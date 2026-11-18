@@ -1,16 +1,22 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { humanize } from "../format";
 import { useDismiss } from "../hooks/useDismiss";
-import type { Meta, Priority, Status, TicketFilters, TicketListItem } from "../types";
-import { FilterIcon, XIcon } from "./Icons";
+import { VIEWS, applyFilters, countViews, filterCount, inView, sortTickets, type QueueFilters, type SortId, type ViewId, NO_FILTERS } from "../lib/views";
+import type { Meta, Priority, TicketListItem } from "../types";
+import { CategoryDot, CheckCircleIcon, EyeIcon, InboxIcon, LayersIcon, SignalIcon, SlidersIcon, XIcon } from "./Icons";
 import { QueueRow } from "./QueueRow";
+
+const VIEW_ICON = { open: InboxIcon, high: SignalIcon, review: EyeIcon, resolved: CheckCircleIcon, all: LayersIcon };
 
 interface Props {
   meta: Meta | null;
-  filters: TicketFilters;
-  onFiltersChange: (filters: TicketFilters) => void;
   tickets: TicketListItem[];
-  total: number;
+  view: ViewId;
+  onView: (view: ViewId) => void;
+  filters: QueueFilters;
+  onFilters: (filters: QueueFilters) => void;
+  sort: SortId;
+  onSort: (sort: SortId) => void;
   loading: boolean;
   error: string | null;
   onRetry: () => void;
@@ -18,87 +24,89 @@ interface Props {
   onSelect: (id: string) => void;
 }
 
-const STATUS_OPTIONS: { value: Status | undefined; label: string }[] = [
-  { value: undefined, label: "All" },
-  { value: "open", label: "Open" },
-  { value: "resolved", label: "Resolved" },
-];
+const toggle = <T,>(list: T[], value: T) => (list.includes(value) ? list.filter((x) => x !== value) : [...list, value]);
 
-export function QueuePane({ meta, filters, onFiltersChange, tickets, total, loading, error, onRetry, selectedId, onSelect }: Props) {
-  const [popoverOpen, setPopoverOpen] = useState(false);
+export function QueuePane({ meta, tickets, view, onView, filters, onFilters, sort, onSort, loading, error, onRetry, selectedId, onSelect }: Props) {
+  const [popover, setPopover] = useState(false);
   const popRef = useRef<HTMLDivElement>(null);
-  const close = useCallback(() => setPopoverOpen(false), []);
-  useDismiss(popRef, popoverOpen, close);
+  const close = useCallback(() => setPopover(false), []);
+  useDismiss(popRef, popover, close);
 
-  const set = <K extends keyof TicketFilters>(key: K, value: TicketFilters[K]) =>
-    onFiltersChange({ ...filters, [key]: value || undefined });
-  const activeCount = (filters.priority ? 1 : 0) + (filters.category ? 1 : 0);
-  const anyFilter = activeCount > 0 || Boolean(filters.status);
+  // Counts reflect the whole loaded list, so each view shows what is in it regardless of filters.
+  const counts = useMemo(() => countViews(tickets), [tickets]);
+  const rows = useMemo(() => sortTickets(applyFilters(tickets.filter((t) => inView(t, view)), filters), sort), [tickets, view, filters, sort]);
+  const active = filterCount(filters);
 
   return (
     <section className="queue" aria-labelledby="queue-heading">
-      <header className="queue-head">
-        <h2 id="queue-heading">Queue</h2>
-        <span className="queue-count num" aria-live="polite">{loading ? "Loading…" : `${total} ticket${total === 1 ? "" : "s"}`}</span>
-      </header>
+      <h2 id="queue-heading" className="sr-only">Queue</h2>
 
-      <div className="queue-controls">
-        <div className="segmented" role="group" aria-label="Status">
-          {STATUS_OPTIONS.map((o) => (
-            <button key={o.label} type="button" aria-pressed={filters.status === o.value} onClick={() => set("status", o.value)}>
-              {o.label}
-            </button>
-          ))}
-        </div>
+      <ul className="views" aria-label="Views">
+        {VIEWS.map((v) => {
+          const Icon = VIEW_ICON[v.id];
+          return (
+            <li key={v.id}>
+              <button type="button" className="view-row" aria-pressed={view === v.id} onClick={() => onView(v.id)}>
+                <Icon size={16} />
+                <span className="view-label">{v.label}</span>
+                <span className="view-count num">{loading ? "" : counts[v.id]}</span>
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+
+      <div className="queue-tools">
         <div className="popover-anchor" ref={popRef}>
-          <button
-            type="button"
-            className={`filters-btn${activeCount ? " active" : ""}`}
-            aria-haspopup="dialog"
-            aria-expanded={popoverOpen}
-            onClick={() => setPopoverOpen((o) => !o)}
-          >
-            <FilterIcon size={14} /> Filters{activeCount ? <span className="filters-count num">{activeCount}</span> : null}
+          <button type="button" className={`filters-btn${active ? " active" : ""}`} aria-haspopup="dialog" aria-expanded={popover} onClick={() => setPopover((o) => !o)}>
+            <SlidersIcon size={14} /> Filters{active ? <span className="filters-count num">{active}</span> : null}
           </button>
-          {popoverOpen && (
+          {popover && (
             <div className="popover filters-popover" role="dialog" aria-label="Filters">
               <fieldset>
                 <legend>Priority</legend>
-                <div className="chip-group">
-                  {(["high", "medium", "low"] as Priority[]).map((p) => (
-                    <button key={p} type="button" className="chip" aria-pressed={filters.priority === p} onClick={() => set("priority", filters.priority === p ? undefined : p)}>
-                      {humanize(p)}
-                    </button>
-                  ))}
-                </div>
+                {(["high", "medium", "low"] as Priority[]).map((p) => (
+                  <label key={p} className="check">
+                    <input type="checkbox" checked={filters.priorities.includes(p)} onChange={() => onFilters({ ...filters, priorities: toggle(filters.priorities, p) })} />
+                    <span>{humanize(p)}</span>
+                  </label>
+                ))}
               </fieldset>
               <fieldset>
                 <legend>Category</legend>
-                <div className="chip-group">
-                  {meta?.categories.map((c) => (
-                    <button key={c} type="button" className="chip" aria-pressed={filters.category === c} onClick={() => set("category", filters.category === c ? undefined : c)}>
-                      {humanize(c)}
-                    </button>
-                  ))}
-                </div>
+                {meta?.categories.map((c) => (
+                  <label key={c} className="check">
+                    <input type="checkbox" checked={filters.categories.includes(c)} onChange={() => onFilters({ ...filters, categories: toggle(filters.categories, c) })} />
+                    <CategoryDot category={c} />
+                    <span>{humanize(c)}</span>
+                  </label>
+                ))}
               </fieldset>
+              {active > 0 && <button type="button" className="link-btn" onClick={() => onFilters(NO_FILTERS)}>Clear all</button>}
             </div>
           )}
         </div>
+        <label className="sort">
+          <span className="sr-only">Sort</span>
+          <select value={sort} onChange={(e) => onSort(e.target.value as SortId)}>
+            <option value="priority">Priority, then newest</option>
+            <option value="newest">Newest first</option>
+          </select>
+        </label>
       </div>
 
-      {(filters.priority || filters.category) && (
+      {active > 0 && (
         <div className="active-chips" aria-label="Active filters">
-          {filters.priority && (
-            <button type="button" className="chip chip-active" onClick={() => set("priority", undefined)} aria-label={`Remove filter: ${humanize(filters.priority)} priority`}>
-              {humanize(filters.priority)} priority <XIcon size={12} />
+          {filters.priorities.map((p) => (
+            <button key={p} type="button" className="chip chip-active" aria-label={`Remove filter Priority: ${humanize(p)}`} onClick={() => onFilters({ ...filters, priorities: toggle(filters.priorities, p) })}>
+              Priority: {humanize(p)} <XIcon size={12} />
             </button>
-          )}
-          {filters.category && (
-            <button type="button" className="chip chip-active" onClick={() => set("category", undefined)} aria-label={`Remove filter: ${humanize(filters.category)}`}>
-              {humanize(filters.category)} <XIcon size={12} />
+          ))}
+          {filters.categories.map((c) => (
+            <button key={c} type="button" className="chip chip-active" aria-label={`Remove filter Category: ${humanize(c)}`} onClick={() => onFilters({ ...filters, categories: toggle(filters.categories, c) })}>
+              Category: {humanize(c)} <XIcon size={12} />
             </button>
-          )}
+          ))}
         </div>
       )}
 
@@ -107,17 +115,21 @@ export function QueuePane({ meta, filters, onFiltersChange, tickets, total, load
           <p>{error}</p>
           <button type="button" className="btn" onClick={onRetry}>Retry</button>
         </div>
-      ) : !loading && tickets.length === 0 ? (
+      ) : loading ? (
+        <ul className="qlist" aria-busy="true" aria-label="Loading tickets">
+          {Array.from({ length: 6 }, (_, i) => (
+            <li key={i} className="qrow-skel"><span className="skeleton-line" style={{ width: "78%" }} /><span className="skeleton-line" style={{ width: "46%" }} /></li>
+          ))}
+        </ul>
+      ) : rows.length === 0 ? (
         <div className="notice">
-          <p>No tickets match these filters.</p>
-          {anyFilter && <button type="button" className="btn" onClick={() => onFiltersChange({})}>Clear filters</button>}
+          {active > 0 ? <p>No tickets match these filters.</p> : <p>No tickets in this view.</p>}
+          {active > 0 ? <button type="button" className="btn" onClick={() => onFilters(NO_FILTERS)}>Clear filters</button> : view !== "all" && <button type="button" className="btn" onClick={() => onView("all")}>Show all tickets</button>}
         </div>
       ) : (
-        <ul className="qlist" aria-busy={loading}>
-          {tickets.map((t) => (
-            <li key={t.id}>
-              <QueueRow ticket={t} selected={t.id === selectedId} onSelect={onSelect} />
-            </li>
+        <ul className="qlist">
+          {rows.map((t) => (
+            <li key={t.id}><QueueRow ticket={t} selected={t.id === selectedId} onSelect={onSelect} /></li>
           ))}
         </ul>
       )}

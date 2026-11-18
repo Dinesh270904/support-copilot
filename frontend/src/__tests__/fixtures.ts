@@ -92,8 +92,13 @@ export function installApi(opts: { runs?: Partial<Record<AssistantRunRequest["ac
       if (opts.reviewStatus && opts.reviewStatus !== 200) return json({ error: { code: "x", message: "Tool server unavailable", request_id: "rid-1" } }, opts.reviewStatus);
       return json({ ...detail(reviewed[1]), reviewed_at: "2026-11-18T10:00:00Z" });
     }
-    const one = url.match(/^\/api\/tickets\/(T-\d+)$/);
-    if (one) return json(detail(one[1]));
+    const one = url.match(/^\/api\/tickets\/([^/?]+)$/);
+    if (one) {
+      // Like the real API: 404 for an unknown ID, 422 for a malformed one.
+      if (!/^T-\d{3,6}$/.test(one[1])) return json({ error: { code: "validation_error", message: "ticket_id: String should match pattern" } }, 422);
+      if (!list.some((t) => t.id === one[1])) return json({ error: { code: "ticket_not_found", message: `Ticket ${one[1]} was not found` } }, 404);
+      return json(detail(one[1]));
+    }
     if (url === "/api/assistant/run") {
       mock.runs.push(body);
       const entry = opts.runs?.[body.action as AssistantRunRequest["action"]];

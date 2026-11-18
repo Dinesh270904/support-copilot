@@ -8,7 +8,9 @@ import { TicketPane } from "./components/TicketPane";
 import { useCopilot } from "./hooks/useCopilot";
 import { useTheme } from "./hooks/useTheme";
 import { untrustedPositions } from "./lib/untrusted";
-import type { Meta, TicketDetail as Ticket, TicketFilters, TicketListItem } from "./types";
+import { NO_FILTERS, type QueueFilters, type SortId, type ViewId } from "./lib/views";
+import { useHashRoute } from "./hooks/useHashRoute";
+import type { Meta, TicketDetail as Ticket, TicketListItem } from "./types";
 
 function message(err: unknown): string {
   return err instanceof ApiError ? err.message : "Unexpected error";
@@ -18,14 +20,16 @@ export default function App() {
   const { theme, toggle: toggleTheme } = useTheme();
   const [meta, setMeta] = useState<Meta | null>(null);
   const [health, setHealth] = useState<HealthState>(null);
-  const [filters, setFilters] = useState<TicketFilters>({});
+  // The URL hash is the source of truth for the selected ticket and view (#/ticket/T-101?view=high).
+  const { route, navigate } = useHashRoute();
+  const [filters, setFilters] = useState<QueueFilters>(NO_FILTERS);
+  const [sort, setSort] = useState<SortId>("priority");
   const [tickets, setTickets] = useState<TicketListItem[]>([]);
-  const [total, setTotal] = useState(0);
   const [listLoading, setListLoading] = useState(true);
   const [listError, setListError] = useState<string | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
 
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const selectedId = route.ticketId;
   const [ticket, setTicket] = useState<Ticket | null>(null);
   const [ticketLoading, setTicketLoading] = useState(false);
   const [ticketError, setTicketError] = useState<string | null>(null);
@@ -44,11 +48,8 @@ export default function App() {
     setListLoading(true);
     setListError(null);
     api
-      .listTickets(filters, controller.signal)
-      .then((res) => {
-        setTickets(res.items);
-        setTotal(res.total);
-      })
+      .listTickets({}, controller.signal) // views, filters and counts are computed client-side from this one list
+      .then((res) => setTickets(res.items))
       .catch((err) => {
         if (!controller.signal.aborted) setListError(message(err));
       })
@@ -56,10 +57,14 @@ export default function App() {
         if (!controller.signal.aborted) setListLoading(false);
       });
     return () => controller.abort();
-  }, [filters, reloadKey]);
+  }, [reloadKey]);
 
   useEffect(() => {
-    if (!selectedId) return;
+    if (!selectedId) {
+      setTicket(null);
+      setTicketError(null);
+      return;
+    }
     const controller = new AbortController();
     setTicketLoading(true);
     setTicketError(null);
@@ -70,7 +75,8 @@ export default function App() {
       .catch((err) => {
         if (!controller.signal.aborted) {
           setTicket(null);
-          setTicketError(message(err));
+          // A bad ID in the URL (404, or 422 for a malformed one) is a normal state, not a crash.
+          setTicketError(err instanceof ApiError && (err.kind === "not_found" || err.kind === "validation") ? `Ticket not found: ${selectedId}` : message(err));
         }
       })
       .finally(() => {
@@ -79,7 +85,7 @@ export default function App() {
     return () => controller.abort();
   }, [selectedId]);
 
-  const selectTicket = useCallback((id: string) => setSelectedId(id), []);
+  const selectTicket = useCallback((id: string) => navigate({ ticketId: id }), [navigate]);
 
   // Optimistic: the UI flips to "Reviewed" at once and rolls back, with an inline error, if the request fails.
   const markReviewed = useCallback(async () => {
@@ -110,10 +116,13 @@ export default function App() {
         <nav className="pane pane-queue" aria-label="Ticket queue">
           <QueuePane
             meta={meta}
-            filters={filters}
-            onFiltersChange={setFilters}
             tickets={tickets}
-            total={total}
+            view={route.view}
+            onView={(view: ViewId) => navigate({ view })}
+            filters={filters}
+            onFilters={setFilters}
+            sort={sort}
+            onSort={setSort}
             loading={listLoading}
             error={listError}
             onRetry={() => setReloadKey((k) => k + 1)}
