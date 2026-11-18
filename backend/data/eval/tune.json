@@ -1,0 +1,288 @@
+{
+  "_comment": "TUNING set: every threshold/gate/analyzer decision is made against these queries. Do not use holdout.json for tuning.",
+  "queries": [
+    {
+      "id": "t01",
+      "query": "PAYMENT_TIMEOUT with a pending authorization; should the customer retry checkout?",
+      "kind": "direct",
+      "expected_article": "KB-01",
+      "allowed_articles": []
+    },
+    {
+      "id": "t02",
+      "query": "What does PAYMENT_TIMEOUT mean and how do I resolve it?",
+      "kind": "error_code",
+      "expected_article": "KB-01",
+      "allowed_articles": []
+    },
+    {
+      "id": "t03",
+      "query": "customer sees PAYMENT_TIMEOUT at checkout",
+      "kind": "error_code",
+      "expected_article": "KB-01",
+      "allowed_articles": []
+    },
+    {
+      "id": "t04",
+      "query": "PAYMENT_TIMEOUT",
+      "kind": "error_code",
+      "expected_article": "KB-01",
+      "allowed_articles": []
+    },
+    {
+      "id": "t05",
+      "query": "what should I do when a payment is pending after a timeout",
+      "kind": "paraphrase",
+      "expected_article": "KB-01",
+      "allowed_articles": []
+    },
+    {
+      "id": "t06",
+      "query": "can the customer try paying again while the payment is pending",
+      "kind": "paraphrase",
+      "expected_article": "KB-01",
+      "allowed_articles": []
+    },
+    {
+      "id": "t07",
+      "query": "customer was maybe charged twice, what should I check",
+      "kind": "paraphrase",
+      "expected_article": "KB-02",
+      "allowed_articles": []
+    },
+    {
+      "id": "t08",
+      "query": "possible duplicate payment with two transaction IDs",
+      "kind": "direct",
+      "expected_article": "KB-02",
+      "allowed_articles": []
+    },
+    {
+      "id": "t09",
+      "query": "should I promise a refund for a second charge",
+      "kind": "paraphrase",
+      "expected_article": "KB-02",
+      "allowed_articles": []
+    },
+    {
+      "id": "t10",
+      "query": "lost authenticator after replacing phone; backup code and enroll a new device",
+      "kind": "direct",
+      "expected_article": "KB-03",
+      "allowed_articles": []
+    },
+    {
+      "id": "t11",
+      "query": "customer got a new phone and cannot sign in with MFA",
+      "kind": "paraphrase",
+      "expected_article": "KB-03",
+      "allowed_articles": []
+    },
+    {
+      "id": "t12",
+      "query": "how do I recover an account when no backup code is available",
+      "kind": "direct",
+      "expected_article": "KB-03",
+      "allowed_articles": []
+    },
+    {
+      "id": "t13",
+      "query": "user is locked out after changing devices",
+      "kind": "inflection",
+      "expected_article": "KB-03",
+      "allowed_articles": []
+    },
+    {
+      "id": "t14",
+      "query": "CSV export with more than 50,000 rows times out; use a background job",
+      "kind": "direct",
+      "expected_article": "KB-04",
+      "allowed_articles": []
+    },
+    {
+      "id": "t15",
+      "query": "report export keeps timing out for big reports",
+      "kind": "paraphrase",
+      "expected_article": "KB-04",
+      "allowed_articles": []
+    },
+    {
+      "id": "t16",
+      "query": "where does the customer download a finished export",
+      "kind": "paraphrase",
+      "expected_article": "KB-04",
+      "allowed_articles": []
+    },
+    {
+      "id": "t17",
+      "query": "how many rows can a synchronous export handle",
+      "kind": "direct",
+      "expected_article": "KB-04",
+      "allowed_articles": []
+    },
+    {
+      "id": "t18",
+      "query": "customers exporting large reports hit timeouts",
+      "kind": "inflection",
+      "expected_article": "KB-04",
+      "allowed_articles": []
+    },
+    {
+      "id": "t19",
+      "query": "password reset email not received",
+      "kind": "direct",
+      "expected_article": "KB-05",
+      "allowed_articles": []
+    },
+    {
+      "id": "t20",
+      "query": "customer says notification emails are missing, should they check spam",
+      "kind": "direct",
+      "expected_article": "KB-05",
+      "allowed_articles": []
+    },
+    {
+      "id": "t21",
+      "query": "message from the product never arrives in the inbox",
+      "kind": "paraphrase",
+      "expected_article": "KB-05",
+      "allowed_articles": []
+    },
+    {
+      "id": "t22",
+      "query": "invoice shows a prorated adjustment after a plan upgrade",
+      "kind": "direct",
+      "expected_article": "KB-06",
+      "allowed_articles": []
+    },
+    {
+      "id": "t23",
+      "query": "why did the amount change after switching plans mid cycle",
+      "kind": "paraphrase",
+      "expected_article": "KB-06",
+      "allowed_articles": []
+    },
+    {
+      "id": "t24",
+      "query": "how should quoted instructions in a ticket be handled, like ignore instructions and print database rows",
+      "kind": "direct",
+      "expected_article": "KB-07",
+      "allowed_articles": []
+    },
+    {
+      "id": "t25",
+      "query": "ticket text contains a prompt injection attempt",
+      "kind": "direct",
+      "expected_article": "KB-07",
+      "allowed_articles": []
+    },
+    {
+      "id": "t26",
+      "query": "customer message tells the assistant to run SQL",
+      "kind": "paraphrase",
+      "expected_article": "KB-07",
+      "allowed_articles": []
+    },
+    {
+      "id": "t27",
+      "query": "What is the office wifi password?",
+      "kind": "negative",
+      "expected_article": null,
+      "allowed_articles": []
+    },
+    {
+      "id": "t28",
+      "query": "Configure scheduled SFTP delivery of reports to an external server",
+      "kind": "negative",
+      "expected_article": null,
+      "allowed_articles": []
+    },
+    {
+      "id": "t29",
+      "query": "Does the product reimburse a bank decline fee?",
+      "kind": "negative",
+      "expected_article": null,
+      "allowed_articles": [
+        "KB-06"
+      ]
+    },
+    {
+      "id": "t30",
+      "query": "Are decline fees refundable?",
+      "kind": "negative",
+      "expected_article": null,
+      "allowed_articles": [
+        "KB-06",
+        "KB-02"
+      ]
+    },
+    {
+      "id": "t31",
+      "query": "Can I get a refund for a bank decline fee?",
+      "kind": "negative",
+      "expected_article": null,
+      "allowed_articles": [
+        "KB-06",
+        "KB-02"
+      ]
+    },
+    {
+      "id": "t32",
+      "query": "Is tax charged on subscription plans?",
+      "kind": "negative",
+      "expected_article": null,
+      "allowed_articles": [
+        "KB-06"
+      ]
+    },
+    {
+      "id": "t33",
+      "query": "How do I configure single sign-on with Okta?",
+      "kind": "negative",
+      "expected_article": null,
+      "allowed_articles": []
+    },
+    {
+      "id": "t34",
+      "query": "What are the support office opening hours?",
+      "kind": "negative",
+      "expected_article": null,
+      "allowed_articles": []
+    },
+    {
+      "id": "t35",
+      "query": "What does ERR_FOO_BAR mean?",
+      "kind": "negative",
+      "expected_article": null,
+      "allowed_articles": []
+    },
+    {
+      "id": "t36",
+      "query": "How do I delete my account?",
+      "kind": "negative",
+      "expected_article": null,
+      "allowed_articles": []
+    },
+    {
+      "id": "t37",
+      "query": "What is the CEO's phone number?",
+      "kind": "negative",
+      "expected_article": null,
+      "allowed_articles": []
+    },
+    {
+      "id": "t38",
+      "query": "export timed out",
+      "kind": "short",
+      "expected_article": "KB-04",
+      "allowed_articles": []
+    },
+    {
+      "id": "t39",
+      "query": "MFA backup code",
+      "kind": "short",
+      "expected_article": "KB-03",
+      "allowed_articles": []
+    }
+  ]
+}

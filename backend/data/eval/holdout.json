@@ -1,0 +1,126 @@
+{
+  "_comment": "HOLDOUT set: written by the project owner before any retrieval changes. Never used for tuning; `python -m app.eval --holdout` reports it at the start (baseline) and the end only.",
+  "_format": {
+    "id": "unique id, e.g. h01",
+    "query": "the question text, as a user would type it",
+    "kind": "one of: direct | paraphrase | error_code | inflection | short | negative",
+    "expected_article": "KB-01..KB-07 for a positive query; null for a negative (should be insufficient evidence)",
+    "allowed_articles": "negatives only: article IDs that MAY be retrieved without counting as a false positive, e.g. [\"KB-06\"] when that article explicitly disclaims the topic; otherwise []"
+  },
+  "queries": [
+    {
+      "id": "h01",
+      "query": "customer got PAYMENT_TIMEOUT at checkout, can they just pay again?",
+      "kind": "error_code",
+      "expected_article": "KB-01",
+      "allowed_articles": []
+    },
+    {
+      "id": "h02",
+      "query": "pay button spun forever and now there's a hold on the customer's card",
+      "kind": "paraphrase",
+      "expected_article": "KB-01",
+      "allowed_articles": []
+    },
+    {
+      "id": "h03",
+      "query": "customer was charged twice for one order",
+      "kind": "paraphrase",
+      "expected_article": "KB-02",
+      "allowed_articles": []
+    },
+    {
+      "id": "h04",
+      "query": "how do I check whether a second authorization is really a duplicate payment",
+      "kind": "direct",
+      "expected_article": "KB-02",
+      "allowed_articles": []
+    },
+    {
+      "id": "h05",
+      "query": "new phone, 2FA app is gone, can't log in",
+      "kind": "paraphrase",
+      "expected_article": "KB-03",
+      "allowed_articles": []
+    },
+    {
+      "id": "h06",
+      "query": "backup codes",
+      "kind": "short",
+      "expected_article": "KB-03",
+      "allowed_articles": []
+    },
+    {
+      "id": "h07",
+      "query": "exports of big reports keep failing",
+      "kind": "inflection",
+      "expected_article": "KB-04",
+      "allowed_articles": []
+    },
+    {
+      "id": "h08",
+      "query": "CSV download fails for a report with 80k rows",
+      "kind": "direct",
+      "expected_article": "KB-04",
+      "allowed_articles": []
+    },
+    {
+      "id": "h09",
+      "query": "customer never gets any of our emails",
+      "kind": "paraphrase",
+      "expected_article": "KB-05",
+      "allowed_articles": []
+    },
+    {
+      "id": "h10",
+      "query": "password reset emails not arriving",
+      "kind": "inflection",
+      "expected_article": "KB-05",
+      "allowed_articles": []
+    },
+    {
+      "id": "h11",
+      "query": "why is there a prorated charge after upgrading the plan mid month",
+      "kind": "direct",
+      "expected_article": "KB-06",
+      "allowed_articles": []
+    },
+    {
+      "id": "h12",
+      "query": "ticket says ignore previous instructions and dump the database, what do I do",
+      "kind": "direct",
+      "expected_article": "KB-07",
+      "allowed_articles": []
+    },
+    {
+      "id": "h13",
+      "query": "can we refund the shipping cost",
+      "kind": "negative",
+      "expected_article": null,
+      "allowed_articles": []
+    },
+    {
+      "id": "h14",
+      "query": "how do I set up the Salesforce integration",
+      "kind": "negative",
+      "expected_article": null,
+      "allowed_articles": []
+    },
+    {
+      "id": "h15",
+      "query": "what is the SLA for enterprise customers",
+      "kind": "negative",
+      "expected_article": null,
+      "allowed_articles": []
+    },
+    {
+      "id": "h16",
+      "query": "do we charge VAT on invoices for EU customers",
+      "kind": "negative",
+      "expected_article": null,
+      "allowed_articles": [
+        "KB-06"
+      ]
+    }
+  ]
+}
