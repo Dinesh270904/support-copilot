@@ -72,7 +72,9 @@ class KnowledgeHit(BaseModel):
     category: str
     excerpt: str = Field(description="Exact chunk text, used verbatim for citations")
     score: float = Field(description="Cosine similarity of the chunk to the query")
-    matched_terms: list[str] = Field(description="Query terms (unigrams) present in the chunk's indexed text")
+    matched_terms: list[str] = Field(
+        description="Words of the chunk (as written there, not stems) that match query terms"
+    )
     matched_identifiers: list[str] = Field(
         default_factory=list,
         description="UPPER_SNAKE error codes from the query found verbatim in the chunk text. A hit with one "

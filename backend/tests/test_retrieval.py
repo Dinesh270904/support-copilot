@@ -139,3 +139,35 @@ def test_ambiguous_single_term_query_surfaces_both_articles_and_exports_scope(in
     exports = index.search("timeout", category="exports", top_k=3)
     assert exports.results[0].article_id == "KB-04"
     assert "KB-01" not in {h.article_id for h in exports.results}
+
+
+# --- matched_terms are words, not stems -------------------------------------------------
+# The stemmer is an internal index detail ("code" -> "cod"); the API and UI show the original words.
+
+
+def test_matched_terms_are_surface_words_from_the_chunk(index):
+    hit = index.search("backup code authenticator", category="account_access").results[0]
+    assert hit.matched_terms == ["authenticator", "backup", "code"]  # not "cod"
+
+
+def test_every_matched_term_is_a_real_word_of_the_chunk(index):
+    import re
+
+    from app.eval import build_chunks
+
+    indexed = {c.chunk_id: set(re.findall(r"\w\w+", c.index_text.lower())) for c in build_chunks()}  # title+tags+text
+    queries = [
+        "customers exporting large reports hit timeouts",
+        "how to handle a device replacement and the invoices after a plan change",
+        "PAYMENT_TIMEOUT pending authorizations",
+        "emails not arriving, check spam folders",
+    ]
+    for q in queries:
+        for hit in index.search(q, top_k=10, min_score=0.0).results:
+            assert hit.matched_terms and set(hit.matched_terms) <= indexed[hit.chunk_id], (q, hit.chunk_id, hit.matched_terms)
+
+
+def test_surface_word_comes_from_the_chunk_text_not_the_query(index):
+    # The query says "exporting"; KB-04#chunk-1's own text says "exports", so that is the word shown.
+    hit = next(h for h in index.search("exporting", category="exports", min_score=0.0).results if h.chunk_id == "KB-04#chunk-1")
+    assert hit.matched_terms == ["exports"]

@@ -100,6 +100,10 @@ class TfidfIndex:
         self._categories = np.array([c.category for c in self._chunks], dtype=object)
         self._analyzer = self._vectorizer.build_analyzer()
         self._chunk_terms = [self._unigrams(c.index_text) for c in self._chunks]
+        # stem -> first original word that produced it, per chunk. Matches are shown as these words
+        # ("code"), never as stems ("cod"): the stemmer is an internal index detail.
+        words = TfidfVectorizer(lowercase=True, stop_words="english").build_analyzer()
+        self._surface = [self._surface_words(words, c) for c in self._chunks]
 
     def stats(self) -> dict[str, object]:
         return {
@@ -166,7 +170,7 @@ class TfidfIndex:
                 if matched_n < 2 and (matched_n / len(query_terms) if query_terms else 0.0) < min_term_coverage:
                     rejected.append(chunk.chunk_id)
                     continue
-            matched = sorted(query_terms & self._chunk_terms[idx])
+            matched = sorted(self._surface[idx][t] for t in query_terms & self._chunk_terms[idx])
             hits.append(
                 KnowledgeHit(
                     chunk_id=chunk.chunk_id,
@@ -183,6 +187,15 @@ class TfidfIndex:
         return empty.model_copy(
             update={"best_score": round(max(best, 0.0), 4), "results": hits, "rejected_low_coverage": rejected}
         )
+
+    @staticmethod
+    def _surface_words(words, chunk: ChunkRecord) -> dict[str, str]:
+        surface: dict[str, str] = {}
+        # The chunk's own text wins; title and tags only fill in stems that appear nowhere in the text.
+        for source in (chunk.text, f"{chunk.title} {' '.join(chunk.tags)}"):
+            for word in words(source):
+                surface.setdefault(stem(word), word)
+        return surface
 
     def _unigrams(self, text: str) -> set[str]:
         return {t for t in self._analyzer(text) if " " not in t}
