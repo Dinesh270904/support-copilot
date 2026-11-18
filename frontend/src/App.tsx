@@ -1,32 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
 import { ApiError, api } from "./api";
 import { AssistantPanel } from "./components/AssistantPanel";
-import { SparkleIcon } from "./components/Icons";
 import { TicketDetail } from "./components/TicketDetail";
-import { ThemeToggle } from "./components/ThemeToggle";
+import { TopBar, type HealthState } from "./components/TopBar";
 import { TicketQueue } from "./components/TicketQueue";
 import { useTheme } from "./hooks/useTheme";
-import type { Health, Meta, TicketDetail as Ticket, TicketFilters, TicketListItem } from "./types";
-
-function HealthStatus({ health }: { health: Health | null | "unreachable" }) {
-  const state =
-    health === null ? "pending" : health === "unreachable" ? "down" : health.mcp.connected && health.database === "ok" ? "up" : "down";
-  const label =
-    state === "pending"
-      ? "Checking tools…"
-      : state === "up"
-        ? `Tools connected (${(health as Health).mcp.tools.length})`
-        : health === "unreachable"
-          ? "API unreachable"
-          : "Assistant tools offline";
-  return (
-    <div className={`health health-${state}`} role="status" title={health && health !== "unreachable" ? health.mcp.last_error ?? "" : ""}>
-      <span className="health-dot" aria-hidden="true" />
-      <span>{label}</span>
-      <span className="health-sub">Local MCP server over stdio</span>
-    </div>
-  );
-}
+import type { Meta, TicketDetail as Ticket, TicketFilters, TicketListItem } from "./types";
 
 function message(err: unknown): string {
   return err instanceof ApiError ? err.message : "Unexpected error";
@@ -35,7 +14,7 @@ function message(err: unknown): string {
 export default function App() {
   const { theme, toggle: toggleTheme } = useTheme();
   const [meta, setMeta] = useState<Meta | null>(null);
-  const [health, setHealth] = useState<Health | null | "unreachable">(null);
+  const [health, setHealth] = useState<HealthState>(null);
   const [filters, setFilters] = useState<TicketFilters>({});
   const [tickets, setTickets] = useState<TicketListItem[]>([]);
   const [total, setTotal] = useState(0);
@@ -122,42 +101,38 @@ export default function App() {
   }, [ticket]);
 
   return (
-    <div className="app">
-      <main className="layout">
-        <aside className="sidebar">
-          <div className="brand">
-            <span className="brand-mark" aria-hidden="true"><SparkleIcon size={18} /></span>
-            <div>
-              <h1>Support Copilot</h1>
-              <p>Grounded answers. Drafts are never sent.</p>
-            </div>
-            <ThemeToggle theme={theme} onToggle={toggleTheme} />
-          </div>
-          <HealthStatus health={health} />
+    <div className="app-shell">
+      <TopBar health={health} theme={theme} onToggleTheme={toggleTheme} />
+      <div className="panes">
+        <nav className="pane pane-queue" aria-label="Ticket queue">
           <TicketQueue
-          meta={meta}
-          filters={filters}
-          onFiltersChange={setFilters}
-          tickets={tickets}
-          total={total}
-          loading={listLoading}
-          error={listError}
-          onRetry={() => setReloadKey((k) => k + 1)}
-          selectedId={selectedId}
-          onSelect={selectTicket}
+            meta={meta}
+            filters={filters}
+            onFiltersChange={setFilters}
+            tickets={tickets}
+            total={total}
+            loading={listLoading}
+            error={listError}
+            onRetry={() => setReloadKey((k) => k + 1)}
+            selectedId={selectedId}
+            onSelect={selectTicket}
           />
+        </nav>
+        <main className="pane pane-ticket">
+          <TicketDetail
+            ticket={ticket}
+            loading={ticketLoading}
+            error={ticketError}
+            reviewing={reviewing}
+            reviewError={reviewError}
+            onMarkReviewed={markReviewed}
+          />
+        </main>
+        <aside className="pane pane-copilot" aria-label="Copilot">
+          {/* Re-mount per ticket so results never show against the wrong ticket. */}
+          <AssistantPanel key={ticket?.id ?? "none"} ticket={ticket} meta={meta} onOpenTicket={selectTicket} />
         </aside>
-        <TicketDetail
-          ticket={ticket}
-          loading={ticketLoading}
-          error={ticketError}
-          reviewing={reviewing}
-          reviewError={reviewError}
-          onMarkReviewed={markReviewed}
-        />
-        {/* Re-mount per ticket so results never show against the wrong ticket. */}
-        <AssistantPanel key={ticket?.id ?? "none"} ticket={ticket} meta={meta} onOpenTicket={selectTicket} />
-      </main>
+      </div>
     </div>
   );
 }

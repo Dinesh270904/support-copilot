@@ -1,0 +1,34 @@
+/* Application shell: 48px top bar, then queue | ticket | copilot panes (handoff section 2). */
+.app-shell { display: flex; flex-direction: column; height: 100%; background: var(--canvas); }
+
+.topbar {
+  flex: none; height: 48px; display: flex; align-items: center; gap: var(--s-3); padding: 0 var(--s-4);
+  background: var(--surface-1); border-bottom: 1px solid var(--border);
+}
+.brand { white-space: nowrap; display: flex; align-items: center; gap: var(--s-2); font-weight: 600; font-size: 14px; letter-spacing: -0.01em; }
+.brand-mark { display: inline-grid; place-items: center; width: 24px; height: 24px; border-radius: var(--r-control); background: var(--accent); color: var(--on-accent); }
+.topbar-spacer { flex: 1; }
+
+.health { white-space: nowrap; display: inline-flex; align-items: center; gap: var(--s-2); padding: 4px 10px; border: 1px solid var(--border); border-radius: var(--r-pill); color: var(--text-2); font-size: var(--fs-meta); }
+.health-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--text-3); }
+.health-up .health-dot { background: var(--ok); }
+.health-down { border-color: var(--danger); }
+.health-down .health-dot { background: var(--danger); }
+.topbar .icon-btn { margin-left: 0; }
+
+.panes { flex: 1; min-height: 0; display: grid; grid-template-columns: 300px minmax(0, 1fr) minmax(400px, 440px); }
+.pane { min-width: 0; min-height: 0; overflow-y: auto; background: var(--surface-1); }
+.pane + .pane { border-left: 1px solid var(--border); }
+
+/* Interim narrow-screen fallback (stacked). Step 9 of the handoff replaces this with the real
+   responsive behaviour (Copilot drawer at 1024-1279px, bottom tab bar under 768px). */
+@media (max-width: 900px) {
+  .app-shell { height: auto; min-height: 100%; }
+  .panes { display: block; }
+  .pane { overflow: visible; border-left: none; border-top: 1px solid var(--border); }
+}
+
+@media (max-width: 480px) {
+  .hide-narrow { display: none; }
+  .topbar { padding: 0 var(--s-3); gap: var(--s-2); }
+}
