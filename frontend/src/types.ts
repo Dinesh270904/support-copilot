@@ -64,6 +64,10 @@ export interface Citation {
   score_type: "cosine" | "bm25" | null;
   article_id: string | null;
   ticket_id: string | null;
+  /** Words (as written in the source) that matched the query; present on article and ticket sources. */
+  matched_terms: string[];
+  /** Error codes from the question found verbatim in the source (articles only). */
+  matched_identifiers: string[];
   usage: "evidence" | "coverage_gap" | "retrieved_unused" | "similar_ticket" | "ticket_record";
 }
 

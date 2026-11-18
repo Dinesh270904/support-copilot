@@ -1,10 +1,13 @@
 import { useCallback, useEffect, useState } from "react";
 import { ApiError, api } from "./api";
 import { AssistantPanel } from "./components/AssistantPanel";
-import { TicketDetail } from "./components/TicketDetail";
 import { TopBar, type HealthState } from "./components/TopBar";
 import { QueuePane } from "./components/QueuePane";
+import { ReplyComposer } from "./components/ReplyComposer";
+import { TicketPane } from "./components/TicketPane";
+import { useCopilot } from "./hooks/useCopilot";
 import { useTheme } from "./hooks/useTheme";
+import { untrustedPositions } from "./lib/untrusted";
 import type { Meta, TicketDetail as Ticket, TicketFilters, TicketListItem } from "./types";
 
 function message(err: unknown): string {
@@ -26,7 +29,6 @@ export default function App() {
   const [ticket, setTicket] = useState<Ticket | null>(null);
   const [ticketLoading, setTicketLoading] = useState(false);
   const [ticketError, setTicketError] = useState<string | null>(null);
-  const [reviewing, setReviewing] = useState(false);
   const [reviewError, setReviewError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -77,28 +79,29 @@ export default function App() {
     return () => controller.abort();
   }, [selectedId]);
 
-  const selectTicket = useCallback((id: string) => {
-    setSelectedId(id);
-    // On stacked (narrow) layouts the detail pane is below the queue; bring it into view.
-    if (window.matchMedia?.("(max-width: 760px)").matches) {
-      window.setTimeout(() => document.getElementById("ticket-detail")?.scrollIntoView({ behavior: "smooth" }), 50);
-    }
-  }, []);
+  const selectTicket = useCallback((id: string) => setSelectedId(id), []);
 
+  // Optimistic: the UI flips to "Reviewed" at once and rolls back, with an inline error, if the request fails.
   const markReviewed = useCallback(async () => {
-    if (!ticket) return;
-    setReviewing(true);
+    if (!ticket || ticket.reviewed_at) return;
+    const id = ticket.id;
+    const stamp = new Date().toISOString();
     setReviewError(null);
+    setTicket((t) => (t && t.id === id ? { ...t, reviewed_at: stamp } : t));
+    setTickets((list) => list.map((t) => (t.id === id ? { ...t, reviewed_at: stamp } : t)));
     try {
-      const updated = await api.markReviewed(ticket.id);
-      setTicket(updated);
-      setTickets((list) => list.map((t) => (t.id === updated.id ? { ...t, reviewed_at: updated.reviewed_at } : t)));
+      const updated = await api.markReviewed(id);
+      setTicket((t) => (t && t.id === id ? updated : t));
+      setTickets((list) => list.map((t) => (t.id === id ? { ...t, reviewed_at: updated.reviewed_at } : t)));
     } catch (err) {
-      setReviewError(message(err));
-    } finally {
-      setReviewing(false);
+      setTicket((t) => (t && t.id === id ? { ...t, reviewed_at: null } : t));
+      setTickets((list) => list.map((t) => (t.id === id ? { ...t, reviewed_at: null } : t)));
+      setReviewError(`Could not mark ${id} reviewed: ${message(err)}`);
     }
   }, [ticket]);
+
+  const copilot = useCopilot(ticket?.id ?? null);
+  const untrusted = untrustedPositions(copilot.session.brief.response?.warnings ?? [], ticket?.messages ?? []);
 
   return (
     <div className="app-shell">
@@ -119,13 +122,24 @@ export default function App() {
           />
         </nav>
         <main className="pane pane-ticket">
-          <TicketDetail
+          <TicketPane
             ticket={ticket}
             loading={ticketLoading}
             error={ticketError}
-            reviewing={reviewing}
             reviewError={reviewError}
+            untrusted={untrusted}
             onMarkReviewed={markReviewed}
+            composer={
+              ticket && (
+                <ReplyComposer
+                  draft={copilot.session.draft}
+                  text={copilot.session.draftText}
+                  onText={copilot.setDraftText}
+                  onDraft={copilot.runDraft}
+                  onReset={copilot.resetDraft}
+                />
+              )
+            }
           />
         </main>
         <aside className="pane pane-copilot" aria-label="Copilot">

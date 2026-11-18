@@ -28,3 +28,18 @@ export function relativeTime(ts: string, now: number = Date.now()): string {
   if (days < 30) return `${days}d`;
   return `${Math.floor(days / 30)}mo`;
 }
+
+/** "12 Nov 2026" (UTC), used for day separators in the conversation. */
+export function formatDay(ts: string): string {
+  const d = new Date(ts);
+  if (Number.isNaN(d.getTime())) return ts;
+  return `${d.getUTCDate()} ${MONTHS[d.getUTCMonth()]} ${d.getUTCFullYear()}`;
+}
+
+/** "09:15 UTC". */
+export function formatTime(ts: string): string {
+  const d = new Date(ts);
+  if (Number.isNaN(d.getTime())) return "";
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())} UTC`;
+}

@@ -62,7 +62,7 @@ describe("AssistantPanel", () => {
       citations: [{
         source_id: "KB-01#chunk-1", source_type: "knowledge_chunk", title: "Handling a checkout payment timeout",
         excerpt: "If the payment is pending, do not ask the customer to submit another payment.", score: 0.2935,
-        score_type: "cosine", article_id: "KB-01", ticket_id: null, usage: "evidence",
+        score_type: "cosine", article_id: "KB-01", ticket_id: null, matched_terms: [], matched_identifiers: [], usage: "evidence",
       }],
     }));
     const user = userEvent.setup();
