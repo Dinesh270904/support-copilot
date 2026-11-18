@@ -1,0 +1,8 @@
+# Versions tested together (Python 3.11+). CPU-only; no model downloads.
+fastapi==0.164.0
+uvicorn==0.54.0
+pydantic==2.13.5
+sqlalchemy==2.1.9
+alembic==1.20.1
+mcp==2.3.0
+scikit-learn==1.9.1

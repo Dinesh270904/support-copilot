@@ -1,0 +1,9 @@
+__pycache__/
+*.pyc
+.pytest_cache/
+backend/data/support.db
+backend/data/support.db-journal
+frontend/node_modules/
+frontend/dist/
+*.tsbuildinfo
+.venv/
