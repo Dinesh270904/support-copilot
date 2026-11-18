@@ -113,3 +113,68 @@
 .agent-notes { margin-top: var(--s-3); padding: var(--s-3); border: 1px solid var(--border); border-radius: var(--r-card); background: var(--surface-2); }
 .agent-notes h4 { margin-bottom: var(--s-2); color: var(--text-2); font-size: 12px; font-weight: 600; }
 .agent-notes ul { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: var(--s-1); color: var(--text-2); }
+
+/* ---- copilot panel, cards, ask box (step 5) ----------------------------------------- */
+.pane-copilot { display: flex; flex-direction: column; overflow: hidden; }
+.copilot { display: flex; flex-direction: column; min-height: 0; height: 100%; }
+.copilot-head { flex: none; display: flex; align-items: baseline; justify-content: space-between; padding: var(--s-4) var(--s-4) var(--s-2); }
+.copilot-head h2 { font-size: 13px; font-weight: 600; }
+.copilot-for { color: var(--text-3); font-size: 12px; }
+.copilot-scroll { flex: 1; min-height: 0; overflow-y: auto; padding: var(--s-2) var(--s-4) var(--s-4); display: flex; flex-direction: column; gap: var(--s-3); }
+
+.card { padding: var(--s-3) var(--s-4); border: 1px solid var(--border); border-radius: var(--r-card); background: var(--surface-2); }
+.card-head { display: flex; align-items: center; gap: var(--s-2); margin-bottom: var(--s-2); }
+.card-head h3 { font-size: 13px; font-weight: 600; }
+.card-tag { padding: 1px 8px; border: 1px solid var(--border); border-radius: var(--r-pill); color: var(--text-3); font-size: 11px; font-weight: 500; white-space: nowrap; }
+.card-ms { margin-left: auto; color: var(--text-3); font-size: 12px; }
+.card-lead { color: var(--text-2); font-size: var(--fs-meta); line-height: 1.5; }
+.card-empty { color: var(--text-3); }
+.card-block { margin: var(--s-3) 0 0; padding: 0; border: 0; }
+.card-block h4, .still-needed legend { padding: 0; margin-bottom: var(--s-1); color: var(--text-3); font-size: 12px; font-weight: 600; }
+.plain-list { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: var(--s-1); color: var(--text-2); font-size: var(--fs-meta); }
+.check { display: flex; align-items: flex-start; gap: var(--s-2); padding: 2px 0; color: var(--text-2); cursor: pointer; }
+.check input { margin-top: 2px; accent-color: var(--accent); }
+.strip { display: flex; align-items: flex-start; gap: var(--s-2); margin: var(--s-2) 0 0; padding: var(--s-2) var(--s-3); border-radius: var(--r-control); font-size: 12px; line-height: 1.45; }
+.strip svg { flex: none; margin-top: 1px; }
+.strip-warn { background: var(--warn-bg); border: 1px solid color-mix(in srgb, var(--warn) 45%, var(--border)); color: var(--text); }
+.strip-warn svg { color: var(--warn); }
+
+.similar-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--s-1); }
+.similar-row { width: 100%; display: flex; flex-direction: column; align-items: stretch; gap: 2px; padding: var(--s-2); text-align: left; cursor: pointer; border: 1px solid transparent; border-radius: var(--r-control); background: transparent; color: var(--text); }
+.similar-row:hover { background: var(--surface-3); }
+.similar-top { display: flex; align-items: center; gap: var(--s-2); min-width: 0; }
+.id-chip { flex: none; padding: 0 6px; border: 1px solid var(--border); border-radius: var(--r-control); background: var(--surface-1); color: var(--text-2); font-size: 12px; font-weight: 600; }
+.similar-title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500; }
+.similar-score { flex: none; color: var(--text-3); font-size: 12px; }
+.similar-fix { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-2); }
+.similar-terms { color: var(--text-3); font-size: 12px; }
+
+.error-note { display: flex; flex-direction: column; align-items: flex-start; gap: var(--s-1); padding: var(--s-3); border: 1px solid; border-radius: var(--r-control); color: var(--text); }
+.error-note p { margin: 0; }
+.error-note-title { display: flex; align-items: center; gap: 6px; font-weight: 600; }
+.error-note-id { color: var(--text-2); font-size: 12px; }
+.error-note-warn { background: var(--warn-bg); border-color: color-mix(in srgb, var(--warn) 50%, var(--border)); }
+.error-note-warn .error-note-title { color: var(--warn); }
+.error-note-danger { background: var(--danger-bg); border-color: color-mix(in srgb, var(--danger) 50%, var(--border)); }
+.error-note-danger .error-note-title { color: var(--danger); }
+.skeleton { display: flex; flex-direction: column; gap: var(--s-2); }
+.skeleton-line { display: block; height: 10px; border-radius: 3px; background: var(--surface-3); }
+.skeleton-note { color: var(--text-3); font-size: 12px; }
+
+.answer-entry { border: 1px solid var(--border); border-radius: var(--r-card); background: var(--surface-2); }
+.answer-entry > summary { display: flex; align-items: center; gap: var(--s-2); padding: var(--s-2) var(--s-3); cursor: pointer; list-style: none; }
+.answer-entry > summary::-webkit-details-marker { display: none; }
+.answer-q { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500; }
+.answer-entry > :not(summary) { margin: 0 var(--s-3) var(--s-3); }
+
+.askbox { flex: none; padding: var(--s-3) var(--s-4) var(--s-4); border-top: 1px solid var(--border); background: var(--surface-1); display: flex; flex-direction: column; gap: var(--s-2); }
+.suggestions { display: flex; flex-wrap: wrap; gap: var(--s-1); }
+.suggestions .chip { text-align: left; max-width: 100%; white-space: normal; line-height: 1.3; padding: 4px 10px; border-radius: var(--r-control); }
+.ask-input { display: block; width: 100%; padding: var(--s-2) var(--s-3); resize: none; border: 1px solid var(--border); border-radius: var(--r-control); background: var(--surface-2); color: var(--text); line-height: 1.45; }
+.ask-input::placeholder { color: var(--text-3); }
+.ask-row { display: flex; align-items: center; gap: var(--s-2); }
+.scope { display: inline-flex; align-items: center; gap: var(--s-2); color: var(--text-3); font-size: 12px; }
+.scope select { padding: 4px 8px; border: 1px solid var(--border); border-radius: var(--r-control); background: var(--surface-2); color: var(--text); font-size: 12px; }
+.ask-count { color: var(--text-3); font-size: 12px; }
+.ask-count.over { color: var(--danger); }
+.ask-submit { margin-left: auto; }

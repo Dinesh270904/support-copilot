@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { ApiError, api } from "./api";
-import { AssistantPanel } from "./components/AssistantPanel";
+import { CopilotPanel } from "./components/CopilotPanel";
 import { TopBar, type HealthState } from "./components/TopBar";
 import { QueuePane } from "./components/QueuePane";
 import { ReplyComposer } from "./components/ReplyComposer";
@@ -143,8 +143,7 @@ export default function App() {
           />
         </main>
         <aside className="pane pane-copilot" aria-label="Copilot">
-          {/* Re-mount per ticket so results never show against the wrong ticket. */}
-          <AssistantPanel key={ticket?.id ?? "none"} ticket={ticket} meta={meta} onOpenTicket={selectTicket} />
+          <CopilotPanel ticket={ticket} meta={meta} copilot={copilot} onOpenTicket={selectTicket} />
         </aside>
       </div>
     </div>

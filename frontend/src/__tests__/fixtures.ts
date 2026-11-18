@@ -16,6 +16,7 @@ export const list: TicketListItem[] = [
   item("T-112", "Request to export records to an SFTP server", "integrations", "high", "integrations"),
   item("T-104", "Locked out after replacing authenticator phone", "account_access", "high", "sign_in"),
   item("T-101", "Checkout timed out with a pending payment", "checkout", "high", "web_checkout"),
+  item("T-103", "Receipt missing after completed checkout", "checkout", "low", "receipts", "resolved"),
 ];
 
 export function detail(id: string): TicketDetail {
