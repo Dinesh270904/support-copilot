@@ -33,3 +33,10 @@ button, input, select, textarea { font: inherit; color: inherit; }
   border: 1px solid var(--border); border-radius: var(--r-control); background: var(--surface-2); color: var(--text-2);
 }
 .icon-btn:hover { background: var(--surface-3); color: var(--text); }
+
+/* Keyboard hints: "R", "⌘K". */
+kbd {
+  display: inline-block; padding: 1px 5px; border: 1px solid var(--border); border-radius: 4px;
+  background: var(--surface-2); color: var(--text-2); font: var(--t-micro); font-family: ui-monospace, "SF Mono", Menlo, monospace;
+}
+.prose-max { max-width: 72ch; }  /* prose blocks stay at 72 characters or fewer */

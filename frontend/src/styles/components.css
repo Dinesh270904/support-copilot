@@ -60,10 +60,11 @@
 .qrow-meta { color: var(--text-3); font-size: 12px; padding-left: 22px; }
 .qrow-meta > span:not(.qrow-flags) { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .qrow-flags { margin-left: auto; display: inline-flex; align-items: center; gap: 6px; flex: none; }
-.qrow-reviewed { color: var(--ok); font-weight: 700; }
-.status-dot { width: 8px; height: 8px; border-radius: 50%; box-sizing: border-box; }
-.status-open { background: var(--text-2); }
-.status-resolved { border: 1.5px solid var(--text-3); background: transparent; }
+.qrow-reviewed { color: var(--ok-text); font-weight: 700; }
+.status-icon.status-open { color: var(--text-2); }
+.status-icon.status-resolved { color: var(--ok); }
+.status-icon { flex: none; }
+.cat-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; flex: none; }
 .unreviewed-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
 .prio-icon { flex: none; }
 .prio-high { color: var(--danger); }
@@ -80,13 +81,13 @@
 .ticket-title { font-size: var(--fs-title); font-weight: 600; line-height: 1.3; letter-spacing: -0.01em; }
 .ticket-meta { margin-top: var(--s-1); color: var(--text-3); }
 .review-box { flex: none; display: flex; flex-direction: column; align-items: flex-end; gap: var(--s-1); }
-.reviewed-line { display: inline-flex; align-items: center; gap: 6px; color: var(--ok); font-weight: 500; }
+.reviewed-line { display: inline-flex; align-items: center; gap: 6px; color: var(--ok-text); font-weight: 500; }
 .ticket-block { margin-top: var(--s-5); }
 .block-label { margin-bottom: var(--s-2); color: var(--text-3); font-size: 12px; font-weight: 600; }
 .read { max-width: 70ch; font-size: var(--fs-read); line-height: 1.55; }
 .resolution-text { color: var(--text-2); }
 .footnote { margin-top: var(--s-4); color: var(--text-3); font-size: 12px; max-width: 64ch; }
-.inline-error { margin-top: var(--s-2); color: var(--danger); font-size: 12px; }
+.inline-error { margin-top: var(--s-2); color: var(--danger-text); font-size: 12px; }
 
 .convo { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--s-3); }
 .convo-day { position: relative; margin: var(--s-1) 0; text-align: center; color: var(--text-3); font-size: 12px; }
@@ -100,11 +101,11 @@
 .msg-head time { color: var(--text-3); }
 .msg-text { font-size: var(--fs-read); line-height: 1.55; overflow-wrap: anywhere; }
 .msg-untrusted .bubble { border: 1px dashed var(--warn); background: var(--warn-bg); }
-.untrusted-label { display: flex; align-items: center; gap: 6px; margin-bottom: var(--s-1); color: var(--warn); font-size: 12px; font-weight: 600; }
+.untrusted-label { display: flex; align-items: center; gap: 6px; margin-bottom: var(--s-1); color: var(--warn-text); font-size: 12px; font-weight: 600; }
 
 .composer { flex: none; max-height: 46%; overflow-y: auto; padding: var(--s-3) var(--s-6) var(--s-4); border-top: 1px solid var(--border); background: var(--surface-1); }
 .composer-head { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s-3); }
-.composer-label { display: inline-flex; align-items: center; gap: 6px; padding: 2px 10px; border: 1px solid var(--draft); border-radius: var(--r-pill); background: var(--draft-bg); color: var(--draft); font-size: 12px; font-weight: 600; }
+.composer-label { display: inline-flex; align-items: center; gap: 6px; padding: 2px 10px; border: 1px solid var(--draft); border-radius: var(--r-pill); background: var(--draft-bg); color: var(--draft-text); font-size: 12px; font-weight: 600; }
 .composer-hint { flex: 1; min-width: 180px; color: var(--text-3); font-size: 12px; }
 .composer-text { display: block; width: 100%; margin-top: var(--s-2); padding: var(--s-3); resize: vertical; border: 1px solid var(--border); border-radius: var(--r-control); background: var(--surface-2); color: var(--text); font-size: var(--fs-read); line-height: 1.55; }
 .composer-text::placeholder { color: var(--text-3); }
@@ -137,7 +138,7 @@
 .strip { display: flex; align-items: flex-start; gap: var(--s-2); margin: var(--s-2) 0 0; padding: var(--s-2) var(--s-3); border-radius: var(--r-control); font-size: 12px; line-height: 1.45; }
 .strip svg { flex: none; margin-top: 1px; }
 .strip-warn { background: var(--warn-bg); border: 1px solid color-mix(in srgb, var(--warn) 45%, var(--border)); color: var(--text); }
-.strip-warn svg { color: var(--warn); }
+.strip-warn svg { color: var(--warn-text); }
 
 .similar-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--s-1); }
 .similar-row { width: 100%; display: flex; flex-direction: column; align-items: stretch; gap: 2px; padding: var(--s-2); text-align: left; cursor: pointer; border: 1px solid transparent; border-radius: var(--r-control); background: transparent; color: var(--text); }
@@ -154,9 +155,9 @@
 .error-note-title { display: flex; align-items: center; gap: 6px; font-weight: 600; }
 .error-note-id { color: var(--text-2); font-size: 12px; }
 .error-note-warn { background: var(--warn-bg); border-color: color-mix(in srgb, var(--warn) 50%, var(--border)); }
-.error-note-warn .error-note-title { color: var(--warn); }
+.error-note-warn .error-note-title { color: var(--warn-text); }
 .error-note-danger { background: var(--danger-bg); border-color: color-mix(in srgb, var(--danger) 50%, var(--border)); }
-.error-note-danger .error-note-title { color: var(--danger); }
+.error-note-danger .error-note-title { color: var(--danger-text); }
 .skeleton { display: flex; flex-direction: column; gap: var(--s-2); }
 .skeleton-line { display: block; height: 10px; border-radius: 3px; background: var(--surface-3); }
 .skeleton-note { color: var(--text-3); font-size: 12px; }
@@ -176,7 +177,7 @@
 .scope { display: inline-flex; align-items: center; gap: var(--s-2); color: var(--text-3); font-size: 12px; }
 .scope select { padding: 4px 8px; border: 1px solid var(--border); border-radius: var(--r-control); background: var(--surface-2); color: var(--text); font-size: 12px; }
 .ask-count { color: var(--text-3); font-size: 12px; }
-.ask-count.over { color: var(--danger); }
+.ask-count.over { color: var(--danger-text); }
 .ask-submit { margin-left: auto; }
 
 /* ---- answer card, citations, score meter, drawer (step 6) --------------------------- */
@@ -186,8 +187,8 @@
 .acard-no_results { border-left-color: var(--text-3); }
 .acard-head { display: flex; align-items: center; gap: var(--s-2); }
 .acard-state { display: inline-flex; align-items: center; gap: 6px; margin: 0; font-weight: 600; font-size: var(--fs-read); }
-.acard-answered .acard-state { color: var(--ok); }
-.acard-insufficient_evidence .acard-state { color: var(--warn); }
+.acard-answered .acard-state { color: var(--ok-text); }
+.acard-insufficient_evidence .acard-state { color: var(--warn-text); }
 .acard-no_results .acard-state { color: var(--text-2); }
 .acard-ms { margin-left: auto; color: var(--text-3); font-size: 12px; }
 .acard-more { margin-left: 0; width: 28px; height: 24px; }
@@ -195,7 +196,7 @@
 .prose { margin: 0; font-size: var(--fs-read); line-height: 1.7; }
 .prose-plain { color: var(--text-2); }
 .count-ids { margin: 0; display: flex; flex-wrap: wrap; gap: var(--s-1); }
-.gap-note { margin: 0; color: var(--warn); font-weight: 600; }
+.gap-note { margin: 0; color: var(--warn-text); font-weight: 600; }
 .hint { margin: 0; color: var(--text-2); }
 .acard-body > .chip { align-self: flex-start; }
 .acard-block { border-top: 1px solid var(--border); padding-top: var(--s-2); }
@@ -248,8 +249,8 @@
 .tool-steps { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; align-items: center; gap: var(--s-2); }
 .tool-step { display: inline-flex; align-items: center; gap: 6px; color: var(--text-2); }
 .tool-step code { color: var(--text); }
-.tool-status { color: var(--ok); font-weight: 700; }
-.tool-error .tool-status { color: var(--danger); }
+.tool-status { color: var(--ok-text); font-weight: 700; }
+.tool-error .tool-status { color: var(--danger-text); }
 .tool-arrow { color: var(--text-3); }
 .retrieval-line { display: flex; flex-wrap: wrap; gap: 0 var(--s-2); margin: 0; color: var(--text-3); font-size: 12px; }
 .retrieval-line span + span::before { content: "·"; margin-right: var(--s-2); }

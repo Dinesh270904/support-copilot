@@ -1,94 +1,103 @@
-/* Design tokens (docs/UI_HANDOFF.md section 4). Dark is the default; the light theme applies via
+/* Design tokens (docs/UI_HANDOFF.md section 4 and docs/UI_SPEC_DETAIL.md sections 1-2). Dark is the default; light applies via
    [data-theme="light"], or via prefers-color-scheme when the user has not chosen a theme.
 
-   Deviations from the handoff's literal values, each made only to meet its own "WCAG AA in both
-   themes" rule (ratios measured on every surface the token is used on):
-   - dark  --text-3  #7D838D -> #858B95   (4.33 -> 4.82 on --surface-3)
-   - light --text-3  #6B7280 -> #626977   (4.08 -> 4.66 on --surface-3)
-   - light --ok      #1F8A63 -> #18775A   (3.64 -> 4.64)
-   - light --warn    #A86A00 -> #8F5A00   (3.75 -> 4.88)
-   Added: --on-accent (white on the dark accent is only 3.84:1, so dark text is used there) and
-   --accent-text (a lighter accent for text on --surface-3). --accent itself is unchanged. */
+   Contrast (WCAG AA, 4.5:1 for text) was MEASURED, not assumed, on every surface a token is used on. Where a literal value
+   failed, the text colour was adjusted, never a tint's alpha:
+   - base tokens --text-3, light --ok and --warn were already corrected (see git history); they stay.
+   - semantic TEXT on a 12% (dark) / 10% (light) tint needed its own tokens: --ok-text, --warn-text, --danger-text,
+     --accent-text, --draft-text. The base --ok/--warn/--danger/--draft remain for icons, dots and fills.
+   - --text-3 is never used on a tinted background (it measures ~4.3:1 there); use --text-2.
+   - --on-accent: dark text on the dark accent (white is only 3.84:1). */
 
 :root {
   color-scheme: dark;
-  --canvas: #08090b;
-  --surface-1: #0f1013;
-  --surface-2: #15171b;
-  --surface-3: #1c1f24;
+  --canvas: #08090b; --surface-1: #0f1013; --surface-2: #15171b; --surface-3: #1c1f24;
   --border: #24272d;
-  --text: #f2f3f5;
-  --text-2: #a8aeb8;
-  --text-3: #858b95;
-  --accent: #6e79e0;
-  --accent-text: #7b85e6;
-  --on-accent: #08090b;
-  --ok: #3fb68b;
-  --warn: #e2a33b;
-  --danger: #e5645b;
-  --draft: #a78bfa;
-  --popover-shadow: 0 8px 24px rgb(0 0 0 / 55%);
+  --text: #f2f3f5; --text-2: #a8aeb8; --text-3: #858b95;
+  --accent: #6e79e0; --on-accent: #08090b;
+  --ok: #3fb68b; --warn: #e2a33b; --danger: #e5645b; --draft: #a78bfa;
+  --ok-text: #3fb68b; --warn-text: #e2a33b; --danger-text: #e66c63; --accent-text: #808ae7; --draft-text: #a78bfa;
+  --tint-a: 12%; --evidence-a: 14%;
+  --popover-shadow: 0 8px 24px -6px rgb(0 0 0 / 45%); --scrim: rgb(0 0 0 / 40%);
+  --cat-checkout: #4FB3BF;
+  --cat-account-access: #9B8AFB;
+  --cat-billing: #E0A458;
+  --cat-exports: #5B9BD5;
+  --cat-notifications: #D77BBA;
+  --cat-integrations: #7FB069;
+  --cat-security: #E07A6E;
 }
 
 @media (prefers-color-scheme: light) {
   :root:not([data-theme="dark"]) {
     color-scheme: light;
-    --canvas: #f7f8fa;
-    --surface-1: #ffffff;
-    --surface-2: #f2f4f7;
-    --surface-3: #e9ecf1;
+    --canvas: #f7f8fa; --surface-1: #ffffff; --surface-2: #f2f4f7; --surface-3: #e9ecf1;
     --border: #dde1e8;
-    --text: #14171c;
-    --text-2: #4a515c;
-    --text-3: #626977;
-    --accent: #4f5bd5;
-    --accent-text: #4f5bd5;
-    --on-accent: #ffffff;
-    --ok: #18775a;
-    --warn: #8f5a00;
-    --danger: #c2362c;
-    --draft: #6d4fd1;
-    --popover-shadow: 0 8px 24px rgb(20 23 28 / 16%);
+    --text: #14171c; --text-2: #4a515c; --text-3: #626977;
+    --accent: #4f5bd5; --on-accent: #ffffff;
+    --ok: #18775a; --warn: #8f5a00; --danger: #c2362c; --draft: #6d4fd1;
+    --ok-text: #166f54; --warn-text: #895600; --danger-text: #b23228; --accent-text: #4a56c8; --draft-text: #684bc7;
+    --tint-a: 10%; --evidence-a: 12%;
+    --popover-shadow: 0 8px 24px -8px rgb(16 24 40 / 18%); --scrim: rgb(16 24 40 / 25%);
+    --cat-checkout: #137A86;
+    --cat-account-access: #5B45D6;
+    --cat-billing: #9A5B0B;
+    --cat-exports: #1F5FA6;
+    --cat-notifications: #A23A84;
+    --cat-integrations: #3E7A26;
+    --cat-security: #B03A2E;
   }
 }
 
 :root[data-theme="light"] {
   color-scheme: light;
-  --canvas: #f7f8fa;
-  --surface-1: #ffffff;
-  --surface-2: #f2f4f7;
-  --surface-3: #e9ecf1;
+  --canvas: #f7f8fa; --surface-1: #ffffff; --surface-2: #f2f4f7; --surface-3: #e9ecf1;
   --border: #dde1e8;
-  --text: #14171c;
-  --text-2: #4a515c;
-  --text-3: #626977;
-  --accent: #4f5bd5;
-  --accent-text: #4f5bd5;
-  --on-accent: #ffffff;
-  --ok: #18775a;
-  --warn: #8f5a00;
-  --danger: #c2362c;
-  --draft: #6d4fd1;
-  --popover-shadow: 0 8px 24px rgb(20 23 28 / 16%);
+  --text: #14171c; --text-2: #4a515c; --text-3: #626977;
+  --accent: #4f5bd5; --on-accent: #ffffff;
+  --ok: #18775a; --warn: #8f5a00; --danger: #c2362c; --draft: #6d4fd1;
+  --ok-text: #166f54; --warn-text: #895600; --danger-text: #b23228; --accent-text: #4a56c8; --draft-text: #684bc7;
+  --tint-a: 10%; --evidence-a: 12%;
+  --popover-shadow: 0 8px 24px -8px rgb(16 24 40 / 18%); --scrim: rgb(16 24 40 / 25%);
+  --cat-checkout: #137A86;
+  --cat-account-access: #5B45D6;
+  --cat-billing: #9A5B0B;
+  --cat-exports: #1F5FA6;
+  --cat-notifications: #A23A84;
+  --cat-integrations: #3E7A26;
+  --cat-security: #B03A2E;
 }
 
 :root {
-  /* Tints derive from the tokens so they follow the theme. Colour is never the only signal: every
-     state also carries an icon or a text label. */
-  --ok-bg: color-mix(in srgb, var(--ok) 13%, var(--surface-1));
-  --warn-bg: color-mix(in srgb, var(--warn) 13%, var(--surface-1));
-  --danger-bg: color-mix(in srgb, var(--danger) 12%, var(--surface-1));
-  --accent-bg: color-mix(in srgb, var(--accent) 14%, var(--surface-1));
-  --draft-bg: color-mix(in srgb, var(--draft) 9%, var(--surface-1));
+  /* A semantic background is the colour at --tint-a alpha with a 1px border at 28%. Colour is never the only signal:
+     every state also carries an icon or a text label. */
+  --ok-bg: color-mix(in srgb, var(--ok) var(--tint-a), transparent);
+  --warn-bg: color-mix(in srgb, var(--warn) var(--tint-a), transparent);
+  --danger-bg: color-mix(in srgb, var(--danger) var(--tint-a), transparent);
+  --accent-bg: color-mix(in srgb, var(--accent) var(--tint-a), transparent);
+  --draft-bg: color-mix(in srgb, var(--draft) var(--tint-a), transparent);
+  --evidence-bg: color-mix(in srgb, var(--accent) var(--evidence-a), transparent);
+  --ok-border: color-mix(in srgb, var(--ok) 28%, transparent);
+  --warn-border: color-mix(in srgb, var(--warn) 28%, transparent);
+  --danger-border: color-mix(in srgb, var(--danger) 28%, transparent);
+  --accent-border: color-mix(in srgb, var(--accent) 28%, transparent);
+  --draft-border: color-mix(in srgb, var(--draft) 28%, transparent);
 
-  /* 4px spacing grid, radii, type, motion */
+  /* 4px spacing grid, radii, motion */
   --s-1: 4px; --s-2: 8px; --s-3: 12px; --s-4: 16px; --s-5: 20px; --s-6: 24px; --s-8: 32px;
   --r-control: 6px;
   --r-card: 8px;
   --r-pill: 999px;
   --font: "Inter Variable", Inter, system-ui, sans-serif;
-  --fs-meta: 13px;   /* queue rows and meta, line-height 1.4 */
-  --fs-read: 14px;   /* conversation and answers, line-height 1.55 */
-  --fs-title: 20px;  /* ticket title, weight 600 */
+  /* Type scale (size / line-height, weight) */
+  --t-title: 600 20px/28px var(--font);
+  --t-heading: 600 15px/22px var(--font);
+  --t-body: 400 14px/22px var(--font);
+  --t-ui: 500 13px/18px var(--font);
+  --t-meta: 500 12px/16px var(--font);
+  --t-micro: 600 11px/14px var(--font);
+  --fs-meta: 13px;
+  --fs-read: 14px;
+  --fs-title: 20px;
   --ease: 180ms ease-out;
 }
