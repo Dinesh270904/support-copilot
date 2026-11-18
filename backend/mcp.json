@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "support-copilot": {
+      "command": ".venv/bin/python",
+      "args": ["-m", "app.mcp_server"],
+      "cwd": ".",
+      "env": { "SUPPORT_COPILOT_DB": "data/support.db" }
+    }
+  }
+}
