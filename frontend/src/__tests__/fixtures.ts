@@ -108,3 +108,43 @@ export function installApi(opts: { runs?: Partial<Record<AssistantRunRequest["ac
   vi.stubGlobal("fetch", fn);
   return mock;
 }
+
+const RETR = { method: "tfidf_cosine" as const, top_k: 3, category: "checkout", min_score: 0.15, min_term_coverage: 0.6, candidates_considered: 4, best_score: 0.2935, results_returned: 3, rejected_low_coverage: [], query_used: "q", fts_query: null };
+const TRACE = [
+  { tool: "get_ticket", arguments: { ticket_id: "T-101" }, status: "ok" as const, duration_ms: 3, error: null },
+  { tool: "search_knowledge", arguments: { query: "q", top_k: 3, category: "checkout" }, status: "ok" as const, duration_ms: 9, error: null },
+];
+const S1 = "When checkout reports PAYMENT_TIMEOUT, first check the order and payment status using the transaction reference.";
+const S2 = "If the payment is pending, do not ask the customer to submit another payment; wait for the gateway status to settle and check again.";
+const S3 = "If no transaction exists after the gateway check, the customer may retry once.";
+
+export const ANSWERED = run({
+  answer: `Documented guidance from “Handling a checkout payment timeout” (KB-01):\n- ${S1} [KB-01#chunk-1]\n- ${S2} [KB-01#chunk-1]\n- ${S3} [KB-01#chunk-2]`,
+  retrieval: RETR, tool_trace: TRACE, duration_ms: 17,
+  limitations: ["No retrieved source supports an answer; nothing was inferred.", "A past fix is a precedent."],
+  citations: [
+    { source_id: "KB-01#chunk-1", source_type: "knowledge_chunk", title: "Handling a checkout payment timeout", excerpt: `${S1} ${S2}`, score: 0.2935, score_type: "cosine", article_id: "KB-01", ticket_id: null, matched_terms: ["payment", "timeout"], matched_identifiers: ["PAYMENT_TIMEOUT"], usage: "evidence" },
+    { source_id: "KB-01#chunk-2", source_type: "knowledge_chunk", title: "Handling a checkout payment timeout", excerpt: `${S3} Include the checked status and timestamp in the support note.`, score: 0.2208, score_type: "cosine", article_id: "KB-01", ticket_id: null, matched_terms: ["transaction"], matched_identifiers: [], usage: "evidence" },
+    { source_id: "KB-02#chunk-1", source_type: "knowledge_chunk", title: "Reviewing a possible duplicate payment", excerpt: "A pending authorization is not a completed second charge.", score: 0.15, score_type: "cosine", article_id: "KB-02", ticket_id: null, matched_terms: ["pending"], matched_identifiers: [], usage: "retrieved_unused" },
+  ],
+});
+
+export const INSUFFICIENT_BANK = run({
+  answer_state: "insufficient_evidence", ticket_id: "T-101",
+  answer: "Insufficient evidence to answer confidently. The closest source, “Understanding a mid-cycle subscription plan change” [KB-06#chunk-2], explicitly does not cover this: “This article does not define bank decline fees, refunds, or tax treatment; escalate questions about those topics for review.” Do not state a policy on this topic; escalate it for review.",
+  retrieval: { ...RETR, category: "billing", best_score: 0.31 }, tool_trace: TRACE,
+  citations: [{ source_id: "KB-06#chunk-2", source_type: "knowledge_chunk", title: "Understanding a mid-cycle subscription plan change", excerpt: "Check the effective plan-change date. This article does not define bank decline fees, refunds, or tax treatment; escalate questions about those topics for review.", score: 0.31, score_type: "cosine", article_id: "KB-06", ticket_id: null, matched_terms: ["bank", "decline", "fee"], matched_identifiers: [], usage: "coverage_gap" }],
+  limitations: ["The only matching guidance is a statement that the topic is out of scope."],
+});
+
+export const INSUFFICIENT_LOW = run({
+  answer_state: "insufficient_evidence",
+  answer: "Insufficient evidence: no chunk reached the minimum similarity of 0.15 (best candidate scored 0.10). The knowledge base does not appear to document this, so no guidance is proposed. Escalate or confirm with the owning team before replying.",
+  retrieval: { ...RETR, category: null, best_score: 0.1, candidates_considered: 14, results_returned: 0 }, tool_trace: TRACE.slice(1), citations: [],
+});
+
+export const NO_EVIDENCE_SFTP = run({
+  answer_state: "insufficient_evidence", ticket_id: null,
+  answer: "Insufficient evidence: no knowledge articles exist in category 'integrations'. The knowledge base does not appear to document this, so no guidance is proposed. Escalate or confirm with the owning team before replying.",
+  retrieval: { ...RETR, category: "integrations", candidates_considered: 0, best_score: 0, results_returned: 0 }, tool_trace: TRACE.slice(1), citations: [],
+});

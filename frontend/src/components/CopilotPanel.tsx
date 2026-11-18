@@ -1,9 +1,11 @@
-import type { RefObject } from "react";
+import { useCallback, useEffect, useRef, useState, type RefObject } from "react";
 import type { useCopilot } from "../hooks/useCopilot";
 import type { Meta, TicketDetail } from "../types";
 import { AnswerEntryView } from "./AnswerEntryView";
 import { AskBox } from "./AskBox";
 import { SimilarCard } from "./SimilarCard";
+import { SourceDrawer } from "./SourceDrawer";
+import type { SourceRef } from "./SourceDetails";
 import { TicketBriefCard } from "./TicketBriefCard";
 
 type Copilot = ReturnType<typeof useCopilot>;
@@ -21,6 +23,17 @@ const COUNT_SUGGESTIONS = ["How many open high-priority tickets are there?", "Ho
 export function CopilotPanel({ ticket, meta, copilot, onOpenTicket, askRef }: Props) {
   const { session } = copilot;
   const busy = session.answers[0]?.state.status === "loading";
+  const [drawer, setDrawer] = useState<SourceRef | null>(null);
+  const closeDrawer = useCallback(() => setDrawer(null), []);
+  // A new answer lands below the brief and similar cards: bring it into view when it is asked for.
+  const newest = useRef<HTMLDivElement>(null);
+  const newestId = session.answers[0]?.id;
+  useEffect(() => {
+    if (newestId === undefined) return;
+    const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    newest.current?.scrollIntoView?.({ block: "start", behavior: reduce ? "auto" : "smooth" });
+  }, [newestId]);
+  const threshold = session.answers.find((a) => a.state.response?.retrieval?.min_score != null)?.state.response?.retrieval?.min_score ?? null;
   return (
     <div className="copilot">
       <header className="copilot-head">
@@ -44,9 +57,13 @@ export function CopilotPanel({ ticket, meta, copilot, onOpenTicket, askRef }: Pr
           </div>
         )}
         {session.answers.map((entry, i) => (
-          <AnswerEntryView key={entry.id} entry={entry} open={i === 0} onRetry={() => copilot.retryAnswer(entry.id)} onOpenTicket={onOpenTicket} />
+          <div key={entry.id} ref={i === 0 ? newest : undefined} className="answer-anchor">
+          <AnswerEntryView entry={entry} open={i === 0} onRetry={() => copilot.retryAnswer(entry.id)} onOpenTicket={onOpenTicket} onViewSource={setDrawer} onDraftHolding={ticket ? copilot.runDraft : undefined} />
+          </div>
         ))}
       </div>
+
+      <SourceDrawer source={drawer} threshold={threshold} onClose={closeDrawer} onOpenTicket={onOpenTicket} />
 
       <AskBox key={ticket?.id ?? "none"} categories={meta?.categories ?? []} ticketCategory={ticket?.category ?? null} onAsk={copilot.ask} inputRef={askRef} busy={busy} />
     </div>
