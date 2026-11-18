@@ -5,7 +5,7 @@ type IconProps = SVGProps<SVGSVGElement> & { size?: number };
 
 function Icon({ size = 16, children, ...rest }: IconProps) {
   return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75}
       strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" focusable="false" {...rest}>
       {children}
     </svg>
@@ -44,4 +44,22 @@ export const InboxIcon = (p: IconProps) => (
 );
 export const ChevronIcon = (p: IconProps) => (
   <Icon {...p}><path d="m9 18 6-6-6-6" /></Icon>
+);
+export const ShieldIcon = (p: IconProps) => (
+  <Icon {...p}><path d="M12 3 4 6v6c0 4.5 3.2 8 8 9 4.8-1 8-4.5 8-9V6z" /><path d="M12 8v4M12 15.5h.01" /></Icon>
+);
+export const KeyboardIcon = (p: IconProps) => (
+  <Icon {...p}><rect x="2.5" y="6" width="19" height="12" rx="2" /><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M7 14h10" /></Icon>
+);
+export const SunIcon = (p: IconProps) => (
+  <Icon {...p}><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" /></Icon>
+);
+export const MoonIcon = (p: IconProps) => (
+  <Icon {...p}><path d="M20.5 14.2A8.5 8.5 0 0 1 9.8 3.5a8.5 8.5 0 1 0 10.7 10.7z" /></Icon>
+);
+export const ExternalIcon = (p: IconProps) => (
+  <Icon {...p}><path d="M14 4h6v6M20 4 10 14" /><path d="M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5" /></Icon>
+);
+export const ArrowIcon = (p: IconProps) => (
+  <Icon {...p}><path d="M5 12h14M13 6l6 6-6 6" /></Icon>
 );

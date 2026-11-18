@@ -3,7 +3,9 @@ import { ApiError, api } from "./api";
 import { AssistantPanel } from "./components/AssistantPanel";
 import { SparkleIcon } from "./components/Icons";
 import { TicketDetail } from "./components/TicketDetail";
+import { ThemeToggle } from "./components/ThemeToggle";
 import { TicketQueue } from "./components/TicketQueue";
+import { useTheme } from "./hooks/useTheme";
 import type { Health, Meta, TicketDetail as Ticket, TicketFilters, TicketListItem } from "./types";
 
 function HealthStatus({ health }: { health: Health | null | "unreachable" }) {
@@ -31,6 +33,7 @@ function message(err: unknown): string {
 }
 
 export default function App() {
+  const { theme, toggle: toggleTheme } = useTheme();
   const [meta, setMeta] = useState<Meta | null>(null);
   const [health, setHealth] = useState<Health | null | "unreachable">(null);
   const [filters, setFilters] = useState<TicketFilters>({});
@@ -128,6 +131,7 @@ export default function App() {
               <h1>Support Copilot</h1>
               <p>Grounded answers. Drafts are never sent.</p>
             </div>
+            <ThemeToggle theme={theme} onToggle={toggleTheme} />
           </div>
           <HealthStatus health={health} />
           <TicketQueue

@@ -1,0 +1,94 @@
+/* Design tokens (docs/UI_HANDOFF.md section 4). Dark is the default; the light theme applies via
+   [data-theme="light"], or via prefers-color-scheme when the user has not chosen a theme.
+
+   Deviations from the handoff's literal values, each made only to meet its own "WCAG AA in both
+   themes" rule (ratios measured on every surface the token is used on):
+   - dark  --text-3  #7D838D -> #858B95   (4.33 -> 4.82 on --surface-3)
+   - light --text-3  #6B7280 -> #626977   (4.08 -> 4.66 on --surface-3)
+   - light --ok      #1F8A63 -> #18775A   (3.64 -> 4.64)
+   - light --warn    #A86A00 -> #8F5A00   (3.75 -> 4.88)
+   Added: --on-accent (white on the dark accent is only 3.84:1, so dark text is used there) and
+   --accent-text (a lighter accent for text on --surface-3). --accent itself is unchanged. */
+
+:root {
+  color-scheme: dark;
+  --canvas: #08090b;
+  --surface-1: #0f1013;
+  --surface-2: #15171b;
+  --surface-3: #1c1f24;
+  --border: #24272d;
+  --text: #f2f3f5;
+  --text-2: #a8aeb8;
+  --text-3: #858b95;
+  --accent: #6e79e0;
+  --accent-text: #7b85e6;
+  --on-accent: #08090b;
+  --ok: #3fb68b;
+  --warn: #e2a33b;
+  --danger: #e5645b;
+  --draft: #a78bfa;
+  --popover-shadow: 0 8px 24px rgb(0 0 0 / 55%);
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    color-scheme: light;
+    --canvas: #f7f8fa;
+    --surface-1: #ffffff;
+    --surface-2: #f2f4f7;
+    --surface-3: #e9ecf1;
+    --border: #dde1e8;
+    --text: #14171c;
+    --text-2: #4a515c;
+    --text-3: #626977;
+    --accent: #4f5bd5;
+    --accent-text: #4f5bd5;
+    --on-accent: #ffffff;
+    --ok: #18775a;
+    --warn: #8f5a00;
+    --danger: #c2362c;
+    --draft: #6d4fd1;
+    --popover-shadow: 0 8px 24px rgb(20 23 28 / 16%);
+  }
+}
+
+:root[data-theme="light"] {
+  color-scheme: light;
+  --canvas: #f7f8fa;
+  --surface-1: #ffffff;
+  --surface-2: #f2f4f7;
+  --surface-3: #e9ecf1;
+  --border: #dde1e8;
+  --text: #14171c;
+  --text-2: #4a515c;
+  --text-3: #626977;
+  --accent: #4f5bd5;
+  --accent-text: #4f5bd5;
+  --on-accent: #ffffff;
+  --ok: #18775a;
+  --warn: #8f5a00;
+  --danger: #c2362c;
+  --draft: #6d4fd1;
+  --popover-shadow: 0 8px 24px rgb(20 23 28 / 16%);
+}
+
+:root {
+  /* Tints derive from the tokens so they follow the theme. Colour is never the only signal: every
+     state also carries an icon or a text label. */
+  --ok-bg: color-mix(in srgb, var(--ok) 13%, var(--surface-1));
+  --warn-bg: color-mix(in srgb, var(--warn) 13%, var(--surface-1));
+  --danger-bg: color-mix(in srgb, var(--danger) 12%, var(--surface-1));
+  --accent-bg: color-mix(in srgb, var(--accent) 14%, var(--surface-1));
+  --draft-bg: color-mix(in srgb, var(--draft) 9%, var(--surface-1));
+
+  /* 4px spacing grid, radii, type, motion */
+  --s-1: 4px; --s-2: 8px; --s-3: 12px; --s-4: 16px; --s-5: 20px; --s-6: 24px; --s-8: 32px;
+  --r-control: 6px;
+  --r-card: 8px;
+  --r-pill: 999px;
+  --font: "Inter Variable", Inter, system-ui, sans-serif;
+  --fs-meta: 13px;   /* queue rows and meta, line-height 1.4 */
+  --fs-read: 14px;   /* conversation and answers, line-height 1.55 */
+  --fs-title: 20px;  /* ticket title, weight 600 */
+  --ease: 180ms ease-out;
+}
