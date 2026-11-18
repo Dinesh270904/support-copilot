@@ -63,3 +63,22 @@ export const ExternalIcon = (p: IconProps) => (
 export const ArrowIcon = (p: IconProps) => (
   <Icon {...p}><path d="M5 12h14M13 6l6 6-6 6" /></Icon>
 );
+export const XIcon = (p: IconProps) => (
+  <Icon {...p}><path d="M18 6 6 18M6 6l12 12" /></Icon>
+);
+export const FilterIcon = (p: IconProps) => (
+  <Icon {...p}><path d="M3 5h18l-7 8v6l-4-2v-4z" /></Icon>
+);
+/** Priority is shown by SHAPE as well as colour: double chevron up / equals / chevron down. */
+export function PriorityIcon({ priority, size = 14 }: { priority: "low" | "medium" | "high"; size?: number }) {
+  const label = `${priority} priority`;
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.25}
+      strokeLinecap="round" strokeLinejoin="round" role="img" aria-label={label} className={`prio-icon prio-${priority}`}>
+      <title>{label}</title>
+      {priority === "high" && <path d="m6 11 6-6 6 6M6 19l6-6 6 6" />}
+      {priority === "medium" && <path d="M6 9h12M6 15h12" />}
+      {priority === "low" && <path d="m6 9 6 6 6-6" />}
+    </svg>
+  );
+}

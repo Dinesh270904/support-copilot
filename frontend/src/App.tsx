@@ -3,7 +3,7 @@ import { ApiError, api } from "./api";
 import { AssistantPanel } from "./components/AssistantPanel";
 import { TicketDetail } from "./components/TicketDetail";
 import { TopBar, type HealthState } from "./components/TopBar";
-import { TicketQueue } from "./components/TicketQueue";
+import { QueuePane } from "./components/QueuePane";
 import { useTheme } from "./hooks/useTheme";
 import type { Meta, TicketDetail as Ticket, TicketFilters, TicketListItem } from "./types";
 
@@ -105,7 +105,7 @@ export default function App() {
       <TopBar health={health} theme={theme} onToggleTheme={toggleTheme} />
       <div className="panes">
         <nav className="pane pane-queue" aria-label="Ticket queue">
-          <TicketQueue
+          <QueuePane
             meta={meta}
             filters={filters}
             onFiltersChange={setFilters}

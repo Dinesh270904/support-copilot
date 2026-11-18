@@ -22,57 +22,41 @@
 .panel-header { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 18px; }
 .panel-header h2 { font-size: 0.95rem; display: inline-flex; align-items: center; gap: 8px; }
 .count { font-size: 0.78rem; color: var(--text-3); }
-.queue { display: flex; flex-direction: column; min-height: 0; flex: 1; padding-top: 14px; }
-.queue .panel-header { padding: 4px 18px 0; margin-bottom: 10px; }
-.queue .filters { padding: 0 14px; }
 
 /* ---------------------------------------------------------------- controls */
 .filters { display: grid; grid-template-columns: repeat(auto-fit, minmax(84px, 1fr)); gap: 8px; margin-bottom: 12px; }
 .filters label { display: flex; flex-direction: column; gap: 4px; font-size: 0.72rem; color: var(--muted); font-weight: 500; }
-select, textarea {
+body .panel select, body .panel textarea {
   background-color: var(--surface-2); border: 1px solid var(--line-2); border-radius: var(--radius-sm); color: var(--text);
   padding: 7px 10px; font-size: 0.86rem; min-width: 0; transition: border-color 120ms, box-shadow 120ms;
 }
-select { appearance: none; padding-right: 28px; cursor: pointer;
+body .panel select { appearance: none; padding-right: 28px; cursor: pointer;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='none' stroke='%237f8aa0' stroke-width='2' viewBox='0 0 24 24'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
   background-repeat: no-repeat; background-position: right 9px center; }
-select:hover, textarea:hover { border-color: color-mix(in srgb, var(--text) 18%, transparent); }
-select:focus, textarea:focus { outline: none; border-color: var(--indigo);  }
-textarea { width: 100%; resize: vertical; line-height: 1.5; }
-textarea::placeholder { color: var(--text-3); }
-option { background: var(--surface-2); }
+body .panel select:hover, body .panel textarea:hover { border-color: color-mix(in srgb, var(--text) 18%, transparent); }
+body .panel select:focus, body .panel textarea:focus { outline: none; border-color: var(--indigo);  }
+body .panel textarea { width: 100%; resize: vertical; line-height: 1.5; }
+body .panel textarea::placeholder { color: var(--text-3); }
+body .panel option { background: var(--surface-2); }
 
-button {
+body .panel button {
   cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 7px;
   border: 1px solid var(--line-2); background: var(--surface-2); color: var(--text); border-radius: var(--radius-sm);
   padding: 7px 13px; font-size: 0.84rem; font-weight: 500; transition: background 120ms, border-color 120ms, transform 80ms;
 }
-button:hover:not(:disabled) { background: var(--surface-3); border-color: color-mix(in srgb, var(--text) 18%, transparent); }
-button:active:not(:disabled) { transform: translateY(1px); }
-button:disabled { cursor: not-allowed; opacity: 0.5; }
-button.primary {
+body .panel button:hover:not(:disabled) { background: var(--surface-3); border-color: color-mix(in srgb, var(--text) 18%, transparent); }
+body .panel button:active:not(:disabled) { transform: translateY(1px); }
+body .panel button:disabled { cursor: not-allowed; opacity: 0.5; }
+body .panel button.primary {
   background: var(--accent); border-color: var(--accent); color: var(--on-accent);
   
 }
-button.primary:hover:not(:disabled) { background: color-mix(in srgb, var(--accent) 88%, var(--text)); }
-button.link { border: none; background: none; padding: 0; color: var(--indigo-2); font-weight: 500; }
-button.link:hover:not(:disabled) { background: none; text-decoration: underline; }
+body .panel button.primary:hover:not(:disabled) { background: color-mix(in srgb, var(--accent) 88%, var(--text)); }
+body .panel button.link { border: none; background: none; padding: 0; color: var(--indigo-2); font-weight: 500; }
+body .panel button.link:hover:not(:disabled) { background: none; text-decoration: underline; }
 
-/* ------------------------------------------------------------------ queue */
-.ticket-list { list-style: none; margin: 0; padding: 4px 10px 12px; display: flex; flex-direction: column; gap: 4px; overflow-y: auto; }
-.ticket-row {
-  width: 100%; display: flex; flex-direction: column; align-items: stretch; gap: 5px; text-align: left;
-  padding: 11px 12px 11px 16px; border-radius: 10px; border: 1px solid transparent; background: transparent; position: relative; font-weight: 400;
-}
-.ticket-row::before { content: ""; position: absolute; left: 5px; top: 12px; bottom: 12px; width: 3px; border-radius: 3px; background: var(--text-3); }
-.ticket-row.priority-high::before { background: var(--red);  }
-.ticket-row.priority-medium::before { background: var(--amber); }
-.ticket-row:hover:not(:disabled) { background: color-mix(in srgb, var(--text) 3.5%, transparent); border-color: transparent; }
-.ticket-row.selected, .ticket-row.selected:hover:not(:disabled) { background: var(--indigo-soft); border-color: color-mix(in srgb, var(--accent) 35%, transparent); }
-.ticket-row-top { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
-.ticket-id { display: inline-flex; align-items: center; gap: 5px; font-size: 0.74rem; font-weight: 600; color: var(--muted); letter-spacing: 0.02em; }
-.ticket-title { font-weight: 500; font-size: 0.87rem; line-height: 1.4; color: var(--text); }
-.ticket-row-meta { display: flex; gap: 10px; font-size: 0.74rem; color: var(--muted); }
+/* ------------------------------------------------------------------ badges (legacy; ticket view) */
+.ticket-id { display: inline-flex; align-items: center; gap: 5px; font-size: 0.74rem; font-weight: 600; color: var(--text-3); letter-spacing: 0.02em; }
 
 .badge {
   display: inline-flex; align-items: center; gap: 5px; font-size: 0.7rem; font-weight: 600; line-height: 1;
@@ -140,7 +124,6 @@ button.link:hover:not(:disabled) { background: none; text-decoration: underline;
 .state-empty { border: 1px dashed var(--line-2); margin: 0 10px; display: flex; flex-direction: column; gap: 10px; align-items: flex-start; }
 .panel .state-empty { margin: 0; min-height: 200px; justify-content: center; align-items: center; text-align: center; }
 .state-error { background: var(--red-soft); color: var(--danger); border: 1px solid color-mix(in srgb, var(--danger) 25%, transparent); margin-top: 16px; display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
-.queue .state-error { margin: 0 10px; }
 .state-error.kind-validation { background: var(--amber-soft); color: var(--warn); border-color: color-mix(in srgb, var(--warn) 25%, transparent); }
 .state-loading { display: flex; align-items: center; gap: 10px; margin-top: 16px; color: var(--text-2); background: var(--surface-2); border: 1px solid var(--line); }
 .spinner { width: 14px; height: 14px; border: 2px solid color-mix(in srgb, var(--text) 15%, transparent); border-top-color: var(--indigo-2); border-radius: 50%; animation: spin 0.7s linear infinite; }
