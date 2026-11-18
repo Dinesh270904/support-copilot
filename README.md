@@ -1,0 +1,272 @@
+# Support Copilot
+
+A local, offline copilot for support agents. Pick a ticket, then summarize it, search internal guidance, find similar resolved tickets, count tickets, or draft a reply. Every answer is built from retrieved records, shows its sources and tool trace, and says plainly when the evidence is insufficient. **No LLM, no API keys, no network calls, and nothing is ever sent to a customer.**
+
+```
+React/TS (Vite) ──HTTP──▶ FastAPI ──MCP client (stdio)──▶ MCP server ──read-only──▶ SQLite
+                           │  orchestrator: fixed tool plan per action              ├─ tickets, messages
+                           │  deterministic response composer                       ├─ articles, chunks
+                           └─ writes: mark reviewed, assistant run log ──▶ SQLite   └─ FTS5 ticket_search
+```
+
+## Quick start
+
+Prerequisites: Python 3.11, 3.12 or 3.13 (tested on all three), Node 20+ (tested on Node 22).
+
+**Use the project virtualenv, `backend/.venv`.** A bare `python3` is often a different interpreter without the
+dependencies (it was 3.14 on the author's machine). The Makefile and `scripts/dev.sh` use `backend/.venv/bin/python`
+automatically when it exists, and so does `backend/mcp.json`.
+
+```bash
+python3.11 -m venv backend/.venv                    # any of 3.11-3.13
+backend/.venv/bin/pip install -r backend/requirements-dev.txt
+(cd frontend && npm install)                         # or: make install
+make dev         # seeds SQLite if missing, starts API on :8000 (which launches the MCP server), UI on :5173
+```
+
+Open http://localhost:5173. API docs are at http://127.0.0.1:8000/docs, and health is at `/health`.
+
+Without `make`:
+
+```bash
+cd backend && .venv/bin/python -m app.seed                                # migrate + seed + verify index build
+.venv/bin/python -m uvicorn app.api.main:app --port 8000      # starts the MCP stdio server as a subprocess
+# in a second terminal
+cd frontend && npm install && npm run dev
+```
+
+After dependencies are installed, everything runs with networking disabled. Re-seed at any time with `make setup` or `RESEED=1 make dev`. Reseeding resets tickets and articles to the data pack and keeps the assistant run log.
+
+## Sample actions
+
+| Ticket | Action | Input | Expected |
+|---|---|---|---|
+| T-104 | Search knowledge | "lost authenticator after replacing phone; backup code and enroll a new device" | KB-03 quoted with `KB-03#chunk-1` citation |
+| T-104 | Similar tickets | (empty: uses ticket text) | T-105 and its fix |
+| T-101 | Search knowledge | "PAYMENT_TIMEOUT with a pending authorization; should the customer retry checkout?" | KB-01 steps in order, including "do not ask … another payment" |
+| T-101 | Search knowledge, scope Checkout | "What does PAYMENT_TIMEOUT mean and how do I resolve it?" | KB-01, retrieved by the **error-code rule** (cosine is only 0.10), with the pending-payment prohibition kept |
+| any | Search knowledge | "How do I delete my account?" | **Insufficient evidence**: one shared word ("account") is not enough |
+| T-101 | Search knowledge, scope Billing | "Does the product reimburse a bank decline fee?" | **Insufficient evidence**: KB-06 says it does not cover this |
+| any | Search knowledge, scope Integrations | "Configure scheduled SFTP delivery…" | **Insufficient evidence**, no citations |
+| — | Count tickets | "How many open high-priority tickets mention checkout failures?" | 1 (T-101), parsed filters shown |
+| T-112 | Summarize | — | SFTP identified; injected message flagged, not followed |
+| T-101 | Draft reply | — | Editable draft labelled "Draft, not sent": one customer step from KB-01; the "do not ask … another payment" caution and a KB-02 sentence appear under "Notes for the agent" |
+
+All ten cases in `backend/data/seed/expected_cases.json` run as tests (`tests/test_expected_cases.py`).
+
+## How a question flows
+
+1. **UI** posts `{action, ticket_id?, query?, category?}` to `POST /api/assistant/run`.
+2. **FastAPI** validates the request with Pydantic: the action enum, ID patterns, a 500-character query limit, and per-action requirements. The orchestrator (`app/api/assistant.py`) chooses a **fixed tool plan** from the action. For example, `search_knowledge` maps to `get_ticket` (if a ticket is given) then `search_knowledge`. Content never changes the plan.
+3. **MCP client** (`app/api/mcp_gateway.py`) sends `tools/call` over a long-lived stdio session to `python -m app.mcp_server`.
+4. **MCP server** (`app/mcp_server.py`, official `mcp` SDK `MCPServer`) validates typed arguments and queries SQLite through a read-only handle.
+5. **RAG retrieval** (`app/rag/index.py`) uses TF-IDF and cosine similarity over chunks (words are stemmed first), then applies the category filter, the threshold, the term-coverage gate and top-k. An exact error-code match bypasses the threshold and gate. It returns chunk IDs, excerpts, scores and per-sentence scores as `structured_content`.
+6. **Composer** (`app/composer/knowledge.py`) quotes supporting sentences verbatim with `[chunk-id]` tags, or returns `insufficient_evidence`.
+7. **Response** contains the answer, citations (with scores), retrieval metadata, the tool trace and limitations. Run metadata (run ID, tools, method, status, duration, source IDs, query length only) is stored in `assistant_runs` and logged to stderr.
+
+## Local RAG pipeline
+
+- **Chunking** (`app/rag/chunking.py`): whole sentences are packed greedily into chunks of at most 45 words, with no overlap. IDs are stable (`KB-03#chunk-1`). Chunks are stored in SQLite with article ID, title and category. The 7 articles produce 14 chunks.
+- **Vectorization**: scikit-learn's analyzer (lower-case, English stop words, 1-2-grams) followed by a small suffix normaliser (`app/rag/stemming.py`) applied to every word, with `sublinear_tf=True`. The normaliser is part of the analyzer, so chunks, sentences and queries are stemmed identically. It conflates "devices"/"device", "fees"/"fee" and "exporting"/"exports"/"export". The stems are index keys only; quotes are always the original text. Each chunk is indexed as `title + tags + text`, so article-level terms such as "MFA" help rank every chunk of that article. The cited excerpt is the raw chunk text only.
+- **Index build**: the index is built in memory from SQLite whenever the MCP server starts (about 20 ms here). `python -m app.seed --check` rebuilds it and prints statistics. Nothing is downloaded.
+- **Scoring**: the query goes through the same vectorizer, and chunks are scored by cosine similarity. A category scope removes other chunks *before* the threshold and top-k are applied.
+- **Three acceptance rules**, all configurable through environment variables (`SUPPORT_COPILOT_RAG_*`):
+  1. `min_score = 0.15` cosine.
+  2. **Term coverage**: a chunk must contain at least 2 distinct query terms, or more than half of them (`min_term_coverage = 0.6`). The fraction only matters when exactly one term matched, and then it passes only a one-term query. At 0.5, "How do I delete my account?" (1 of its 2 terms matching KB-03) slipped through; any value above 0.5 behaves identically here, so 0.6 reads as "more than half".
+  3. **Error-code identifiers**: an UPPER_SNAKE token in the query (for example `PAYMENT_TIMEOUT`) that appears verbatim, as a whole token, in a chunk's text makes that chunk evidence on its own, even below the score floor. A code is near-unique, so an exact match is stronger evidence than any cosine: "What does PAYMENT_TIMEOUT mean and how do I resolve it?" scores only 0.10 against the article written for that error. The hit reports `matched_identifiers`. An unknown code (`ERR_FOO_BAR`) still gives insufficient evidence.
+
+  Why two text gates: "office wifi password" scores 0.22 against KB-05 because of the single word "password", so a cosine cutoff alone cannot separate it from true matches (0.22-0.50).
+
+### Evaluation (`python -m app.eval`)
+
+Offline, no model, builds the corpus from the data pack. Metrics per article: precision@1, recall@3, MRR, and the false-positive rate (FPR) on negatives that should be insufficient evidence. Compared: the shipped TF-IDF, FTS5 bm25 over the same chunks (>= 2 matched terms), and a hybrid that returns an article only if both agree.
+
+- **Tuning set** `backend/data/eval/tune.json` (39 queries: 28 positive, 11 negative). Every decision above was made on this set.
+- **Holdout set** `backend/data/eval/holdout.json` (16 queries: 12 positive, 4 negative), written before any retrieval change and **never used for tuning**. `python -m app.eval --holdout` is the only way to read it. It was run twice: at baseline and once at the end.
+
+| Set | Retriever | P@1 / R@3 / MRR baseline | P@1 / R@3 / MRR final | FPR baseline | FPR final |
+|---|---|---|---|---|---|
+| tune (39) | TF-IDF (shipped) | 0.786 | **0.893** | 0.091 | **0.000** |
+| tune (39) | FTS5 bm25 | 0.893 | 0.893 | 0.091 | 0.091 |
+| tune (39) | hybrid (agree) | 0.786 | **0.893** | 0.000 | 0.000 |
+| holdout (16) | TF-IDF (shipped) | 0.750 | **0.833** | 0.000 | 0.000 |
+| holdout (16) | FTS5 bm25 | 0.833 | 0.833 | 0.250 | 0.250 |
+| holdout (16) | hybrid (agree) | 0.750 | **0.833** | 0.000 | 0.000 |
+
+Baseline is the original code (score floor 0.15, coverage 0.5, no identifier rule, no stemming). P@1, R@3 and MRR are equal in every row because the corpus has only 7 articles, so the question is whether the right article is retrieved at all, not its rank. Holdout by kind, shipped TF-IDF (baseline to final):
+
+| Kind | n | P@1 baseline | P@1 final |
+|---|---|---|---|
+| direct | 4 | 1.000 | 1.000 |
+| error_code | 1 | 1.000 | 1.000 |
+| inflection | 2 | 1.000 | 1.000 |
+| short | 1 | 1.000 | 1.000 |
+| **paraphrase** | 4 | **0.250** | **0.500** |
+| negative (FPR) | 4 | 0.000 | 0.000 |
+
+Threshold sweep on the tuning set, with the coverage gate on: P@1 is 0.893 and FPR is 0.000 for every `min_score` from 0.05 to 0.175, then 0.857 at 0.20, 0.786 at 0.25 and 0.679 at 0.30. So 0.15 is not a sharp optimum; it sits on a plateau with a margin before the cliff, and the gates, not the cosine cutoff, do the separating work. The 0.6 coverage value was chosen after seeing one tuning query ("delete my account"); the holdout negatives stayed at 0 false positives. These are small sets, so treat the numbers as evidence of direction, not precision.
+
+Paraphrase is the remaining gap, as expected for lexical retrieval: the two holdout misses ("pay button spun forever and now there's a hold on the customer's card", "new phone, 2FA app is gone, can't log in") share almost no words with their articles.
+- **Composition rules** (deterministic, no generation):
+  1. If nothing passes retrieval, the result is `insufficient_evidence` with no citations. The answer says why: an empty category, too few shared terms, or a best score below the threshold.
+  2. If the best-supported sentence is a *coverage disclaimer* ("does not define …"), the result is `insufficient_evidence`, and the disclaiming chunk is cited as `coverage_gap`. This handles the bank-decline-fee case, where similarity is high precisely because KB-06 names the topic it excludes.
+  3. Otherwise, up to 3 supporting sentences are quoted verbatim, in documented order.
+  4. **Guardrails survive**: prohibition sentences ("do not …", "never …") from cited articles that share a query term are always included. When the question named the article's error code, all of that article's prohibitions are eligible, because an identifier is one token and shares no word with "If the payment is pending, do not ask …".
+- **What TF-IDF misses compared with embeddings**: synonyms and paraphrase ("can't log in" vs "locked out", "reimburse" vs "refund") and intent. The light stemmer handles plain inflections only. It is strong on exact codes such as `PAYMENT_TIMEOUT`, and it is transparent: `matched_terms` and `matched_identifiers` explain every hit.
+
+## Similar tickets and counts
+
+- `search_resolved_tickets` uses SQLite **FTS5** (`porter unicode61`) over title, description, conversation and resolution, ranked by `bm25` with column weights. User text is reduced to quoted alphanumeric terms joined with `OR`, so FTS operators such as `NEAR`, `*` or column filters cannot be injected.
+- **Relevance floor**: a resolved ticket is listed only if it shares at least 2 distinct query terms (stemmed), or all of them when the query has fewer. A query term found in more than half of the indexed tickets ("customer" is in 75%) carries no signal and does not count. Before this, "customer asks about weather in Paris and email" returned three tickets because of generic words. Each hit lists its `matched_terms`. The 50% cutoff was measured on 12 tickets; a larger history would call for re-checking it.
+- `count_tickets` takes typed filters. The API can read status, priority and a known category from a natural-language question, and explicit filters override parsed ones. The response lists which filters were applied.
+
+## MCP server
+
+| Tools (all read-only, typed input and output schemas) | Resources |
+|---|---|
+| `get_ticket(ticket_id)` | `support://tickets/{ticket_id}` (template) |
+| `search_knowledge(query, category=None, top_k=3)` | `support://knowledge/{article_id}` (template) |
+| `search_resolved_tickets(query, category=None, exclude_ticket_id=None, limit=3)` | `support://knowledge` (article index) |
+| `count_tickets(filters)` | `support://index/status` (index statistics and thresholds) |
+
+**How SQLite access is constrained**:
+- The server opens the database with `mode=ro` and `PRAGMA query_only=ON`.
+- Tools accept only typed, pattern-validated parameters. There is no SQL passthrough.
+- All SQL lives in `app/repository.py` and uses SQLAlchemy expressions or bound parameters.
+- The only write (`PATCH /api/tickets/{id}/reviewed`) lives in FastAPI and is idempotent: the first review time is kept.
+
+Logs go to stderr, and stdout is reserved for MCP frames.
+
+**Inspect it.** The commands below use the project venv interpreter, `backend/.venv/bin/python`, explicitly. A bare `python3` is a different interpreter and fails with `No module named 'mcp'`.
+
+```bash
+cd backend
+npx @modelcontextprotocol/inspector .venv/bin/python -m app.mcp_server                       # web UI
+npx @modelcontextprotocol/inspector --cli .venv/bin/python -m app.mcp_server --method tools/list
+npx @modelcontextprotocol/inspector --cli .venv/bin/python -m app.mcp_server \
+    --method tools/call --tool-name search_knowledge --tool-arg query="backup code authenticator"
+npx @modelcontextprotocol/inspector --cli .venv/bin/python -m app.mcp_server --method resources/read --uri support://tickets/T-104
+npx @modelcontextprotocol/inspector --cli --config mcp.json --server support-copilot --method tools/list   # via the config file
+.venv/bin/python scripts/mcp_check.py      # same checks with the official Python SDK client, no Node needed
+```
+
+In the web UI (Inspector v2.13, walked through in a browser): open the printed URL (it includes a token), then:
+
+1. **Connect**: flip the toggle on the `python` server card. It shows "Connecting…" and then "Connected, MCP 2025-11-25". The Tools, Prompts and Resources tabs only appear after it connects.
+2. **Tools**: open the **Tools** tab. There is no separate "List tools" button; `tools/list` runs automatically on connect and the four tools are listed (`TOOLS/LIST` is already in the log). Each tool page shows READ-ONLY and IDEMPOTENT badges.
+3. **Call `search_knowledge`**: select "Search knowledge articles (TF-IDF)", type `backup code authenticator` into the required **Query** field, and click **Execute Tool**. Expect `KB-03#chunk-1`, score about 0.46, and `matched_terms` (stems such as `cod` for "code" appear; they are index keys).
+4. **Read a ticket**: open the **Resources** tab. The ticket is under **Templates (2)**, not the plain URIs (those are the article index and the index status). Select "Support ticket", type `T-104` into `ticket_id` (the URI preview shows `support://tickets/T-104`), then click **Read Resource**.
+
+The right-hand **Protocol** panel logs every JSON-RPC message with timing (`TOOLS/CALL`, `RESOURCES/READ`).
+
+Client config: `backend/mcp.json` (`command` is `.venv/bin/python`, resolved against `cwd`, so create the venv first).
+
+**API resilience**: the MCP server is started once, when the API starts.
+- If it fails to start, the API still serves tickets, `/health` reports `degraded`, and assistant calls return a safe `503 assistant_unavailable` while retrying the connection.
+- `/health` pings the MCP server (2 s limit), so it reports `degraded` as soon as the child process is dead, not only after a request fails.
+- If the connection drops, including a `SIGKILL` of the child while a request is in flight, the call is retried once on a fresh session. This is safe because every tool is read-only and idempotent. A drop is recognised by the SDK's typed `CONNECTION_CLOSED` JSON-RPC code, not by message text; any other protocol error is a tool error and is not retried.
+- A tool call that exceeds the timeout (15 s) returns **`504 gateway_timeout`**, recycles the connection, and is *not* retried (a hung server would make the user wait twice as long). Tool errors return `502 tool_error`.
+- Every `SUPPORT_COPILOT_*` environment variable is forwarded to the MCP child; the API's resolved settings win for the database path, log level and RAG values, so the two processes can never disagree about the database.
+- Stack traces stay in the server logs. The browser gets `{error: {code, message, request_id}}`.
+
+## API
+
+| Route | Notes |
+|---|---|
+| `GET /health` | Database status, a live MCP ping, tool list, index statistics |
+| `GET /api/meta` | Statuses, priorities, categories, actions (drives UI filters) |
+| `GET /api/tickets?status&priority&category&reviewed&limit&offset` | Bounded at 100. Invalid enum or unknown category returns 422 |
+| `GET /api/tickets/{id}` | Ticket with timeline. Malformed ID returns 422, unknown returns 404 |
+| `PATCH /api/tickets/{id}/reviewed` | Idempotent review mark |
+| `POST /api/assistant/run` | Unsupported action, extra fields, oversized query or missing requirements return 422; MCP down 503; MCP timeout 504 |
+| `GET /api/assistant/runs` | Recent run metadata (audit view) |
+
+## Data model
+
+The schema is created by Alembic migration `0001_initial`:
+- `tickets`, with CHECK constraints on status and priority, a composite index `(status, priority, category)`, and indexes on category and updated_at
+- `ticket_messages`
+- `articles`
+- `article_chunks`
+- `assistant_runs`
+- the FTS5 virtual table `ticket_search`
+
+The seed (`app/seed.py`) validates the JSON pack with Pydantic, which rejects duplicate IDs and malformed timestamps, then reloads everything in one transaction.
+
+## Tests
+
+```bash
+make test            # backend: 104 pytest tests (+1 expected failure); frontend: 5 Vitest tests
+```
+
+| Requirement | Tests |
+|---|---|
+| 1. Known query retrieves the expected chunk ID | `test_retrieval.py` |
+| 2. Evidence is quoted with citations; low score gives insufficient evidence with no citation | `test_composer.py` |
+| 3. MCP lists tools and resources; tool call and resource read over real stdio | `test_mcp_server.py` |
+| 4. FastAPI calls MCP over stdio end to end | `test_api.py::test_end_to_end_action_goes_through_mcp_stdio` |
+| 5. Filters and review persist; unknown IDs and unsupported actions rejected; MCP outage gives 503 | `test_api.py` |
+| 6. Injected article or ticket text cannot change the plan or run SQL | `test_safety.py` (seeds a malicious article KB-90) |
+| Data pack expected cases | `test_expected_cases.py` |
+| Error-code rule, stemmer, coverage gate, guardrails, drafts | `test_retrieval.py`, `test_stemming.py`, `test_api.py` |
+| Similar-ticket relevance floor | `test_similar_tickets.py` |
+| MCP reliability: real `SIGKILL` (idle and mid-request), 504 mapping, env passthrough, typed errors, honest `/health` | `test_gateway_reliability.py` |
+| Eval harness: label validity, metric arithmetic, holdout not read by default | `test_eval.py` |
+| UI: evidence, insufficient evidence, validation and outage states, draft label, edit and copy | `frontend/src/__tests__/AssistantPanel.test.tsx` |
+
+## Known limitations
+
+- Retrieval is lexical: no synonyms or paraphrase. Paraphrase is the weakest kind in the evaluation (holdout P@1 0.500). A larger corpus would need a re-tuned threshold and probably BM25 or hybrid ranking.
+- Single-word queries can fall below the similarity floor. Bare 'timeout' scored 0.098 against KB-04. The category scope narrows ambiguity, and real questions with more terms retrieve correctly. This is recorded as a strict expected-failure test (`test_ambiguous_single_term_query_surfaces_both_articles_and_exports_scope`).
+- Ambiguous short queries can span categories ("timeout" is a tag of both KB-01 and KB-04). The ticket's category scope resolves them, and the UI defaults to it; unscoped, the answer may come from only one article.
+- The evaluation sets are small (39 tuning, 16 holdout queries) and were labelled by hand; the corpus is 7 articles and 12 tickets. The coverage value (0.6) and the similar-ticket 50% cutoff were chosen on this data.
+- The "information still needed" lists in summaries are fixed per-category checklists with keyword detection, not inference.
+- Drafts quote internal wording verbatim ("first check the order…"); the agent is told to rephrase before sending. Draft steps come from the top-ranked article only; agent-facing prohibitions and sentences from other articles are listed under "Notes for the agent", not in the customer text.
+- FTS rows are rebuilt by the seed. Tickets are immutable in this prototype apart from `reviewed_at`.
+- There is no authentication or role model. It is a single local agent.
+- Instruction-like text detection is a regex that *flags* content for the agent. Safety comes from the structural guarantees: the fixed tool plan, typed tools and read-only SQLite access.
+
+**With a local LLM or a larger corpus**, I would keep this pipeline as the retrieval and citation layer and the fallback:
+- Add embeddings (hybrid with BM25) for recall.
+- Have a local model rephrase only the retrieved sentences, then check its output: every sentence must map to a cited chunk.
+- Keep the deterministic composer for insufficient-evidence decisions.
+
+## AI tools used
+
+The original implementation was produced with AI assistance (Claude, per the original author's note). This section covers the **review and hardening phase** that followed. It uses two labels so each action is attributed to who actually did it: **Claude Code** (Claude Sonnet 5.5, in VS Code, with its shell and a browser extension) and **Owner** (the project owner, who directed the work and made the decisions).
+
+### What Claude Code did, and the evidence it produced
+
+Each item was executed, not assumed, and its output was reported back to the owner.
+
+- Created a Python 3.11 virtualenv, ran the backend and frontend suites, and re-ran the backend suite on 3.12 (all passing). Python 3.13 was verified separately by the owner. `python3` on the development machine is 3.14 and does not have the dependencies installed, which is why the docs insist on `backend/.venv`.
+- Ran all ten cases in `backend/data/seed/expected_cases.json` through the live API with curl and compared the answer state, tool calls and citation IDs with the expectations.
+- Exercised the MCP server three ways: an official Python SDK client, the Inspector CLI (including `--config mcp.json`), and the Inspector web UI v2.13, driven through browser automation (connect, list tools, call `search_knowledge`, read `support://tickets/T-104`). The README steps were corrected to match what the UI actually shows. The owner has not run this walkthrough personally in this record.
+- Killed the MCP child process for real (`SIGKILL`, and `SIGSTOP` then `SIGKILL` during an in-flight call) to test reconnect behaviour, then turned those experiments into tests.
+- Built the offline evaluation harness (`app/eval.py`) and the tuning set, and ran the sweeps and comparisons whose numbers appear above.
+- Implemented the approved changes test-first: the error-code rule, the stemmer, the coverage gate value, the guardrail fix, the similar-ticket floor, the 504 mapping, environment passthrough, the `/health` ping, and the draft split.
+
+### What the owner decided or redirected
+
+- **Evaluation method.** Required a tuning set and a separate holdout set, with the holdout read only at the start and the end and never used to tune. The holdout queries were added by the owner before any retrieval change. (Who wrote each query is not asserted here.)
+- **A metric that did not add up.** Questioned why the hybrid retriever's precision changed between two reports (0.885 versus 0.769). The cause was a different composition (the earlier figure was built on the stemmer and identifier variant), not a bug, and it was explained before work continued.
+- **The guardrail bug.** Claude Code surfaced that an answer for "What does PAYMENT_TIMEOUT mean and how do I resolve it?" left out "If the payment is pending, do not ask the customer to submit another payment". The owner judged it an answer-correctness bug, ordered it fixed as its own step ahead of the stemmer, and set the acceptance test. The owner proposed two candidate fixes and asked Claude Code to choose and justify one; it chose the more general one (all of an article's prohibitions become eligible when the question named its error code).
+- **The gate decision.** Set the acceptance criteria for changing the term-coverage gate (remove the "delete my account" false positive without losing short queries such as "export timed out" and "MFA backup code"), approved 0.6 documented as "more than half", and required the holdout result for it to be reported honestly even if it got worse. It did not.
+- **The ambiguous "timeout" label.** Refused to count the one-word query "timeout" in the precision metrics because it legitimately matches two articles, and specified the scope-based assertions instead. When those assertions turned out to be false for the current system (KB-04 scores 0.09 against the 0.15 floor), the owner chose to leave the gap, keep the strict expected-failure test, and document it as a limitation.
+- **The draft behaviour.** Decided that agent-facing prohibitions must move to "Notes for the agent" and not be deleted, and that only the top-ranked article supplies the customer-facing steps.
+- **The UI direction.** Rejected the original UI, chose an evidence-first answer panel over a full redesign, and later replaced that plan with a written handoff specification.
+
+### Mistakes made along the way, and how they were caught
+
+Running things is what exposed these; none was found by reading alone.
+
+- An early prototype stemmer turned "devices" into "devic" but left "device" alone, so the two never matched. Caught by writing a test for exactly that pair first.
+- A threshold sweep in the evaluation harness silently used a stale default for the coverage gate, so its 0.15 row disagreed with the main table. Caught by comparing the two, fixed, and a regression test added.
+- A test assumed the quoted answer contained the word "pending"; it did not. The assertion was corrected to what the design guarantees.
+- A first set of process-kill tests used the shared session fixture and broke other tests. They now use an isolated app.
+- A "weak match" test query contained the word "customer", which is in 75% of tickets, so a count-only relevance floor was not enough and a document-frequency rule was added.
+
+### What this section does not claim
+
+- Retrieval numbers come from small, hand-labelled sets (39 tuning queries, 16 holdout queries) over a 7-article, 12-ticket corpus.
+- The original implementation's history is not reconstructed here, only the work above.
