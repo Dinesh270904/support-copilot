@@ -1,29 +1,41 @@
 import type { ReactNode } from "react";
-import { formatTimestamp, humanize } from "../format";
+import { formatTime, formatTimestamp, humanize } from "../format";
 import type { TicketDetail } from "../types";
-import { CheckIcon, PriorityIcon } from "./Icons";
+import { CategoryDot, CheckIcon, PriorityIcon, StatusIcon } from "./Icons";
 import { Conversation } from "./Conversation";
+
+export interface ReviewState {
+  /** "Couldn't mark reviewed" details, set when the optimistic update was rolled back. */
+  error: { requestId?: string } | null;
+  /** True for ~3s after a successful review: an aria-live confirmation. */
+  confirmed: boolean;
+}
 
 interface Props {
   ticket: TicketDetail | null;
   loading: boolean;
   error: string | null;
-  reviewError: string | null;
+  review: ReviewState;
   untrusted: Set<number>;
   onMarkReviewed: () => void;
   /** The reply composer, docked under the conversation. */
   composer?: ReactNode;
-  /** Shown when no ticket is selected (the overview, step 8). */
+  /** Shown when no ticket is selected. */
   empty?: ReactNode;
 }
 
-export function TicketPane({ ticket, loading, error, reviewError, untrusted, onMarkReviewed, composer, empty }: Props) {
+export function TicketPane({ ticket, loading, error, review, untrusted, onMarkReviewed, composer, empty }: Props) {
   if (error) {
     return <div className="ticket-scroll"><div className="notice notice-danger" role="alert">{error}</div></div>;
   }
   if (!ticket) {
-    return <div className="ticket-scroll">{empty ?? <div className="notice">{loading ? "Loading ticket…" : "Pick a ticket from the queue."}</div>}</div>;
+    return (
+      <div className="ticket-scroll">
+        {loading ? <div className="ticket-skel" role="status" aria-label="Loading ticket"><span className="skeleton-line" style={{ width: "40%", height: 20 }} /><span className="skeleton-line" style={{ width: "70%" }} /><span className="skeleton-line" style={{ width: "55%", height: 54 }} /><span className="skeleton-line" style={{ width: "45%", height: 54 }} /></div> : (empty ?? <div className="notice">Pick a ticket from the queue.</div>)}
+      </div>
+    );
   }
+  const messageCount = ticket.messages.length;
   return (
     <>
       <div className="ticket-scroll" aria-busy={loading}>
@@ -32,33 +44,40 @@ export function TicketPane({ ticket, loading, error, reviewError, untrusted, onM
             <p className="ticket-kicker">
               <span className="num">{ticket.id}</span>
               <span className="kicker-item"><PriorityIcon priority={ticket.priority} /> {humanize(ticket.priority)}</span>
-              <span className="kicker-item">{humanize(ticket.status)}</span>
+              <span className="kicker-item"><StatusIcon status={ticket.status} /> {humanize(ticket.status)}</span>
+              <span className="kicker-item"><CategoryDot category={ticket.category} /> {humanize(ticket.category)}</span>
             </p>
             <h2 className="ticket-title">{ticket.title}</h2>
             <p className="ticket-meta">
-              {humanize(ticket.category)}{ticket.product_area !== ticket.category && <> · {humanize(ticket.product_area)}</>} · Created <span className="num">{formatTimestamp(ticket.created_at)}</span>
+              {ticket.product_area !== ticket.category && <>{humanize(ticket.product_area)} · </>}
+              Opened <span className="num">{formatTimestamp(ticket.created_at)}</span> · Updated <span className="num">{formatTime(ticket.updated_at)}</span> · {messageCount} message{messageCount === 1 ? "" : "s"}
             </p>
           </div>
           <div className="review-box">
             {ticket.reviewed_at ? (
-              <p className="reviewed-line"><CheckIcon size={14} /> Reviewed <span className="num">{formatTimestamp(ticket.reviewed_at)}</span></p>
-            ) : (
-              <button type="button" className="btn btn-primary" onClick={onMarkReviewed}>
-                <CheckIcon size={14} /> Mark reviewed
+              <button type="button" className="btn btn-ghost" disabled>
+                <CheckIcon size={14} /> Reviewed <span className="num">{formatTimestamp(ticket.reviewed_at).replace(/^(\d+ \w+) \d{4}, /, "$1, ")}</span>
               </button>
+            ) : (
+              <button type="button" className="btn btn-primary" onClick={onMarkReviewed}><CheckIcon size={14} /> Mark reviewed</button>
             )}
-            {reviewError && <p className="inline-error" role="alert">{reviewError}</p>}
+            <p className="review-live" aria-live="polite">{review.confirmed ? `Marked ${ticket.id} reviewed` : ""}</p>
+            {review.error && (
+              <p className="inline-error" role="alert">
+                Couldn't mark reviewed. Try again.{review.error.requestId && <span className="num"> Request ID: {review.error.requestId}</span>}
+              </p>
+            )}
           </div>
         </header>
 
         <section className="ticket-block" aria-labelledby="desc-h">
-          <h3 id="desc-h" className="block-label">Description</h3>
-          <p className="read">{ticket.description}</p>
+          <h3 id="desc-h" className="block-label">Customer report</h3>
+          <p className="read prose-max">{ticket.description}</p>
         </section>
         {ticket.resolution_summary && (
-          <section className="ticket-block" aria-labelledby="res-h">
+          <section className="ticket-block resolution" aria-labelledby="res-h">
             <h3 id="res-h" className="block-label">Resolution</h3>
-            <p className="read resolution-text">{ticket.resolution_summary}</p>
+            <p className="read prose-max">{ticket.resolution_summary}</p>
           </section>
         )}
         <section className="ticket-block" aria-labelledby="conv-h">

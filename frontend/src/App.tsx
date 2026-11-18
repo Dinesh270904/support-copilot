@@ -4,7 +4,7 @@ import { CopilotPanel } from "./components/CopilotPanel";
 import { TopBar, type HealthState } from "./components/TopBar";
 import { QueuePane } from "./components/QueuePane";
 import { ReplyComposer } from "./components/ReplyComposer";
-import { TicketPane } from "./components/TicketPane";
+import { TicketPane, type ReviewState } from "./components/TicketPane";
 import { useCopilot } from "./hooks/useCopilot";
 import { useTheme } from "./hooks/useTheme";
 import { untrustedPositions } from "./lib/untrusted";
@@ -33,7 +33,7 @@ export default function App() {
   const [ticket, setTicket] = useState<Ticket | null>(null);
   const [ticketLoading, setTicketLoading] = useState(false);
   const [ticketError, setTicketError] = useState<string | null>(null);
-  const [reviewError, setReviewError] = useState<string | null>(null);
+  const [review, setReview] = useState<ReviewState>({ error: null, confirmed: false });
 
   useEffect(() => {
     api.meta().then(setMeta).catch((err) => setListError(message(err)));
@@ -68,7 +68,7 @@ export default function App() {
     const controller = new AbortController();
     setTicketLoading(true);
     setTicketError(null);
-    setReviewError(null);
+    setReview({ error: null, confirmed: false });
     api
       .getTicket(selectedId, controller.signal)
       .then(setTicket)
@@ -92,17 +92,19 @@ export default function App() {
     if (!ticket || ticket.reviewed_at) return;
     const id = ticket.id;
     const stamp = new Date().toISOString();
-    setReviewError(null);
+    setReview({ error: null, confirmed: false });
     setTicket((t) => (t && t.id === id ? { ...t, reviewed_at: stamp } : t));
     setTickets((list) => list.map((t) => (t.id === id ? { ...t, reviewed_at: stamp } : t)));
     try {
       const updated = await api.markReviewed(id);
       setTicket((t) => (t && t.id === id ? updated : t));
       setTickets((list) => list.map((t) => (t.id === id ? { ...t, reviewed_at: updated.reviewed_at } : t)));
+      setReview({ error: null, confirmed: true });
+      window.setTimeout(() => setReview((r) => ({ ...r, confirmed: false })), 3000);
     } catch (err) {
       setTicket((t) => (t && t.id === id ? { ...t, reviewed_at: null } : t));
       setTickets((list) => list.map((t) => (t.id === id ? { ...t, reviewed_at: null } : t)));
-      setReviewError(`Could not mark ${id} reviewed: ${message(err)}`);
+      setReview({ error: { requestId: err instanceof ApiError ? err.requestId : undefined }, confirmed: false });
     }
   }, [ticket]);
 
@@ -135,7 +137,7 @@ export default function App() {
             ticket={ticket}
             loading={ticketLoading}
             error={ticketError}
-            reviewError={reviewError}
+            review={review}
             untrusted={untrusted}
             onMarkReviewed={markReviewed}
             composer={
