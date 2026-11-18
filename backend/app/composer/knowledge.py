@@ -78,6 +78,7 @@ def _chunk_citation(hit: KnowledgeHit, usage: str) -> Citation:
         score=hit.score,
         score_type="cosine",
         article_id=hit.article_id,
+        matched_terms=hit.matched_terms,
         matched_identifiers=hit.matched_identifiers,
         usage=usage,  # type: ignore[arg-type]
     )

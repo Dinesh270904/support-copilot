@@ -18,7 +18,7 @@ class Citation(BaseModel):
     article_id: str | None = None
     ticket_id: str | None = None
     matched_terms: list[str] = Field(
-        default_factory=list, description="Similar tickets: the words that matched the query"
+        default_factory=list, description="Words that matched the query (from the chunk text, or from the ticket)"
     )
     matched_identifiers: list[str] = Field(
         default_factory=list, description="Error codes from the question found verbatim in this source"

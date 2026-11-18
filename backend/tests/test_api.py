@@ -244,3 +244,16 @@ def test_no_draft_for_any_ticket_tells_the_customer_to_do_an_agent_prohibition(c
         customer_text = body["draft"].split("Best regards")[0]
         for line in customer_text.splitlines():
             assert not is_guardrail(line), f"T-{n}: agent-facing prohibition leaked into the customer draft: {line!r}"
+
+
+def test_knowledge_citations_carry_matched_terms_and_identifiers(client):
+    body = client.post(
+        "/api/assistant/run",
+        json={"action": "search_knowledge", "ticket_id": "T-101", "category": "checkout",
+              "query": "What does PAYMENT_TIMEOUT mean and how do I resolve it?"},
+    ).json()
+    citation = body["citations"][0]
+    assert citation["source_id"] == "KB-01#chunk-1"
+    assert citation["matched_identifiers"] == ["PAYMENT_TIMEOUT"]
+    assert citation["matched_terms"], "the UI shows which words matched for every source"
+    assert all(t == t.lower() for t in citation["matched_terms"])  # words, not stems or ids
