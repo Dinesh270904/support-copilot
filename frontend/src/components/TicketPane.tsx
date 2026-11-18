@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { formatTime, formatTimestamp, humanize } from "../format";
+import { useScrollMemory } from "../hooks/useScrollMemory";
 import type { TicketDetail } from "../types";
 import { CategoryDot, CheckIcon, PriorityIcon, StatusIcon } from "./Icons";
 import { Conversation } from "./Conversation";
@@ -25,6 +26,7 @@ interface Props {
 }
 
 export function TicketPane({ ticket, loading, error, review, untrusted, onMarkReviewed, composer, empty }: Props) {
+  const scrollRef = useScrollMemory(ticket?.id ?? "none");
   if (error) {
     return <div className="ticket-scroll"><div className="notice notice-danger" role="alert">{error}</div></div>;
   }
@@ -38,7 +40,7 @@ export function TicketPane({ ticket, loading, error, review, untrusted, onMarkRe
   const messageCount = ticket.messages.length;
   return (
     <>
-      <div className="ticket-scroll" aria-busy={loading}>
+      <div className="ticket-scroll" aria-busy={loading} ref={scrollRef}>
         <header className="ticket-head">
           <div className="ticket-head-main">
             <p className="ticket-kicker">

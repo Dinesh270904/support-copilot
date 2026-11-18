@@ -1,4 +1,4 @@
-import { Fragment, useState } from "react";
+import { Fragment, useState, type Ref } from "react";
 import { parseAnswer } from "../lib/answer";
 import type { AssistantRunResponse, Citation } from "../types";
 import { AlertIcon, CheckIcon, SearchIcon, ShieldIcon } from "./Icons";
@@ -13,11 +13,17 @@ interface Props {
   onOpenTicket: (id: string) => void;
   /** Offered on insufficient evidence when a ticket is open. */
   onDraftHolding?: () => void;
+  /** Offered when the question was scoped to one category. */
+  onSearchAll?: () => void;
+  question?: string;
+  scope?: string;
+  /** Receives focus when the answer arrives, so a screen-reader user lands on it. */
+  headingRef?: Ref<HTMLHeadingElement>;
 }
 
 /** The hero of the product: the answer as prose, each sentence tied to a numbered source, the scores
  * against the threshold, and the tool calls that produced it. */
-export function AnswerCard({ result, onViewSource, onOpenTicket, onDraftHolding }: Props) {
+export function AnswerCard({ result, onViewSource, onOpenTicket, onDraftHolding, onSearchAll, question, scope, headingRef }: Props) {
   const [showTrace, setShowTrace] = useState(false);
   const [showLimits, setShowLimits] = useState(false);
   const parsed = parseAnswer(result.answer);
@@ -60,10 +66,12 @@ export function AnswerCard({ result, onViewSource, onOpenTicket, onDraftHolding 
   return (
     <article className={`acard acard-${state}`} aria-label="Answer">
       <header className="acard-head">
-        <p className="acard-state"><StateIcon size={15} /> <span>{headline}</span></p>
+        <h4 className="acard-state" ref={headingRef} tabIndex={-1}><StateIcon size={15} /> <span>{headline}</span>{scope && !isCount && <span className="acard-scope"> · {scope}</span>}</h4>
         <span className="acard-ms num">{Math.round(result.duration_ms)} ms</span>
         <button type="button" className="icon-btn acard-more" aria-label="Show raw tool trace" aria-expanded={showTrace} onClick={() => setShowTrace((s) => !s)}>⋯</button>
       </header>
+
+      {question && <p className="acard-q"><span aria-hidden="true">Q</span> {question}</p>}
 
       {result.warnings.map((w) => (
         <p key={w} className="strip strip-warn"><ShieldIcon size={14} /><span>{w}</span></p>
@@ -98,8 +106,11 @@ export function AnswerCard({ result, onViewSource, onOpenTicket, onDraftHolding 
           <p className="gap-note">Closest source says this is out of scope.</p>
         )}
         {widenHint && <p className="hint">{state === "no_results" ? "Try widening the scope to all categories." : "No articles exist in this scope. Try “All categories”."}</p>}
-        {state === "insufficient_evidence" && onDraftHolding && result.ticket_id && (
-          <button type="button" className="chip" onClick={onDraftHolding}>Draft a holding reply</button>
+        {state === "insufficient_evidence" && (onDraftHolding || onSearchAll) && (
+          <div className="acard-actions">
+            {onDraftHolding && result.ticket_id && <button type="button" className="btn" onClick={onDraftHolding}>Draft a holding reply</button>}
+            {onSearchAll && <button type="button" className="btn" onClick={onSearchAll}>Search all categories</button>}
+          </div>
         )}
       </div>
 

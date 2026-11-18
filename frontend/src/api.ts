@@ -65,6 +65,6 @@ export const api = {
     request<TicketDetail>(`/api/tickets/${encodeURIComponent(id)}`, { signal }),
   markReviewed: (id: string) =>
     request<TicketDetail>(`/api/tickets/${encodeURIComponent(id)}/reviewed`, { method: "PATCH" }),
-  runAssistant: (body: AssistantRunRequest) =>
-    request<AssistantRunResponse>("/api/assistant/run", { method: "POST", body: JSON.stringify(body) }),
+  runAssistant: (body: AssistantRunRequest, signal?: AbortSignal) =>
+    request<AssistantRunResponse>("/api/assistant/run", { method: "POST", body: JSON.stringify(body), signal }),
 };

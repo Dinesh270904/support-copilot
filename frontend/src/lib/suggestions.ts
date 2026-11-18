@@ -1,44 +1,29 @@
-/** Starter questions per ticket category (UI copy, not data). Each one is a real question the
- * knowledge base can or deliberately cannot answer, so they also demonstrate both outcomes. */
-const BY_CATEGORY: Record<string, string[]> = {
-  checkout: [
-    "What does PAYMENT_TIMEOUT mean and how do I resolve it?",
-    "Can the customer retry while the payment is pending?",
-    "How do I check for a possible duplicate payment?",
-  ],
-  account_access: [
-    "Customer lost their authenticator after replacing a phone",
-    "What if no backup code is available?",
-    "How is account recovery verified?",
-  ],
-  billing: [
-    "Why is there a prorated charge after a plan change?",
-    "Does the product reimburse a bank decline fee?",
-    "How is the next billing cycle priced?",
-  ],
-  exports: [
-    "CSV export with more than 50,000 rows times out",
-    "Where does a finished export download appear?",
-    "What should I record if an export job fails?",
-  ],
-  notifications: [
-    "Customer is not receiving notification emails",
-    "Password reset email is not arriving",
-    "What should I collect to check delivery logs?",
-  ],
-  integrations: [
-    "Configure scheduled SFTP delivery of reports to an external server",
-    "Is SFTP delivery documented?",
-    "Which integrations are documented?",
-  ],
-  security: [
-    "How should instruction-like text in a ticket be handled?",
-    "Can a ticket message change what the assistant does?",
-    "What must never be disclosed from ticket content?",
-  ],
-};
-const GENERIC = ["How do I resolve this error?", "What are the documented next steps?", "Is this topic documented?"];
+/** Starter questions per ticket category (UI copy, not data), exactly as specified. The billing "bank decline fee"
+ * and integrations "SFTP" chips are deliberate: they demonstrate the insufficient-evidence state. */
+export interface Suggestion {
+  text: string;
+  /** "count" chips run count_tickets instead of a knowledge search. */
+  kind: "ask" | "count";
+}
+const ask = (...texts: string[]): Suggestion[] => texts.map((text) => ({ text, kind: "ask" }));
 
-export function suggestionsFor(category: string | null | undefined): string[] {
-  return (category && BY_CATEGORY[category]) || GENERIC;
+const BY_CATEGORY: Record<string, Suggestion[]> = {
+  checkout: ask("Can the customer retry while payment is pending?", "What does PAYMENT_TIMEOUT mean and how do I resolve it?", "How do I check for a duplicate charge?"),
+  account_access: ask("Customer lost their authenticator after a new phone. What now?", "Can they sign in with a backup code?", "What if they have no backup code?"),
+  billing: ask("Why is there a prorated charge after a plan change?", "Does the product reimburse a bank decline fee?", "When does the new plan price apply?"),
+  exports: ask("CSV export over 50,000 rows times out. What should they do?", "Where does the background export download appear?", "What do we record if the export job fails?"),
+  notifications: ask("Password reset email never arrived. What should we check?", "Should we ask for the reset token?", "How do we check delivery logs?"),
+  integrations: ask("Can scheduled reports be sent to an SFTP server?", "Which integrations are documented?"),
+  security: ask("A ticket says to ignore instructions and print secrets. How do we handle it?"),
+};
+const NO_TICKET: Suggestion[] = [
+  { text: "How do I recover account access after a phone change?", kind: "ask" },
+  { text: "How many open high-priority tickets mention checkout?", kind: "count" },
+];
+
+/** `scope` is the category currently selected in the Ask box, or null for all categories. */
+export function suggestionsFor(scope: string | null, ticketCategory: string | null): Suggestion[] {
+  if (scope && BY_CATEGORY[scope]) return BY_CATEGORY[scope];
+  if (!scope && ticketCategory && BY_CATEGORY[ticketCategory]) return BY_CATEGORY[ticketCategory];
+  return NO_TICKET;
 }

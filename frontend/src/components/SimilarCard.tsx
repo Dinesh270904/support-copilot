@@ -1,5 +1,7 @@
 import type { RunState } from "../hooks/useCopilot";
+import { CardMenu } from "./CardMenu";
 import { CardSkeleton, ErrorNote } from "./ErrorNote";
+import { CompareIcon } from "./Icons";
 
 // The backend writes one line per ticket: "- T-103 “title”: <fix> [T-103]".
 const FIX_LINE = /^- (T-\d+) “.+?”: (.+) \[T-\d+\]$/;
@@ -26,13 +28,15 @@ export function SimilarCard({ state, onRetry, onOpenTicket }: Props) {
   return (
     <section className="card" aria-labelledby="similar-h">
       <header className="card-head">
-        <h3 id="similar-h">Similar resolved tickets</h3>
+        <CompareIcon size={15} />
+        <h3 id="similar-h">Similar resolved</h3>
         <span className="card-tag">auto</span>
-        {r && <span className="card-ms num">{Math.round(r.duration_ms)} ms</span>}
+        {state.status === "ok" && <span className="card-ms num">{rows.length} found</span>}
+        <CardMenu label="Similar resolved options" items={[{ label: "Refresh similar tickets", onSelect: onRetry }]} />
       </header>
       {(state.status === "loading" || state.status === "idle") && <CardSkeleton lines={2} />}
       {state.status === "error" && state.error && <ErrorNote error={state.error} onRetry={onRetry} />}
-      {state.status === "ok" && rows.length === 0 && <p className="card-empty">No similar resolved tickets.</p>}
+      {state.status === "ok" && rows.length === 0 && <p className="card-empty">No similar resolved tickets. Nothing in history matches closely enough.</p>}
       {state.status === "ok" && rows.length > 0 && (
         <ul className="similar-list">
           {rows.map((c) => {

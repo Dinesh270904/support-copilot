@@ -1,5 +1,5 @@
 import type { ApiError } from "../api";
-import { AlertIcon } from "./Icons";
+import { AlertIcon, PlugIcon } from "./Icons";
 
 const TITLE: Record<ApiError["kind"], string> = {
   validation: "Request rejected",
@@ -28,7 +28,7 @@ export function CardSkeleton({ lines = 3 }: { lines?: number }) {
   return (
     <div className="skeleton" role="status" aria-label="Calling MCP tools">
       {Array.from({ length: lines }, (_, i) => <span key={i} className="skeleton-line" style={{ width: `${92 - i * 14}%` }} />)}
-      <span className="skeleton-note">Calling MCP tools…</span>
+      <span className="skeleton-note"><PlugIcon size={13} /> Calling MCP tools…</span>
     </div>
   );
 }

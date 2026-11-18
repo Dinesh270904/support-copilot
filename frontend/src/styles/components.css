@@ -137,13 +137,19 @@
 .pane-copilot { display: flex; flex-direction: column; overflow: hidden; }
 .copilot { display: flex; flex-direction: column; min-height: 0; height: 100%; }
 .copilot-head { flex: none; display: flex; align-items: baseline; justify-content: space-between; padding: var(--s-4) var(--s-4) var(--s-2); }
-.copilot-head h2 { font-size: 13px; font-weight: 600; }
+.copilot-head h2 { display: inline-flex; align-items: center; gap: 6px; font: var(--t-heading); }
 .copilot-for { color: var(--text-3); font-size: 12px; }
 .copilot-scroll { flex: 1; min-height: 0; overflow-y: auto; padding: var(--s-2) var(--s-4) var(--s-4); display: flex; flex-direction: column; gap: var(--s-3); }
 
 .card { padding: var(--s-3) var(--s-4); border: 1px solid var(--border); border-radius: var(--r-card); background: var(--surface-2); }
 .card-head { display: flex; align-items: center; gap: var(--s-2); margin-bottom: var(--s-2); }
-.card-head h3 { font-size: 13px; font-weight: 600; }
+.card-head h3 { font: var(--t-ui); font-weight: 600; }
+.card-head > svg { color: var(--text-2); flex: none; }
+.card-menu { margin-left: 0; }
+.card-menu .icon-btn { width: 24px; height: 24px; }
+.menu { right: 0; left: auto; min-width: 180px; padding: var(--s-1); }
+.menu-item { display: block; width: 100%; padding: 6px 10px; text-align: left; border: 0; border-radius: var(--r-control); background: transparent; color: var(--text); font: var(--t-ui); cursor: pointer; }
+.menu-item:hover { background: var(--surface-3); }
 .card-tag { padding: 1px 8px; border: 1px solid var(--border); border-radius: var(--r-pill); color: var(--text-3); font-size: 11px; font-weight: 500; white-space: nowrap; }
 .card-ms { margin-left: auto; color: var(--text-3); font-size: 12px; }
 .card-lead { color: var(--text-2); font-size: var(--fs-meta); line-height: 1.5; }
@@ -178,12 +184,20 @@
 .error-note-danger .error-note-title { color: var(--danger-text); }
 .skeleton { display: flex; flex-direction: column; gap: var(--s-2); }
 .skeleton-line { display: block; height: 10px; border-radius: 3px; background: var(--surface-3); }
-.skeleton-note { color: var(--text-3); font-size: 12px; }
+.skeleton-note { display: inline-flex; align-items: center; gap: 6px; color: var(--text-3); font: var(--t-meta); }
 
 .answer-entry { border: 1px solid var(--border); border-radius: var(--r-card); background: var(--surface-2); }
 .answer-entry > summary { display: flex; align-items: center; gap: var(--s-2); padding: var(--s-2) var(--s-3); cursor: pointer; list-style: none; }
 .answer-entry > summary::-webkit-details-marker { display: none; }
-.answer-q { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 500; }
+.answer-q { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: var(--t-ui); }
+.answer-sum { flex: none; color: var(--text-3); font: var(--t-meta); }
+.answer-entry-open { border: 0; background: transparent; }
+.answer-q-line { margin: 0 0 var(--s-2); color: var(--text-3); font: var(--t-meta); }
+.acard-q { margin: 0; color: var(--text-3); font: var(--t-meta); }
+.acard-q span { font-weight: 700; margin-right: 4px; }
+.acard-scope { font-weight: 500; }
+.acard-actions { display: flex; flex-wrap: wrap; gap: var(--s-2); }
+.acard-state:focus-visible { outline-offset: 4px; }
 .answer-entry > :not(summary) { margin: 0 var(--s-3) var(--s-3); }
 
 .askbox { flex: none; padding: var(--s-3) var(--s-4) var(--s-4); border-top: 1px solid var(--border); background: var(--surface-1); display: flex; flex-direction: column; gap: var(--s-2); }
@@ -195,8 +209,10 @@
 .scope { display: inline-flex; align-items: center; gap: var(--s-2); color: var(--text-3); font-size: 12px; }
 .scope select { padding: 4px 8px; border: 1px solid var(--border); border-radius: var(--r-control); background: var(--surface-2); color: var(--text); font-size: 12px; }
 .ask-count { color: var(--text-3); font-size: 12px; }
+.ask-count.warn { color: var(--warn-text); }
 .ask-count.over { color: var(--danger-text); }
 .ask-submit { margin-left: auto; }
+.ask-submit kbd { margin-left: 2px; background: transparent; border-color: color-mix(in srgb, var(--on-accent) 40%, transparent); color: var(--on-accent); }
 
 /* ---- answer card, citations, score meter, drawer (step 6) --------------------------- */
 .acard { display: flex; flex-direction: column; gap: var(--s-3); padding: var(--s-3) var(--s-4); border: 1px solid var(--border); border-left-width: 3px; border-radius: var(--r-card); background: var(--surface-2); }

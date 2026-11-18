@@ -71,18 +71,18 @@ export const DRAFT = run({
 
 type Handler = (body: AssistantRunRequest) => { status?: number; body: unknown };
 export interface ApiMock {
-  calls: { method: string; url: string; body?: unknown }[];
+  calls: { method: string; url: string; body?: unknown; signal?: AbortSignal | null }[];
   runs: AssistantRunRequest[];
 }
 
 /** Routes fetch() like the real API. `runs` maps an assistant action to its response (or a handler). */
-export function installApi(opts: { runs?: Partial<Record<AssistantRunRequest["action"], AssistantRunResponse | Handler>>; reviewStatus?: number } = {}): ApiMock {
+export function installApi(opts: { runs?: Partial<Record<AssistantRunRequest["action"], AssistantRunResponse | Handler>>; reviewStatus?: number; hold?: (body: AssistantRunRequest) => Promise<void> | undefined } = {}): ApiMock {
   const mock: ApiMock = { calls: [], runs: [] };
   const fn = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = String(input);
     const method = init?.method ?? "GET";
     const body = init?.body ? JSON.parse(String(init.body)) : undefined;
-    mock.calls.push({ method, url, body });
+    mock.calls.push({ method, url, body, signal: init?.signal });
     const json = (data: unknown, status = 200) => new Response(JSON.stringify(data), { status, headers: { "Content-Type": "application/json" } });
     if (url === "/health") return json({ status: "ok", database: "ok", mcp: { connected: true, tools: ["a", "b", "c", "d"], last_error: null, index: null } });
     if (url === "/api/meta") return json(meta);
@@ -101,6 +101,8 @@ export function installApi(opts: { runs?: Partial<Record<AssistantRunRequest["ac
     }
     if (url === "/api/assistant/run") {
       mock.runs.push(body);
+      await opts.hold?.(body); // lets a test keep a request in flight
+      if (init?.signal?.aborted) throw new DOMException("aborted", "AbortError");
       const entry = opts.runs?.[body.action as AssistantRunRequest["action"]];
       if (typeof entry === "function") {
         const r = entry(body);
