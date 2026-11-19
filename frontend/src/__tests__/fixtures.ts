@@ -77,7 +77,8 @@ export interface ApiMock {
 }
 
 /** Routes fetch() like the real API. `runs` maps an assistant action to its response (or a handler). */
-export function installApi(opts: { runs?: Partial<Record<AssistantRunRequest["action"], AssistantRunResponse | Handler>>; reviewStatus?: number; hold?: (body: AssistantRunRequest) => Promise<void> | undefined } = {}): ApiMock {
+export function installApi(opts: { runs?: Partial<Record<AssistantRunRequest["action"], AssistantRunResponse | Handler>>; reviewStatus?: number; hold?: (body: AssistantRunRequest) => Promise<void> | undefined; /** Called per /health request (1-based); return false to report the tool server as down. */ healthy?: (nth: number) => boolean } = {}): ApiMock {
+  let healthCalls = 0;
   const mock: ApiMock = { calls: [], runs: [] };
   const fn = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = String(input);
@@ -85,7 +86,7 @@ export function installApi(opts: { runs?: Partial<Record<AssistantRunRequest["ac
     const body = init?.body ? JSON.parse(String(init.body)) : undefined;
     mock.calls.push({ method, url, body, signal: init?.signal });
     const json = (data: unknown, status = 200) => new Response(JSON.stringify(data), { status, headers: { "Content-Type": "application/json" } });
-    if (url === "/health") return json({ status: "ok", database: "ok", mcp: { connected: true, tools: ["get_ticket", "search_knowledge", "search_resolved_tickets", "count_tickets"], last_error: null, server: { name: "support-copilot", protocol_version: "2025-11-25" }, index: { method: "tfidf_cosine", chunks: 14, articles: 7, min_score: 0.15, min_term_coverage: 0.6 } } });
+    if (url === "/health") return json({ status: "ok", database: "ok", mcp: { connected: opts.healthy ? opts.healthy(++healthCalls) : true, tools: ["get_ticket", "search_knowledge", "search_resolved_tickets", "count_tickets"], last_error: null, server: { name: "support-copilot", protocol_version: "2025-11-25" }, index: { method: "tfidf_cosine", chunks: 14, articles: 7, min_score: 0.15, min_term_coverage: 0.6 } } });
     if (url === "/api/meta") return json(meta);
     if (url.startsWith("/api/tickets?")) return json({ items: list, total: list.length, limit: 100, offset: 0 });
     const reviewed = url.match(/^\/api\/tickets\/(T-\d+)\/reviewed$/);

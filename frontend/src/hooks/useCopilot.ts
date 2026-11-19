@@ -30,11 +30,14 @@ const IDLE: RunState = { status: "idle" };
 const EMPTY: Session = { brief: IDLE, similar: IDLE, draft: IDLE, draftText: "", answers: [] };
 const NO_TICKET = "__none__";
 
-async function execute(body: AssistantRunRequest, signal?: AbortSignal): Promise<RunState> {
+async function execute(body: AssistantRunRequest, signal: AbortSignal | undefined, onSettled: () => void): Promise<RunState> {
   try {
-    return { status: "ok", response: await api.runAssistant(body, signal) };
+    const response = await api.runAssistant(body, signal);
+    onSettled();
+    return { status: "ok", response };
   } catch (err) {
     if (signal?.aborted) return IDLE; // the agent moved on: not an error, and nothing to render
+    onSettled();
     return { status: "error", error: err instanceof ApiError ? err : new ApiError("Unexpected error", 0, "unknown", "server") };
   }
 }
@@ -45,7 +48,11 @@ async function execute(body: AssistantRunRequest, signal?: AbortSignal): Promise
  * /api/assistant/runs. Results are written under the ticket they were started for, so switching
  * tickets mid-request can never show an answer against the wrong ticket. History is client-side only.
  */
-export function useCopilot(ticketId: string | null) {
+export function useCopilot(ticketId: string | null, onRunSettled: () => void = () => {}) {
+  // Called after every assistant run that finishes, ok or not, so the app can re-check the tool server at once.
+  const settledRef = useRef(onRunSettled);
+  settledRef.current = onRunSettled;
+  const settled = useCallback(() => settledRef.current(), []);
   const [sessions, setSessions] = useState<Record<string, Session>>({});
   const nextId = useRef(1);
   const started = useRef(new Set<string>());
@@ -67,13 +74,13 @@ export function useCopilot(ticketId: string | null) {
 
   const runBrief = useCallback((tid: string) => {
     patch(tid, (s) => ({ ...s, brief: { status: "loading" } }));
-    void track(tid, (signal) => execute({ action: "summarize_ticket", ticket_id: tid }, signal)).then((r) => patch(tid, (s) => ({ ...s, brief: r })));
-  }, [patch, track]);
+    void track(tid, (signal) => execute({ action: "summarize_ticket", ticket_id: tid }, signal, settled)).then((r) => patch(tid, (s) => ({ ...s, brief: r })));
+  }, [patch, track, settled]);
 
   const runSimilar = useCallback((tid: string) => {
     patch(tid, (s) => ({ ...s, similar: { status: "loading" } }));
-    void track(tid, (signal) => execute({ action: "search_resolved_tickets", ticket_id: tid }, signal)).then((r) => patch(tid, (s) => ({ ...s, similar: r })));
-  }, [patch, track]);
+    void track(tid, (signal) => execute({ action: "search_resolved_tickets", ticket_id: tid }, signal, settled)).then((r) => patch(tid, (s) => ({ ...s, similar: r })));
+  }, [patch, track, settled]);
 
   useEffect(() => {
     if (ticketId && !started.current.has(ticketId)) {
@@ -101,10 +108,10 @@ export function useCopilot(ticketId: string | null) {
   const submit = useCallback((k: string, entry: Omit<AnswerEntry, "id" | "state">) => {
     const id = nextId.current++;
     patch(k, (s) => ({ ...s, answers: [{ ...entry, id, state: { status: "loading" } }, ...s.answers] }));
-    void execute(entry.request).then((r) =>
+    void execute(entry.request, undefined, settled).then((r) =>
       patch(k, (s) => ({ ...s, answers: s.answers.map((a) => (a.id === id ? { ...a, state: r } : a)) })),
     );
-  }, [patch]);
+  }, [patch, settled]);
 
   const ask = useCallback((query: string, scope: string | null) => {
     const request: AssistantRunRequest = { action: "search_knowledge", query };
@@ -121,19 +128,19 @@ export function useCopilot(ticketId: string | null) {
     patch(key, (s) => ({ ...s, answers: s.answers.map((a) => (a.id === id ? { ...a, state: { status: "loading" } } : a)) }));
     const entry = (sessions[key] ?? EMPTY).answers.find((a) => a.id === id);
     if (!entry) return;
-    void execute(entry.request).then((r) =>
+    void execute(entry.request, undefined, settled).then((r) =>
       patch(key, (s) => ({ ...s, answers: s.answers.map((a) => (a.id === id ? { ...a, state: r } : a)) })),
     );
-  }, [key, patch, sessions]);
+  }, [key, patch, sessions, settled]);
 
   const runDraft = useCallback(() => {
     if (!ticketId) return;
     const tid = ticketId;
     patch(tid, (s) => ({ ...s, draft: { status: "loading" } }));
-    void track(tid, (signal) => execute({ action: "draft_reply", ticket_id: tid }, signal)).then((r) =>
+    void track(tid, (signal) => execute({ action: "draft_reply", ticket_id: tid }, signal, settled)).then((r) =>
       patch(tid, (s) => ({ ...s, draft: r, draftText: r.response?.draft ?? s.draftText })),
     );
-  }, [ticketId, patch, track]);
+  }, [ticketId, patch, track, settled]);
 
   const setDraftText = useCallback((text: string) => patch(key, (s) => ({ ...s, draftText: text })), [key, patch]);
   const resetDraft = useCallback(() => patch(key, (s) => ({ ...s, draftText: s.draft.response?.draft ?? "" })), [key, patch]);

@@ -49,13 +49,14 @@ export default function App() {
   const [ticketError, setTicketError] = useState<string | null>(null);
   const [review, setReview] = useState<ReviewState>({ error: null, confirmed: false });
 
+  const refreshHealth = useCallback(() => void api.health().then(setHealth).catch(() => setHealth("unreachable")), []);
+
   useEffect(() => {
     api.meta().then(setMeta).catch((err) => setListError(message(err)));
-    const check = () => api.health().then(setHealth).catch(() => setHealth("unreachable"));
-    check();
-    const timer = window.setInterval(check, 30_000);
+    refreshHealth();
+    const timer = window.setInterval(refreshHealth, 30_000);
     return () => window.clearInterval(timer);
-  }, []);
+  }, [refreshHealth]);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -140,7 +141,7 @@ export default function App() {
     void markReviewed();
   };
 
-  const copilot = useCopilot(ticket?.id ?? null);
+  const copilot = useCopilot(ticket?.id ?? null, refreshHealth);
 
   // A new answer brings the Copilot into view when it is a drawer or its own tab. Only genuinely new answers (ids only
   // grow), so switching to a ticket that already has history does not pop it open.

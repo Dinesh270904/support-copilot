@@ -208,6 +208,18 @@ describe("top bar", () => {
     await user.keyboard("{Escape}");
     expect(screen.queryByRole("dialog", { name: "Assistant tool status" })).not.toBeInTheDocument();
   });
+  it("re-checks health right after an assistant run, so a recovered tool server shows at once", async () => {
+    // First check (page load): down. Every later check: up. No 30 s timer fires inside this test.
+    const api = installApi({ runs: base, healthy: (nth) => nth > 1 });
+    render(<App />);
+    await screen.findByText("Assistant offline");
+    const healthCalls = () => api.calls.filter((c) => c.url === "/health").length;
+    expect(healthCalls()).toBe(1);
+    window.location.hash = "#/ticket/T-101"; // opening a ticket starts the two auto-runs
+    window.dispatchEvent(new HashChangeEvent("hashchange"));
+    await screen.findByRole("button", { name: /Tools connected \(4\)/ });
+    expect(healthCalls()).toBeGreaterThan(1);
+  });
   it("the keyboard button opens the shortcut sheet", async () => {
     installApi({ runs: base });
     const user = userEvent.setup();
