@@ -82,3 +82,29 @@ def test_title_only_match_falls_back_to_opening_sentence_with_limitation():
     assert composed.answer_state == "answered"
     assert [q.text for q in composed.evidence] == ["Open the panel."]
     assert any("title/tags" in lim for lim in composed.limitations)
+
+
+def test_prohibitions_beyond_the_cap_are_reported_not_silently_dropped():
+    from app.composer.knowledge import MAX_GUARDRAILS
+    from app.rag.index import ChunkRecord, TfidfIndex
+
+    prohibitions = [
+        "Do not rotate the vault key during a freeze.",
+        "Never share the vault key in a ticket.",
+        "Do not rotate the vault key without a second approver.",
+        "You must not rotate the vault key from a personal laptop.",
+        "Do not store the vault key in a shared folder.",
+        "Never email the vault key to a vendor.",
+        "Do not reuse an old vault key after rotation.",
+    ]
+    text = "Rotate the vault key on the first Monday of each quarter. " + " ".join(prohibitions)
+    chunk = ChunkRecord("KB-91#chunk-1", "KB-91", 1, "Vault key rotation", "security", text)
+    composed = compose_knowledge_answer(TfidfIndex([chunk]).search("rotate the vault key quarterly schedule"))
+
+    assert composed.answer_state == "answered"
+    quoted = [p for p in prohibitions if f"- {p} [KB-91#chunk-1]" in composed.answer]
+    hidden = len(prohibitions) - len(quoted)
+    assert hidden > 0, "the synthetic article must have more prohibitions than are quoted"
+    # Prohibitions beyond the evidence sentences are capped at MAX_GUARDRAILS; the cap is a limitation, never silent.
+    assert f"{hidden} more prohibition{'s' if hidden != 1 else ''} in KB-91 not shown." in composed.limitations
+    assert len(quoted) <= 3 + MAX_GUARDRAILS

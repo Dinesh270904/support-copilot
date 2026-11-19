@@ -154,8 +154,11 @@ def compose_knowledge_answer(
         and (c.score > 0 or c.hit.article_id in identifier_articles)
         and is_guardrail(c.text)
         and not is_coverage_disclaimer(c.text)
-    ][:MAX_GUARDRAILS]
-    selected += guardrails
+    ]
+    for article_id in dict.fromkeys(c.hit.article_id for c in guardrails[MAX_GUARDRAILS:]):
+        hidden = sum(1 for c in guardrails[MAX_GUARDRAILS:] if c.hit.article_id == article_id)
+        limitations.append(f"{hidden} more prohibition{'' if hidden == 1 else 's'} in {article_id} not shown.")
+    selected += guardrails[:MAX_GUARDRAILS]
 
     article_rank: dict[str, int] = {}
     for c in sorted(selected, key=lambda c: c.hit_rank):
