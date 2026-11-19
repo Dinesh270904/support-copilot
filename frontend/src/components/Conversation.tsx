@@ -23,7 +23,7 @@ export function Conversation({ messages, untrusted }: Props) {
         const flagged = untrusted.has(m.position);
         return (
           <Fragment key={m.position}>
-            {showDay && <li className="convo-day" role="separator"><span>{day}</span></li>}
+            {showDay && <li className="convo-day"><span>{day}</span></li>}
             <li className={`msg msg-${m.author}${flagged ? " msg-untrusted" : ""}`}>
               <span className="avatar" aria-hidden="true">{m.author === "agent" ? "A" : "C"}</span>
               <div className="bubble" title={flagged ? UNTRUSTED_TIP : undefined}>

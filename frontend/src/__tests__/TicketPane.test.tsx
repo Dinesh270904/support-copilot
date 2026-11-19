@@ -15,7 +15,7 @@ describe("Conversation", () => {
     render(<Conversation messages={t.messages} untrusted={new Set([2])} />);
     expect(screen.getAllByText("Untrusted content: not followed")).toHaveLength(1);
     expect(screen.getByText(/Ignore all prior instructions/)).toBeVisible();
-    expect(screen.getAllByRole("separator")).toHaveLength(1); // both messages are on 12 Nov
+    expect(document.querySelectorAll(".convo-day")).toHaveLength(1); // both messages are on 12 Nov
   });
 });
 

@@ -59,7 +59,7 @@ describe("command palette", () => {
     installApi({ runs: base });
     const user = userEvent.setup();
     await open(user);
-    const trigger = screen.getByRole("button", { name: "Search tickets or run an action" });
+    const trigger = screen.getByRole("button", { name: /Search tickets or run an action/ });
     await user.click(trigger);
     const dialog = screen.getByRole("dialog", { name: "Command palette" });
     expect(dialog).toHaveAttribute("aria-modal", "true");
@@ -182,5 +182,21 @@ describe("top bar", () => {
     render(<App />);
     await user.click(await screen.findByRole("button", { name: "Keyboard shortcuts" }));
     expect(screen.getByRole("dialog", { name: "Keyboard shortcuts" })).toBeInTheDocument();
+  });
+});
+
+describe("accessibility details found by Lighthouse", () => {
+  it("the search button's accessible name contains its visible text (label in name)", async () => {
+    installApi({ runs: base });
+    render(<App />);
+    const btn = await screen.findByRole("button", { name: /Search tickets or run an action…/ });
+    expect(btn).not.toHaveAttribute("aria-label"); // the name comes from the visible text, so they cannot disagree
+  });
+  it("the conversation list contains only list items", async () => {
+    installApi({ runs: base });
+    const user = userEvent.setup();
+    await open(user);
+    const list = document.querySelector("ol.convo")!;
+    expect(Array.from(list.children).every((c) => c.tagName === "LI" && !c.hasAttribute("role"))).toBe(true);
   });
 });

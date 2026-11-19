@@ -43,7 +43,7 @@ export function TopBar({ health, theme, onToggleTheme, onOpenPalette, onOpenShor
         <span className="brand-mark" aria-hidden="true"><SparkleIcon size={14} /></span>
         <span className="brand-name">Support Copilot</span>
       </div>
-      <button type="button" className="searchbtn" onClick={onOpenPalette} aria-label="Search tickets or run an action" title="Search tickets or run an action · ⌘K">
+      <button type="button" className="searchbtn" onClick={onOpenPalette} title="Search tickets or run an action · ⌘K">
         <SearchIcon size={16} />
         <span className="searchbtn-text">Search tickets or run an action…</span>
         <kbd>⌘K</kbd>

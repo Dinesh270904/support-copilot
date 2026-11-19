@@ -45,7 +45,9 @@
 /* Top bar on narrower screens: the search field shrinks to an icon, then the help button goes. */
 @media (max-width: 1023px) {
   .searchbtn { flex: none; width: 36px; padding: 0; justify-content: center; margin-left: auto; }
-  .searchbtn-text, .searchbtn kbd { display: none; }
+  /* Visually hidden, not display:none, so the button keeps its accessible name (label in name). */
+  .searchbtn-text { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .searchbtn kbd { display: none; }
 }
 @media (max-width: 767px) { .kbd-help { display: none; } }
 @media (max-width: 480px) {
