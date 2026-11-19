@@ -156,8 +156,40 @@ describe("single-key shortcuts", () => {
     expect(window.location.hash).toContain("view=high");
     await user.keyboard("4");
     expect(window.location.hash).toContain("view=resolved");
+  });
+
+  const reviewCalls = (api: ReturnType<typeof installApi>) => api.calls.filter((c) => c.method === "PATCH" && c.url === "/api/tickets/T-101/reviewed");
+
+  it("r asks first: nothing is written until Enter confirms", async () => {
+    const api = installApi({ runs: base });
+    const user = userEvent.setup();
+    await open(user);
     await user.keyboard("r");
-    await waitFor(() => expect(api.calls.some((c) => c.method === "PATCH" && c.url === "/api/tickets/T-101/reviewed")).toBe(true));
+    expect(screen.getByText(/Mark T-101 reviewed\?/)).toBeInTheDocument();
+    expect(screen.getByText(/Enter to confirm · Esc to cancel/)).toBeInTheDocument();
+    expect(reviewCalls(api)).toHaveLength(0);
+    await user.keyboard("{Enter}");
+    await waitFor(() => expect(reviewCalls(api)).toHaveLength(1));
+    expect(screen.queryByText(/Mark T-101 reviewed\?/)).not.toBeInTheDocument();
+  });
+
+  it("Esc cancels the review question, writes nothing and returns focus to the button", async () => {
+    const api = installApi({ runs: base });
+    const user = userEvent.setup();
+    await open(user);
+    await user.keyboard("r");
+    await user.keyboard("{Escape}");
+    expect(screen.queryByText(/Mark T-101 reviewed\?/)).not.toBeInTheDocument();
+    expect(reviewCalls(api)).toHaveLength(0);
+    expect(screen.getByRole("button", { name: /Mark reviewed/ })).toHaveFocus();
+  });
+
+  it("the button still marks reviewed in one click", async () => {
+    const api = installApi({ runs: base });
+    const user = userEvent.setup();
+    await open(user);
+    await user.click(screen.getByRole("button", { name: /Mark reviewed/ }));
+    await waitFor(() => expect(reviewCalls(api)).toHaveLength(1));
   });
 });
 

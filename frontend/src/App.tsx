@@ -129,6 +129,17 @@ export default function App() {
     }
   }, [ticket]);
 
+  // The R key asks first: a stray keystroke must not write. The button and the palette action stay one step.
+  const [confirmingId, setConfirmingId] = useState<string | null>(null);
+  const confirming = !!ticket && confirmingId === ticket.id && !ticket.reviewed_at;
+  const requestReview = () => {
+    if (ticket && !ticket.reviewed_at) setConfirmingId(ticket.id);
+  };
+  const confirmReview = () => {
+    setConfirmingId(null);
+    void markReviewed();
+  };
+
   const copilot = useCopilot(ticket?.id ?? null);
 
   // A new answer brings the Copilot into view when it is a drawer or its own tab. Only genuinely new answers (ids only
@@ -171,7 +182,7 @@ export default function App() {
       "/": focusAsk,
       s: () => ticket && copilot.retryBrief(),
       d: () => ticket && copilot.runDraft(),
-      r: () => void markReviewed(),
+      r: requestReview,
       t: toggleTheme,
       "?": () => setSheet(true),
       c: () => {
@@ -179,6 +190,7 @@ export default function App() {
         else if (layout === "phone") setTab((t) => (t === "copilot" ? "ticket" : "copilot"));
       },
       Escape: () => {
+        if (confirming) return setConfirmingId(null);
         const el = document.activeElement as HTMLElement | null;
         if (el && (el.tagName === "TEXTAREA" || el.tagName === "INPUT")) el.blur(); // Esc leaves an input
         else if (drawerMode && copilotOpen) setCopilotOpen(false);
@@ -236,6 +248,9 @@ export default function App() {
             review={review}
             untrusted={untrusted}
             onMarkReviewed={markReviewed}
+            confirming={confirming}
+            onConfirmReview={confirmReview}
+            onCancelReview={() => setConfirmingId(null)}
             empty={<EmptyOverview tickets={tickets} loading={listLoading} onOpenTicket={selectTicket} onView={(view) => navigate({ view })} />}
             composer={
               ticket && (

@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 import { formatTime, formatTimestamp, humanize } from "../format";
 import { useScrollMemory } from "../hooks/useScrollMemory";
 import type { TicketDetail } from "../types";
@@ -19,14 +19,25 @@ interface Props {
   review: ReviewState;
   untrusted: Set<number>;
   onMarkReviewed: () => void;
+  /** The R shortcut asks before writing; true while that question is on screen. */
+  confirming?: boolean;
+  onConfirmReview?: () => void;
+  onCancelReview?: () => void;
   /** The reply composer, docked under the conversation. */
   composer?: ReactNode;
   /** Shown when no ticket is selected. */
   empty?: ReactNode;
 }
 
-export function TicketPane({ ticket, loading, error, review, untrusted, onMarkReviewed, composer, empty }: Props) {
+export function TicketPane({ ticket, loading, error, review, untrusted, onMarkReviewed, confirming = false, onConfirmReview, onCancelReview, composer, empty }: Props) {
   const scrollRef = useScrollMemory(ticket?.id ?? "none");
+  const markRef = useRef<HTMLButtonElement>(null);
+  const wasConfirming = useRef(false);
+  useEffect(() => {
+    // Cancelling returns focus to the button the question replaced.
+    if (wasConfirming.current && !confirming) markRef.current?.focus();
+    wasConfirming.current = confirming;
+  }, [confirming]);
   if (error) {
     return <div className="ticket-scroll"><div className="notice notice-danger" role="alert">{error}</div></div>;
   }
@@ -60,8 +71,16 @@ export function TicketPane({ ticket, loading, error, review, untrusted, onMarkRe
               <button type="button" className="btn btn-ghost" disabled>
                 <CheckIcon size={14} /> Reviewed <span className="num">{formatTimestamp(ticket.reviewed_at).replace(/^(\d+ \w+) \d{4}, /, "$1, ")}</span>
               </button>
+            ) : confirming ? (
+              <div className="review-confirm" role="group" aria-label={`Confirm marking ${ticket.id} reviewed`}>
+                <p className="review-confirm-q">Mark {ticket.id} reviewed? <span className="muted">Enter to confirm · Esc to cancel</span></p>
+                <span className="review-confirm-actions">
+                  <button type="button" className="btn btn-primary" autoFocus onClick={onConfirmReview}>Confirm</button>
+                  <button type="button" className="btn" onClick={onCancelReview}>Cancel</button>
+                </span>
+              </div>
             ) : (
-              <button type="button" className="btn btn-primary" onClick={onMarkReviewed} title="Mark reviewed · R"><CheckIcon size={14} /> Mark reviewed <kbd className="kbd-on-accent">R</kbd></button>
+              <button type="button" ref={markRef} className="btn btn-primary" onClick={onMarkReviewed} title="Mark reviewed · R"><CheckIcon size={14} /> Mark reviewed <kbd className="kbd-on-accent">R</kbd></button>
             )}
             <p className="review-live" aria-live="polite">{review.confirmed ? `Marked ${ticket.id} reviewed` : ""}</p>
             {review.error && (
