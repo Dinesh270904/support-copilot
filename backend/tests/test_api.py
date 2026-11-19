@@ -285,3 +285,17 @@ def test_unknown_route_and_wrong_method_use_the_error_envelope(client):
         assert resp.status_code == status
         error = resp.json()["error"]
         assert error["code"] == "http_error" and error["request_id"] and "detail" not in resp.json()
+
+
+def test_tool_error_log_has_the_code_but_never_the_error_text(client, monkeypatch, caplog):
+    from app.api.mcp_gateway import McpToolError
+
+    async def boom(name, arguments):
+        raise McpToolError("invalid_arguments", "bad input: my secret customer sentence")
+
+    monkeypatch.setattr(client.app.state.gateway, "call_tool", boom)
+    with caplog.at_level("ERROR", logger="support_copilot.api"):
+        resp = client.post("/api/assistant/run", json={"action": "count_tickets"})
+    assert resp.status_code == 502 and "secret" not in resp.text
+    logged = " ".join(r.getMessage() + str(getattr(r, "fields", "")) for r in caplog.records)
+    assert "invalid_arguments" in logged and "secret customer sentence" not in logged

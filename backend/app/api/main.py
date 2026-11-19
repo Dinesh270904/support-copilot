@@ -292,7 +292,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             if isinstance(exc, McpUnavailableError):
                 raise AppError(503, "assistant_unavailable", "The assistant tool server is unavailable. Try again shortly.") from exc
             if isinstance(exc, McpToolError):
-                log.error("MCP tool error", extra={"fields": {"code": exc.code, "detail": str(exc)[:300]}})
+                log.error("MCP tool error", extra={"fields": {"code": exc.code}})  # the text can echo the query
                 raise AppError(502, "tool_error", f"An assistant tool failed ({exc.code}).") from exc
             raise
         await run_in_threadpool(_save_run, sessions, record)
