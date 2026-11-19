@@ -15,13 +15,14 @@ from contextlib import asynccontextmanager
 from datetime import datetime, timezone
 from typing import Annotated
 
-from fastapi import Depends, FastAPI, HTTPException, Path, Query, Request
+from fastapi import Depends, FastAPI, Path, Query, Request
 from fastapi.concurrency import run_in_threadpool
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from mcp import StdioServerParameters
 from sqlalchemy import desc, select, text
+from starlette.exceptions import HTTPException as StarletteHTTPException
 from sqlalchemy.orm import Session, sessionmaker
 
 from app import repository
@@ -174,8 +175,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         summary = "; ".join(f"{d['field']}: {d['message']}" if d["field"] else d["message"] for d in details)
         return _error(422, "validation_error", summary or "Invalid request", request, details)
 
-    @app.exception_handler(HTTPException)
-    async def _http(request: Request, exc: HTTPException) -> JSONResponse:
+    @app.exception_handler(StarletteHTTPException)  # FastAPI's HTTPException subclasses this; routing 404/405 raise it
+    async def _http(request: Request, exc: StarletteHTTPException) -> JSONResponse:
         return _error(exc.status_code, "http_error", str(exc.detail), request)
 
     @app.exception_handler(AppError)

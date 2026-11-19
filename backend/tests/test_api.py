@@ -278,3 +278,10 @@ def test_missing_database_is_never_created_and_routes_say_so(tmp_path):
             error = resp.json()["error"]
             assert error["code"] == "database_not_initialized" and "make setup" in error["message"]
     assert not db.exists()  # nothing created the file
+
+
+def test_unknown_route_and_wrong_method_use_the_error_envelope(client):
+    for resp, status in ((client.get("/api/nope"), 404), (client.delete("/api/tickets/T-101"), 405)):
+        assert resp.status_code == status
+        error = resp.json()["error"]
+        assert error["code"] == "http_error" and error["request_id"] and "detail" not in resp.json()
