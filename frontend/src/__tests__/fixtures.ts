@@ -155,3 +155,9 @@ export const NO_EVIDENCE_SFTP = run({
   answer: "Insufficient evidence: no knowledge articles exist in category 'integrations'. The knowledge base does not appear to document this, so no guidance is proposed. Escalate or confirm with the owning team before replying.",
   retrieval: { ...RETR, category: "integrations", candidates_considered: 0, best_score: 0, results_returned: 0 }, tool_trace: TRACE.slice(1), citations: [],
 });
+
+export const LOW_OVERLAP = run({
+  answer_state: "insufficient_evidence",
+  answer: "Insufficient evidence: the closest chunks (KB-05#chunk-2) share too few query terms to count as evidence. The knowledge base does not appear to document this, so no guidance is proposed. Escalate or confirm with the owning team before replying.",
+  retrieval: { ...RETR, category: null, best_score: 0.22, candidates_considered: 14, results_returned: 0, rejected_low_coverage: ["KB-05#chunk-2"] }, tool_trace: TRACE.slice(1), citations: [],
+});

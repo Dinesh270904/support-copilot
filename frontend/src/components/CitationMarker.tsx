@@ -7,11 +7,13 @@ interface Props {
   source: SourceRef;
   threshold: number | null;
   onView: (source: SourceRef) => void;
+  /** Lets the card highlight the matching row in its source list while the marker is hovered or focused. */
+  onActive?: (id: string | null) => void;
 }
 
 /** A superscript number that is a real button. Hover, focus or tap opens the preview and a click keeps it
  * open (a mouse click is always preceded by a hover, so it must not toggle); Esc, blur or leaving closes it. */
-export function CitationMarker({ n, source, threshold, onView }: Props) {
+export function CitationMarker({ n, source, threshold, onView, onActive }: Props) {
   const [open, setOpen] = useState(false);
   const wrap = useRef<HTMLSpanElement>(null);
   const button = useRef<HTMLButtonElement>(null);
@@ -22,23 +24,33 @@ export function CitationMarker({ n, source, threshold, onView }: Props) {
   const show = () => {
     window.clearTimeout(timer.current);
     setOpen(true);
+    onActive?.(source.citation.source_id);
   };
-  // A short delay lets the pointer travel from the marker to the card without it closing.
+  // Hover opens after 150ms (so passing over a marker does not flash a card); focus and click open at once.
+  const hoverShow = () => {
+    window.clearTimeout(timer.current);
+    timer.current = window.setTimeout(show, 150);
+  };
+  // Leaving closes after 200ms, so the pointer can travel from the marker to the card.
   const hideSoon = () => {
     window.clearTimeout(timer.current);
-    timer.current = window.setTimeout(() => setOpen(false), 160);
+    timer.current = window.setTimeout(() => {
+      setOpen(false);
+      onActive?.(null);
+    }, 200);
   };
   const onKeyDown = (e: KeyboardEvent) => {
     if (e.key === "Escape" && open) {
       e.stopPropagation();
       setOpen(false);
+      onActive?.(null);
       button.current?.focus();
     }
   };
 
   return (
-    <span className="cite" ref={wrap} onKeyDown={onKeyDown} onMouseEnter={show} onMouseLeave={hideSoon}
-      onBlur={(e) => { if (!wrap.current?.contains(e.relatedTarget as Node | null)) setOpen(false); }}>
+    <span className="cite" ref={wrap} onKeyDown={onKeyDown} onMouseEnter={hoverShow} onMouseLeave={hideSoon}
+      onBlur={(e) => { if (!wrap.current?.contains(e.relatedTarget as Node | null)) { setOpen(false); onActive?.(null); } }}>
       <button
         ref={button}
         type="button"

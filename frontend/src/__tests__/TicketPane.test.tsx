@@ -72,8 +72,9 @@ describe("ReplyComposer", () => {
     const user = userEvent.setup();
     render(<Composer />);
     await user.click(screen.getByRole("button", { name: /Draft with Copilot/ }));
-    expect(await screen.findByText("Tool server unavailable")).toBeInTheDocument();
-    expect(screen.getByText("Request ID: rid-5")).toBeInTheDocument();
+    expect(await screen.findByText("The tool server took too long")).toBeInTheDocument();
+    expect(screen.getByText("Try again; if it repeats, check the API logs.")).toBeInTheDocument();
+    expect(screen.getByText("Request ID rid-5")).toBeInTheDocument();
     await user.click(screen.getByRole("button", { name: "Retry" }));
     expect(await screen.findByDisplayValue(/Thank you for contacting us/)).toBeInTheDocument();
   });

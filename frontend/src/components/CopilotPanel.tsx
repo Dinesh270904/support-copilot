@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useRef, useState, type RefObject } from "react";
 import { useScrollMemory } from "../hooks/useScrollMemory";
 import type { useCopilot } from "../hooks/useCopilot";
-import type { Meta, TicketDetail } from "../types";
+import type { AssistantRunResponse, Meta, TicketDetail } from "../types";
 import { AnswerEntryView } from "./AnswerEntryView";
 import { AskBox } from "./AskBox";
 import { SparkleIcon } from "./Icons";
 import { SimilarCard } from "./SimilarCard";
 import { SourceDrawer } from "./SourceDrawer";
+import { TraceDrawer } from "./TraceDrawer";
 import type { SourceRef } from "./SourceDetails";
 import { TicketBriefCard } from "./TicketBriefCard";
 
@@ -25,6 +26,8 @@ export function CopilotPanel({ ticket, meta, copilot, onOpenTicket, askRef }: Pr
   const busy = session.answers[0]?.state.status === "loading";
   const [drawer, setDrawer] = useState<SourceRef | null>(null);
   const closeDrawer = useCallback(() => setDrawer(null), []);
+  const [trace, setTrace] = useState<{ result: AssistantRunResponse; opener: HTMLElement | null } | null>(null);
+  const closeTrace = useCallback(() => setTrace(null), []);
   // A new answer lands below the brief and similar cards: bring it into view when it is asked for.
   const scrollRef = useScrollMemory(ticket?.id ?? "none");
   const newest = useRef<HTMLDivElement>(null);
@@ -82,6 +85,7 @@ export function CopilotPanel({ ticket, meta, copilot, onOpenTicket, askRef }: Pr
               onRetry={() => copilot.retryAnswer(entry.id)}
               onOpenTicket={onOpenTicket}
               onViewSource={setDrawer}
+              onViewTrace={(result, opener) => setTrace({ result, opener })}
               onDraftHolding={ticket ? copilot.runDraft : undefined}
               onSearchAll={() => copilot.ask(entry.query, null)}
             />
@@ -90,6 +94,8 @@ export function CopilotPanel({ ticket, meta, copilot, onOpenTicket, askRef }: Pr
       </div>
 
       <SourceDrawer source={drawer} threshold={threshold} onClose={closeDrawer} onOpenTicket={onOpenTicket} />
+
+      <TraceDrawer result={trace?.result ?? null} onClose={closeTrace} returnTo={trace?.opener} />
 
       <AskBox key={ticket?.id ?? "none"} categories={meta?.categories ?? []} ticketCategory={ticket?.category ?? null} hasTicket={ticket !== null} onAsk={copilot.ask} onCount={copilot.count} inputRef={askRef} busy={busy} />
     </div>

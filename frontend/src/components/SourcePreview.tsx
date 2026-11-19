@@ -1,5 +1,6 @@
 import { useLayoutEffect, useState, type RefObject } from "react";
-import { SourceDetails, type SourceRef } from "./SourceDetails";
+import { ArrowUpRightIcon } from "./Icons";
+import { Excerpt, IdentifierNote, MatchedLine, ScoreLine, type SourceRef } from "./SourceDetails";
 
 interface Props {
   source: SourceRef;
@@ -40,8 +41,14 @@ export function SourcePreview({ source, threshold, anchor, onView, onEnter, onLe
       onMouseEnter={onEnter}
       onMouseLeave={onLeave}
     >
-      <SourceDetails source={source} threshold={threshold} />
-      <button type="button" className="btn preview-view" onClick={onView}>View source</button>
+      <p className="pv-head"><span className="num pv-id">{source.citation.source_id}</span> · <span className="pv-title">{source.citation.title}</span></p>
+      <div className="pv-score"><ScoreLine citation={source.citation} threshold={threshold} /><MatchedLine citation={source.citation} /></div>
+      <Excerpt citation={source.citation} sentences={source.sentences} />
+      <IdentifierNote citation={source.citation} threshold={threshold} />
+      <div className="pv-foot">
+        <button type="button" className="btn" onClick={onView}>Open source <ArrowUpRightIcon size={14} /></button>
+        <span className="pv-esc"><kbd>Esc</kbd> to close</span>
+      </div>
     </div>
   );
 }

@@ -67,8 +67,9 @@ describe("Copilot cards", () => {
     render(<App />);
     await openT101(user);
     const brief = await screen.findByRole("region", { name: "Ticket brief" });
-    expect(await within(brief).findByText("Tool server unavailable")).toBeInTheDocument();
-    expect(within(brief).getByText("Request ID: rid-9")).toBeInTheDocument();
+    expect(await within(brief).findByText("Assistant tools are offline")).toBeInTheDocument();
+    expect(within(brief).getByText("The MCP server isn't reachable. Ticket browsing still works.")).toBeInTheDocument();
+    expect(within(brief).getByText("Request ID rid-9")).toBeInTheDocument();
     expect(await screen.findByText(/Fix: The receipt email was delayed/)).toBeInTheDocument(); // similar card unaffected
     await user.click(within(brief).getByRole("button", { name: "Retry" }));
     expect(await within(brief).findByText(/Error codes mentioned/)).toBeInTheDocument();
@@ -128,7 +129,7 @@ describe("Ask box", () => {
     await openT101(user);
     await user.type(screen.getByLabelText("Ask a question"), "a valid looking question{Enter}");
     expect(await screen.findByText("Request rejected")).toBeInTheDocument();
-    expect(screen.getByText("Request ID: rid-2")).toBeInTheDocument();
+    expect(screen.getByText("Request ID rid-2")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Retry" })).not.toBeInTheDocument(); // the user must fix the input
   });
 });
@@ -187,7 +188,7 @@ describe("answer stack, focus and cards", () => {
     expect(await screen.findByText("Answer ready: answered from 1 article")).toBeInTheDocument(); // and it is announced
 
     await user.type(screen.getByLabelText("Ask a question"), "second question here{Enter}");
-    await screen.findByText("Not enough evidence. Don't guess.", { exact: false });
+    await screen.findByRole("heading", { name: /Not enough evidence/ });
     const older = screen.getByText("Q: “first question here”").closest("summary")!;
     expect(older).toHaveTextContent("Answered · 3 sources");
     expect(older.closest("details")).not.toHaveAttribute("open"); // collapsed until clicked

@@ -56,21 +56,3 @@ export function Excerpt({ citation, sentences }: { citation: Citation; sentences
     </blockquote>
   );
 }
-
-export function SourceDetails({ source, threshold }: { source: SourceRef; threshold: number | null }) {
-  const { citation: c } = source;
-  return (
-    <>
-      <p className="src-head">
-        {source.n !== null && <span className="src-n num" aria-hidden="true">{source.n}</span>}
-        <span className="src-title">{c.title}</span>
-      </p>
-      <p className="src-id num">{c.source_id}</p>
-      <ScoreLine citation={c} threshold={threshold} />
-      <Excerpt citation={c} sentences={source.sentences} />
-      <MatchedLine citation={c} />
-      <IdentifierNote citation={c} threshold={threshold} />
-      <p className="src-usage">{usageLabel(c.usage)}</p>
-    </>
-  );
-}
