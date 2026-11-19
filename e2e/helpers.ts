@@ -56,3 +56,10 @@ export const answerCard = (page: Page) => page.getByRole("article", { name: "Ans
 export function setReviewed(id: string, at: string): void {
   execFileSync(PY, ["-c", `import sqlite3;c=sqlite3.connect(${JSON.stringify(DB)});c.execute("update tickets set reviewed_at=? where id=?",(${JSON.stringify(at)},${JSON.stringify(id)}));c.commit()`]);
 }
+
+import { execSync } from "node:child_process";
+/** The real MCP stdio child of the isolated API (port 8100). */
+export function mcpChildPid(): number {
+  const api = execSync(`pgrep -f "uvicorn app.api.main:app --host 127.0.0.1 --port 8100"`).toString().trim().split("\n")[0];
+  return Number(execSync(`pgrep -P ${api} -f app.mcp_server`).toString().trim().split("\n")[0]);
+}
