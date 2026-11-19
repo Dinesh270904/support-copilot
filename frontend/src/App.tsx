@@ -1,6 +1,8 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ApiError, api } from "./api";
+import { CommandPalette } from "./components/CommandPalette";
 import { CopilotPanel } from "./components/CopilotPanel";
+import { ShortcutSheet } from "./components/ShortcutSheet";
 import { TopBar, type HealthState } from "./components/TopBar";
 import { QueuePane } from "./components/QueuePane";
 import { ReplyComposer } from "./components/ReplyComposer";
@@ -8,8 +10,9 @@ import { TicketPane, type ReviewState } from "./components/TicketPane";
 import { useCopilot } from "./hooks/useCopilot";
 import { useTheme } from "./hooks/useTheme";
 import { untrustedPositions } from "./lib/untrusted";
-import { NO_FILTERS, type QueueFilters, type SortId, type ViewId } from "./lib/views";
+import { NO_FILTERS, VIEWS, visibleTickets, type QueueFilters, type SortId, type ViewId } from "./lib/views";
 import { useHashRoute } from "./hooks/useHashRoute";
+import { useHotkeys } from "./hooks/useHotkeys";
 import type { Meta, TicketDetail as Ticket, TicketListItem } from "./types";
 
 function message(err: unknown): string {
@@ -111,9 +114,41 @@ export default function App() {
   const copilot = useCopilot(ticket?.id ?? null);
   const untrusted = untrustedPositions(copilot.session.brief.response?.warnings ?? [], ticket?.messages ?? []);
 
+  // ---- keyboard: overlays own the keyboard while open; single-letter keys never fire while typing
+  const [palette, setPalette] = useState(false);
+  const [sheet, setSheet] = useState(false);
+  const askRef = useRef<HTMLTextAreaElement>(null);
+  const shown = useMemo(() => visibleTickets(tickets, route.view, filters, sort), [tickets, route.view, filters, sort]);
+  const step = (delta: 1 | -1) => {
+    if (shown.length === 0) return;
+    const at = shown.findIndex((t) => t.id === selectedId);
+    const next = at === -1 ? (delta === 1 ? 0 : shown.length - 1) : Math.min(Math.max(at + delta, 0), shown.length - 1);
+    navigate({ ticketId: shown[next].id });
+  };
+  const focusAsk = () => window.setTimeout(() => askRef.current?.focus(), 0);
+  useHotkeys(
+    {
+      "mod+k": () => setPalette(true),
+      j: () => step(1),
+      k: () => step(-1),
+      "/": focusAsk,
+      s: () => ticket && copilot.retryBrief(),
+      d: () => ticket && copilot.runDraft(),
+      r: () => void markReviewed(),
+      t: toggleTheme,
+      "?": () => setSheet(true),
+      Escape: () => {
+        const el = document.activeElement as HTMLElement | null;
+        if (el && (el.tagName === "TEXTAREA" || el.tagName === "INPUT")) el.blur(); // Esc leaves an input
+      },
+      ...Object.fromEntries(VIEWS.map((v, i) => [String(i + 1), () => navigate({ view: v.id })])),
+    },
+    !palette && !sheet,
+  );
+
   return (
     <div className="app-shell">
-      <TopBar health={health} theme={theme} onToggleTheme={toggleTheme} />
+      <TopBar health={health} theme={theme} onToggleTheme={toggleTheme} onOpenPalette={() => setPalette(true)} onOpenShortcuts={() => setSheet(true)} />
       <div className="panes">
         <nav className="pane pane-queue" aria-label="Ticket queue">
           <QueuePane
@@ -154,9 +189,26 @@ export default function App() {
           />
         </main>
         <aside className="pane pane-copilot" aria-label="Copilot">
-          <CopilotPanel ticket={ticket} meta={meta} copilot={copilot} onOpenTicket={selectTicket} />
+          <CopilotPanel ticket={ticket} meta={meta} copilot={copilot} onOpenTicket={selectTicket} askRef={askRef} />
         </aside>
       </div>
+      <CommandPalette
+        open={palette}
+        onClose={() => setPalette(false)}
+        tickets={shown}
+        hasTicket={ticket !== null}
+        theme={theme}
+        onOpenTicket={selectTicket}
+        onView={(view) => navigate({ view })}
+        onRefreshBrief={() => copilot.retryBrief()}
+        onFocusAsk={focusAsk}
+        onDraft={copilot.runDraft}
+        onMarkReviewed={() => void markReviewed()}
+        onAskKnowledge={(q) => copilot.ask(q, ticket?.category ?? null)}
+        onToggleTheme={toggleTheme}
+        onShortcuts={() => setSheet(true)}
+      />
+      <ShortcutSheet open={sheet} onClose={() => setSheet(false)} />
     </div>
   );
 }

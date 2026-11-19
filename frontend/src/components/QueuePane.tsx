@@ -1,7 +1,7 @@
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { humanize } from "../format";
 import { useDismiss } from "../hooks/useDismiss";
-import { VIEWS, applyFilters, countViews, filterCount, inView, sortTickets, type QueueFilters, type SortId, type ViewId, NO_FILTERS } from "../lib/views";
+import { VIEWS, countViews, filterCount, visibleTickets, type QueueFilters, type SortId, type ViewId, NO_FILTERS } from "../lib/views";
 import type { Meta, Priority, TicketListItem } from "../types";
 import { CategoryDot, CheckCircleIcon, EyeIcon, InboxIcon, LayersIcon, SignalIcon, SlidersIcon, XIcon } from "./Icons";
 import { QueueRow } from "./QueueRow";
@@ -34,7 +34,12 @@ export function QueuePane({ meta, tickets, view, onView, filters, onFilters, sor
 
   // Counts reflect the whole loaded list, so each view shows what is in it regardless of filters.
   const counts = useMemo(() => countViews(tickets), [tickets]);
-  const rows = useMemo(() => sortTickets(applyFilters(tickets.filter((t) => inView(t, view)), filters), sort), [tickets, view, filters, sort]);
+  const rows = useMemo(() => visibleTickets(tickets, view, filters, sort), [tickets, view, filters, sort]);
+
+  // After j/k (or any selection change) keep the selected row on screen without jumping the list.
+  useEffect(() => {
+    document.querySelector<HTMLElement>('.qlist [aria-current="true"]')?.scrollIntoView?.({ block: "nearest" });
+  }, [selectedId]);
   const active = filterCount(filters);
 
   return (

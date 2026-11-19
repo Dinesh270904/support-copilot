@@ -57,9 +57,9 @@ export function ReplyComposer({ draft, text, onText, onDraft, onReset }: Props) 
           <h3 id="composer-heading" className="composer-title">Reply</h3>
         )}
         <span className="composer-hint">{ready ? "Copilot never contacts the customer. Edit, then copy into your support tool." : "Copilot drafts from documented guidance. Nothing is sent."}</span>
-        <button type="button" className="btn" onClick={onDraft} disabled={loading}>
+        <button type="button" className="btn" onClick={onDraft} disabled={loading} title="Draft with Copilot · D">
           {loading ? <span className="spinner" aria-hidden="true" /> : <SparkleIcon size={14} />}
-          {loading ? "Drafting…" : ready ? "Draft again" : "Draft with Copilot"}
+          {loading ? "Drafting…" : ready ? "Draft again" : "Draft with Copilot"} {!loading && <kbd>D</kbd>}
         </button>
       </header>
 

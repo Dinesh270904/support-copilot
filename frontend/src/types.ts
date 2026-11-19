@@ -138,5 +138,5 @@ export interface ApiErrorBody {
 export interface Health {
   status: "ok" | "degraded";
   database: "ok" | "error";
-  mcp: { connected: boolean; tools: string[]; last_error: string | null; index: Record<string, unknown> | null };
+  mcp: { connected: boolean; tools: string[]; last_error: string | null; index: Record<string, unknown> | null; server?: { name: string; protocol_version?: string } };
 }

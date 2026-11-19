@@ -50,3 +50,8 @@ export function sortTickets(tickets: TicketListItem[], sort: SortId): TicketList
   const newest = (a: TicketListItem, b: TicketListItem) => b.updated_at.localeCompare(a.updated_at) || a.id.localeCompare(b.id);
   return [...tickets].sort(sort === "newest" ? newest : (a, b) => RANK[a.priority] - RANK[b.priority] || newest(a, b));
 }
+
+/** What the queue shows: the view, then filters, then sort. Shared so j/k and the palette follow the same order. */
+export function visibleTickets(tickets: TicketListItem[], view: ViewId, filters: QueueFilters, sort: SortId): TicketListItem[] {
+  return sortTickets(applyFilters(tickets.filter((t) => inView(t, view)), filters), sort);
+}

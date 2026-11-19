@@ -61,7 +61,7 @@ export function TicketPane({ ticket, loading, error, review, untrusted, onMarkRe
                 <CheckIcon size={14} /> Reviewed <span className="num">{formatTimestamp(ticket.reviewed_at).replace(/^(\d+ \w+) \d{4}, /, "$1, ")}</span>
               </button>
             ) : (
-              <button type="button" className="btn btn-primary" onClick={onMarkReviewed}><CheckIcon size={14} /> Mark reviewed</button>
+              <button type="button" className="btn btn-primary" onClick={onMarkReviewed} title="Mark reviewed · R"><CheckIcon size={14} /> Mark reviewed <kbd className="kbd-on-accent">R</kbd></button>
             )}
             <p className="review-live" aria-live="polite">{review.confirmed ? `Marked ${ticket.id} reviewed` : ""}</p>
             {review.error && (
