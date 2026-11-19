@@ -2,12 +2,12 @@ import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import App from "../App";
-import { ANSWERED, BRIEF, INSUFFICIENT_BANK, SIMILAR, installApi, run } from "./fixtures";
+import { ANSWERED, BRIEF, INSUFFICIENT_BANK, SIMILAR, installApi, run, queue } from "./fixtures";
 
 afterEach(() => vi.unstubAllGlobals());
 
 async function openT101(user: ReturnType<typeof userEvent.setup>) {
-  await user.click(await screen.findByRole("button", { name: /T-101/ }));
+  await user.click(await queue().findByRole("button", { name: /T-101/ }));
 }
 
 describe("Copilot cards", () => {
@@ -34,9 +34,9 @@ describe("Copilot cards", () => {
     render(<App />);
     await openT101(user);
     await screen.findByText(/Error codes mentioned/);
-    await user.click(screen.getByRole("button", { name: /T-104/ }));
+    await user.click(queue().getByRole("button", { name: /T-104/ }));
     await waitFor(() => expect(api.runs).toHaveLength(4));
-    await user.click(screen.getByRole("button", { name: /T-101/ }));
+    await user.click(queue().getByRole("button", { name: /T-101/ }));
     await screen.findByText(/Error codes mentioned/);
     expect(api.runs).toHaveLength(4); // 2 per ticket opened, none for the revisit
   });
@@ -221,12 +221,12 @@ describe("leaving a ticket", () => {
     render(<App />);
     await openT101(user);
     await waitFor(() => expect(api.runs.filter((r) => r.ticket_id === "T-101")).toHaveLength(2));
-    await user.click(screen.getByRole("button", { name: /T-104/ })); // leave while T-101's runs are still in flight
+    await user.click(queue().getByRole("button", { name: /T-104/ })); // leave while T-101's runs are still in flight
     const t101 = () => api.calls.filter((c) => c.url === "/api/assistant/run" && (c.body as { ticket_id?: string }).ticket_id === "T-101");
     await waitFor(() => expect(t101().every((c) => c.signal?.aborted)).toBe(true)); // once T-104 has loaded
     release();
     await screen.findByRole("region", { name: "Ticket brief" });
-    await user.click(screen.getByRole("button", { name: /T-101/ }));
+    await user.click(queue().getByRole("button", { name: /T-101/ }));
     await waitFor(() => expect(api.runs.filter((r) => r.ticket_id === "T-101").length).toBeGreaterThanOrEqual(4)); // started afresh
   });
 
@@ -239,9 +239,9 @@ describe("leaving a ticket", () => {
     await screen.findByRole("region", { name: "Ticket brief" });
     pane().scrollTop = 120;
     pane().dispatchEvent(new Event("scroll"));
-    await user.click(screen.getByRole("button", { name: /T-104/ }));
+    await user.click(queue().getByRole("button", { name: /T-104/ }));
     await screen.findByRole("region", { name: "Ticket brief" });
-    await user.click(screen.getByRole("button", { name: /T-101/ }));
+    await user.click(queue().getByRole("button", { name: /T-101/ }));
     await waitFor(() => expect(pane().scrollTop).toBe(120));
   });
 });

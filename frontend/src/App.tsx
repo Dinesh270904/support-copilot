@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ApiError, api } from "./api";
 import { CommandPalette } from "./components/CommandPalette";
 import { CopilotPanel } from "./components/CopilotPanel";
+import { EmptyOverview } from "./components/EmptyOverview";
 import { ShortcutSheet } from "./components/ShortcutSheet";
 import { TopBar, type HealthState } from "./components/TopBar";
 import { QueuePane } from "./components/QueuePane";
@@ -69,6 +70,9 @@ export default function App() {
       return;
     }
     const controller = new AbortController();
+    // Switching tickets: drop the previous one at once. Showing T-104 under a URL that says T-108 would let a
+    // keystroke (r, d) act on the wrong ticket.
+    setTicket((t) => (t && t.id === selectedId ? t : null));
     setTicketLoading(true);
     setTicketError(null);
     setReview({ error: null, confirmed: false });
@@ -175,6 +179,7 @@ export default function App() {
             review={review}
             untrusted={untrusted}
             onMarkReviewed={markReviewed}
+            empty={<EmptyOverview tickets={tickets} loading={listLoading} onOpenTicket={selectTicket} onView={(view) => navigate({ view })} />}
             composer={
               ticket && (
                 <ReplyComposer
@@ -189,7 +194,7 @@ export default function App() {
           />
         </main>
         <aside className="pane pane-copilot" aria-label="Copilot">
-          <CopilotPanel ticket={ticket} meta={meta} copilot={copilot} onOpenTicket={selectTicket} askRef={askRef} />
+          <CopilotPanel ticket={ticket} meta={meta} copilot={copilot} onOpenTicket={selectTicket} askRef={askRef} pendingTicket={selectedId !== null && ticket === null && ticketError === null} />
         </aside>
       </div>
       <CommandPalette

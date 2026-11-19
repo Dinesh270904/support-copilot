@@ -6,7 +6,7 @@ import App from "../App";
 import { QueuePane } from "../components/QueuePane";
 import { NO_FILTERS, type QueueFilters, type SortId, type ViewId } from "../lib/views";
 import type { Meta, TicketListItem } from "../types";
-import { BRIEF, SIMILAR, installApi } from "./fixtures";
+import { BRIEF, SIMILAR, installApi, queue } from "./fixtures";
 
 afterEach(() => vi.unstubAllGlobals());
 
@@ -109,7 +109,7 @@ describe("hash routing in the app", () => {
     render(<App />);
     expect(await screen.findByRole("heading", { name: "Checkout timed out with a pending payment" })).toBeInTheDocument();
     expect(api.calls.some((c) => c.url === "/api/tickets/T-101")).toBe(true);
-    await user.click(await screen.findByRole("button", { name: /T-104/ }));
+    await user.click(await queue().findByRole("button", { name: /T-104/ }));
     expect(window.location.hash).toBe("#/ticket/T-104");
     expect(await screen.findByRole("heading", { name: "Locked out after replacing authenticator phone" })).toBeInTheDocument();
   });
@@ -117,7 +117,7 @@ describe("hash routing in the app", () => {
     installApi({ runs: { summarize_ticket: BRIEF, search_resolved_tickets: SIMILAR } });
     const user = userEvent.setup();
     render(<App />);
-    await user.click(await screen.findByRole("button", { name: /High priority/ }));
+    await user.click(await queue().findByRole("button", { name: /High priority/ }));
     expect(window.location.hash).toBe("#/?view=high");
     window.location.hash = "#/ticket/T-999";
     expect(await screen.findByText("Ticket not found: T-999")).toBeInTheDocument();

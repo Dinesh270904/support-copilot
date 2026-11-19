@@ -1,3 +1,4 @@
+import { screen, within } from "@testing-library/react";
 import { vi } from "vitest";
 import type { AssistantRunRequest, AssistantRunResponse, Meta, TicketDetail, TicketListItem } from "../types";
 
@@ -161,3 +162,6 @@ export const LOW_OVERLAP = run({
   answer: "Insufficient evidence: the closest chunks (KB-05#chunk-2) share too few query terms to count as evidence. The knowledge base does not appear to document this, so no guidance is proposed. Escalate or confirm with the owning team before replying.",
   retrieval: { ...RETR, category: null, best_score: 0.22, candidates_considered: 14, results_returned: 0, rejected_low_coverage: ["KB-05#chunk-2"] }, tool_trace: TRACE.slice(1), citations: [],
 });
+
+/** Queries scoped to the queue landmark: "Try these" on the overview also names ticket IDs. */
+export const queue = () => within(screen.getByRole("navigation", { name: "Ticket queue" }));

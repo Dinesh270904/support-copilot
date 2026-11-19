@@ -2,14 +2,14 @@ import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import App from "../App";
-import { BRIEF, DRAFT, SIMILAR, installApi, run } from "./fixtures";
+import { BRIEF, DRAFT, SIMILAR, installApi, run, queue } from "./fixtures";
 
 afterEach(() => vi.unstubAllGlobals());
 const base = { summarize_ticket: BRIEF, search_resolved_tickets: SIMILAR, draft_reply: DRAFT };
 
 async function open(user: ReturnType<typeof userEvent.setup>, id = "T-101") {
   render(<App />);
-  await user.click(await screen.findByRole("button", { name: new RegExp(id) }));
+  await user.click(await queue().findByRole("button", { name: new RegExp(id) }));
   await screen.findByRole("region", { name: "Ticket brief" });
 }
 const selected = () => document.querySelector('.qlist [aria-current="true"] .qrow-id')?.textContent;

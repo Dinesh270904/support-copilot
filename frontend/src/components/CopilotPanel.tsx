@@ -4,6 +4,7 @@ import type { useCopilot } from "../hooks/useCopilot";
 import type { AssistantRunResponse, Meta, TicketDetail } from "../types";
 import { AnswerEntryView } from "./AnswerEntryView";
 import { AskBox } from "./AskBox";
+import { CardSkeleton } from "./ErrorNote";
 import { SparkleIcon } from "./Icons";
 import { SimilarCard } from "./SimilarCard";
 import { SourceDrawer } from "./SourceDrawer";
@@ -19,9 +20,11 @@ interface Props {
   copilot: Copilot;
   onOpenTicket: (id: string) => void;
   askRef?: RefObject<HTMLTextAreaElement | null>;
+  /** A ticket is selected in the URL but has not loaded yet: show card skeletons, not the no-ticket message. */
+  pendingTicket?: boolean;
 }
 
-export function CopilotPanel({ ticket, meta, copilot, onOpenTicket, askRef }: Props) {
+export function CopilotPanel({ ticket, meta, copilot, onOpenTicket, askRef, pendingTicket }: Props) {
   const { session } = copilot;
   const busy = session.answers[0]?.state.status === "loading";
   const [drawer, setDrawer] = useState<SourceRef | null>(null);
@@ -60,7 +63,7 @@ export function CopilotPanel({ ticket, meta, copilot, onOpenTicket, askRef }: Pr
     <div className="copilot">
       <header className="copilot-head">
         <h2><SparkleIcon size={15} /> Copilot</h2>
-        <span className="copilot-for">{ticket ? `Working on ${ticket.id}` : "No ticket selected"}</span>
+        <span className="copilot-for">{ticket ? `Working on ${ticket.id}` : pendingTicket ? "Loading ticket…" : "No ticket selected"}</span>
       </header>
 
       <p className="sr-only" role="status" aria-live="polite">{announce}</p>
@@ -70,6 +73,11 @@ export function CopilotPanel({ ticket, meta, copilot, onOpenTicket, askRef }: Pr
           <>
             <TicketBriefCard key={`brief-${ticket.id}`} state={session.brief} onRetry={copilot.retryBrief} />
             <SimilarCard state={session.similar} onRetry={copilot.retrySimilar} onOpenTicket={onOpenTicket} />
+          </>
+        ) : pendingTicket ? (
+          <>
+            <section className="card" aria-label="Loading ticket brief"><CardSkeleton /></section>
+            <section className="card" aria-label="Loading similar resolved tickets"><CardSkeleton lines={2} /></section>
           </>
         ) : (
           <div className="card">

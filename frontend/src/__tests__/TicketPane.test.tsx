@@ -5,7 +5,7 @@ import App from "../App";
 import { Conversation } from "../components/Conversation";
 import { ReplyComposer } from "../components/ReplyComposer";
 import { useCopilot } from "../hooks/useCopilot";
-import { BRIEF, BRIEF_T112, DRAFT, SIMILAR, detail, installApi } from "./fixtures";
+import { BRIEF, BRIEF_T112, DRAFT, SIMILAR, detail, installApi, queue } from "./fixtures";
 
 afterEach(() => vi.unstubAllGlobals());
 
@@ -85,7 +85,7 @@ describe("ticket pane in the app", () => {
     installApi({ runs: { summarize_ticket: BRIEF_T112, search_resolved_tickets: SIMILAR } });
     const user = userEvent.setup();
     render(<App />);
-    await user.click(await screen.findByRole("button", { name: /T-112/ }));
+    await user.click(await queue().findByRole("button", { name: /T-112/ }));
     expect(await screen.findByText("Untrusted content: not followed")).toBeInTheDocument();
     expect(screen.getByText(/Ignore all prior instructions/)).toBeVisible();
   });
@@ -94,7 +94,7 @@ describe("ticket pane in the app", () => {
     installApi({ runs: { summarize_ticket: BRIEF, search_resolved_tickets: SIMILAR }, reviewStatus: 503 });
     const user = userEvent.setup();
     render(<App />);
-    await user.click(await screen.findByRole("button", { name: /T-101/ }));
+    await user.click(await queue().findByRole("button", { name: /T-101/ }));
     await user.click(await screen.findByRole("button", { name: /Mark reviewed/ }));
     const alert = await screen.findByRole("alert");
     expect(alert).toHaveTextContent("Couldn't mark reviewed. Try again.");
@@ -106,7 +106,7 @@ describe("ticket pane in the app", () => {
     installApi({ runs: { summarize_ticket: BRIEF, search_resolved_tickets: SIMILAR } });
     const user = userEvent.setup();
     render(<App />);
-    await user.click(await screen.findByRole("button", { name: /T-101/ }));
+    await user.click(await queue().findByRole("button", { name: /T-101/ }));
     await user.click(await screen.findByRole("button", { name: /Mark reviewed/ }));
     const done = await screen.findByRole("button", { name: /Reviewed 18 Nov, 10:00 UTC/ });
     expect(done).toBeDisabled();

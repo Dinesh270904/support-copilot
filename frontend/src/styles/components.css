@@ -184,6 +184,10 @@
 .error-note-danger .error-note-title { color: var(--danger-text); }
 .skeleton { display: flex; flex-direction: column; gap: var(--s-2); }
 .skeleton-line { display: block; height: 10px; border-radius: 3px; background: var(--surface-3); }
+@media (prefers-reduced-motion: no-preference) {
+  .skeleton-line { background: linear-gradient(90deg, var(--surface-3) 0%, color-mix(in srgb, var(--surface-3) 55%, var(--text-3)) 50%, var(--surface-3) 100%); background-size: 200% 100%; animation: shimmer 1.2s linear infinite; }
+  @keyframes shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+}
 .skeleton-note { display: inline-flex; align-items: center; gap: 6px; color: var(--text-3); font: var(--t-meta); }
 
 .answer-entry { border: 1px solid var(--border); border-radius: var(--r-card); background: var(--surface-2); }
@@ -363,3 +367,23 @@
 .sheet-table td { padding: 6px var(--s-4); color: var(--text-2); font: var(--t-ui); }
 .sheet-note { margin: 0; padding: 0 var(--s-4); color: var(--text-3); font: var(--t-meta); }
 .sheet .drawer-head { border-bottom: 1px solid var(--border); }
+
+
+/* ---- empty overview ------------------------------------------------------------------ */
+.overview { padding: var(--s-8) var(--s-6); max-width: 640px; }
+.overview-title { font: var(--t-title); letter-spacing: -0.01em; }
+.overview-stats { margin: var(--s-3) 0 0; color: var(--text-2); font: var(--t-ui); }
+.stat { padding: 0; border: 0; background: none; color: var(--text); font: var(--t-ui); cursor: pointer; }
+.stat .num { font-weight: 700; }
+.stat:hover { color: var(--accent-text); text-decoration: underline; }
+.stat-sep { color: var(--text-3); }
+.overview-block { margin-top: var(--s-6); }
+.try-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--s-1); }
+.try-row { width: 100%; display: flex; align-items: center; gap: var(--s-3); padding: var(--s-2) var(--s-3); text-align: left; border: 1px solid var(--border); border-radius: var(--r-control); background: var(--surface-2); color: var(--text); font: var(--t-ui); cursor: pointer; }
+.try-row:hover { background: var(--surface-3); }
+.try-what { flex: 1; min-width: 0; }
+.try-row svg { flex: none; color: var(--text-3); }
+.mini-keys { margin: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s-2) var(--s-4); }
+.mini-keys > div { display: flex; align-items: center; gap: var(--s-2); }
+.mini-keys dt { margin: 0; min-width: 52px; }
+.mini-keys dd { margin: 0; color: var(--text-2); font: var(--t-meta); }
