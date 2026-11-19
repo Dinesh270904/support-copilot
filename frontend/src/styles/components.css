@@ -6,9 +6,14 @@
   padding: 6px 12px; border: 1px solid var(--border); border-radius: var(--r-control);
   background: var(--surface-2); color: var(--text); font-size: var(--fs-meta); font-weight: 500;
 }
+.btn svg, .chip svg, .view-row svg, .icon-btn svg { flex: none; }
+/* Hover: a 150ms ease-out colour change on every interactive surface (reduced motion zeroes it in base.css). */
+.btn, .chip, .view-row, .qrow, .rail-btn, .tab, .link-btn, .notes-toggle, .icon-btn, .searchbtn {
+  transition: background-color 150ms ease-out, border-color 150ms ease-out, color 150ms ease-out, box-shadow 150ms ease-out;
+}
 .btn:hover:not(:disabled) { background: var(--surface-3); }
 .btn:disabled { cursor: not-allowed; opacity: 0.55; }
-.btn-primary { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.btn-primary { background: var(--accent); border-color: var(--accent); color: var(--on-accent); box-shadow: var(--btn-highlight); }
 .btn-primary:hover:not(:disabled) { background: color-mix(in srgb, var(--accent) 88%, var(--text)); }
 .chip {
   display: inline-flex; align-items: center; gap: var(--s-1); cursor: pointer; padding: 3px 10px;
@@ -61,7 +66,7 @@
 .qrow-meta > span:not(.qrow-flags) { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .qrow-flags { margin-left: auto; display: inline-flex; align-items: center; gap: 6px; flex: none; }
 .qrow-status { display: inline-flex; align-items: center; gap: 4px; }
-.qrow-reviewed { color: var(--ok-text); font-weight: 700; }
+.qrow-reviewed { display: inline-flex; color: var(--ok-text); }
 .qrow-skel { display: flex; flex-direction: column; gap: 8px; height: 56px; justify-content: center; padding: 0 12px; }
 .sort { flex: none; }
 
@@ -130,7 +135,7 @@
 .composer-status { color: var(--text-3); font: var(--t-meta); }
 .composer .strip { margin: var(--s-2) 0 0; }
 .agent-notes { margin-top: var(--s-2); }
-.notes-toggle { padding: 0; border: 0; background: none; color: var(--text-2); font: var(--t-meta); cursor: pointer; }
+.notes-toggle { display: inline-flex; align-items: center; gap: var(--s-1); padding: 0; border: 0; background: none; color: var(--text-2); font: var(--t-meta); cursor: pointer; }
 .notes-toggle:hover { color: var(--text); }
 .agent-notes ul { margin: var(--s-2) 0 0; padding: var(--s-3) var(--s-3) var(--s-3) var(--s-6); border: 1px solid var(--border); border-radius: var(--r-card); background: var(--surface-2); display: flex; flex-direction: column; gap: var(--s-1); color: var(--text-2); }
 
@@ -302,7 +307,7 @@
 .source-sub { display: flex; flex-wrap: wrap; align-items: center; gap: var(--s-1) var(--s-3); margin: 2px 0 0 26px; }
 .source-sub .matched-line { margin: 0; }
 .source .id-note { margin-left: 26px; }
-.link-btn { padding: 0; border: 0; background: none; color: var(--accent-text); font: var(--t-meta); cursor: pointer; }
+.link-btn { display: inline-flex; align-items: center; gap: var(--s-1); padding: 0; border: 0; background: none; color: var(--accent-text); font: var(--t-meta); cursor: pointer; }
 .link-btn:hover { text-decoration: underline; }
 
 .timeline-box { display: flex; flex-direction: column; gap: var(--s-1); color: var(--text-2); }
@@ -311,9 +316,9 @@
 .tool-steps { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; align-items: center; gap: var(--s-2); }
 .tool-step { display: inline-flex; align-items: center; gap: 6px; }
 .tool-step code { color: var(--text); }
-.tool-status { color: var(--ok-text); font-weight: 700; }
+.tool-status { display: inline-flex; color: var(--ok-text); }
 .tool-error .tool-status, .tool-error .num { color: var(--danger-text); }
-.tool-arrow { color: var(--text-3); }
+.tool-arrow { display: inline-flex; color: var(--text-3); }
 .retrieval-line { display: flex; flex-wrap: wrap; gap: 0 var(--s-2); margin: 0 0 0 22px; color: var(--text-3); font: var(--t-meta); }
 .retrieval-line span + span::before { content: "·"; margin-right: var(--s-2); }
 .raw-trace { align-self: stretch; margin: var(--s-3) 0; padding: var(--s-3); overflow: auto; border: 1px solid var(--border); border-radius: var(--r-control); background: var(--surface-2); color: var(--text-2); font-size: 12px; line-height: 18px; }
