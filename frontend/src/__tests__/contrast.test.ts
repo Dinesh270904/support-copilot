@@ -63,6 +63,14 @@ function pairs(theme: string, css: string): Pair[] {
     }
   }
   add("on-accent", "accent", rgb(t.accent));
+
+  // The highlighted source row (a focused or hovered citation marker): an accent tint over the surface.
+  for (const sName of SURFACES) {
+    const row = mix(rgb(t.accent), tintA, surfaces[sName]);
+    add("text-2", `active source row on ${sName} (matched-terms line)`, row);
+    add("text", `active source row on ${sName}`, row);
+    add("accent-text", `source ID chip on active row (chip background is --surface-1)`, surfaces["surface-1"]);
+  }
   return out;
 }
 
@@ -81,5 +89,30 @@ describe("text contrast (WCAG AA 4.5:1)", () => {
     if (process.env.CONTRAST_REPORT) console.table(all.map((p) => ({ ...p, ratio: +p.ratio.toFixed(2) })));
     const failing = all.filter((p) => p.ratio < 4.5).map((p) => `${p.theme} ${p.text} on ${p.background}: ${p.ratio.toFixed(2)}`);
     expect(failing).toEqual([]);
+  });
+});
+
+describe("the highlighted source row", () => {
+  const components = readFileSync("src/styles/components.css", "utf8");
+  const dark = tokens(block(":root {\n  color-scheme: dark"));
+  const light = tokens(block(':root[data-theme="light"]'));
+  const a = (css: string) => alpha(css, "tint-a");
+
+  it("needs its overrides: the source ID chip on a doubled accent tint and --text-3 on the tint are below 4.5:1", () => {
+    for (const [css, t] of [[block(":root {\n  color-scheme: dark"), dark], [block(':root[data-theme="light"]'), light]] as const) {
+      const worst = Math.min(
+        ...SURFACES.flatMap((sName) => {
+          const row = mix(rgb(t.accent), a(css), rgb(t[sName]));
+          const doubled = mix(rgb(t.accent), a(css), row);
+          return [ratio(rgb(t["accent-text"]), doubled), ratio(rgb(t["text-3"]), row)];
+        }),
+      );
+      expect(worst).toBeLessThan(4.5);
+    }
+  });
+
+  it("keeps the overrides in the stylesheet", () => {
+    expect(components).toMatch(/\.source-active \.source-id\s*\{[^}]*background:\s*var\(--surface-1\)/);
+    expect(components).toMatch(/\.source-active \.matched-line\s*\{[^}]*color:\s*var\(--text-2\)/);
   });
 });

@@ -222,7 +222,7 @@ def create_server(settings: Settings) -> MCPServer:
 def main() -> None:
     settings = get_settings()
     configure_logging(settings.log_level)
-    log.info("Starting MCP server", extra={"fields": {"transport": "stdio", "db": settings.db_path.name}})
+    log.info("Starting MCP server", extra={"fields": {"transport": "stdio", "db": str(settings.db_path)}})
     create_server(settings).run("stdio")
 
 

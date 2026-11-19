@@ -11,3 +11,7 @@ frontend/dist/
 # Local UI screenshots (2.4 MB in total, over the repo size budget). Only the five curated readme-*.jpg files are tracked.
 docs/screenshots/*
 !docs/screenshots/readme-*.jpg
+
+e2e/node_modules/
+e2e/test-results/
+e2e/playwright-report/

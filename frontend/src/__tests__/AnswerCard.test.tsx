@@ -208,7 +208,9 @@ describe("AnswerCard: insufficient evidence and no results", () => {
     expect(screen.getByText("Closest source says this is out of scope:")).toBeInTheDocument();
     expect(screen.getByText(/“This article does not define bank decline fees, refunds, or tax treatment; escalate questions about those topics for review\.”/)).toBeInTheDocument();
     expect(screen.getByText("Do not state a policy on this topic; escalate it for review.")).toBeInTheDocument(); // the backend's reason
-    expect(screen.getByRole("button", { name: /^Source 1: KB-06#chunk-2/ })).toBeInTheDocument();
+    // UI_HANDOFF section 12 item 3: an insufficient-evidence card has no source markers. (This test used to expect one; that was wrong.)
+    expect(screen.queryByRole("button", { name: /^Source \d/ })).not.toBeInTheDocument();
+    expect(screen.getByText("KB-06#chunk-2")).toBeInTheDocument();
     expect(screen.getByText(/Similarity is high because the article names this topic/)).toBeInTheDocument();
     expect(screen.getByRole("meter").querySelector(".meter-fill")).toHaveClass("meter-neutral"); // never drawn as a pass
     await user.click(screen.getByRole("button", { name: "Draft a holding reply" }));

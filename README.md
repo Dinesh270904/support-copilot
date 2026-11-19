@@ -254,6 +254,25 @@ make test            # backend: 152 pytest tests (+1 expected failure); frontend
 | Eval harness: label validity, metric arithmetic, holdout not read by default | `test_eval.py` |
 | UI: answer card and citations (markers, preview, drawer, meter, timeline), insufficient / no-results / error states, queue views and routing, composer, Copilot cards and Ask box, keyboard and palette, responsive layouts, theme | `frontend/src/__tests__/*.test.ts(x)` |
 
+## End-to-end tests
+
+`e2e/` holds a Playwright suite that drives the real app in a real browser: the real FastAPI process, the real MCP stdio subprocess, a real
+SQLite file and real keyboard and mouse input. There are no mocks and no stubbed network. It uses its own ports (API 8100, UI 5180, plus
+8101 for a missing database and 5181 and 5182 for the "database not initialized" and "API down" states) and a temporary database that is
+seeded fresh before every run, so it never touches `backend/data/support.db`.
+
+```bash
+cd e2e && npm install && npx playwright install chromium   # one-time dev download (about 100 MB); the app itself does not need it
+make e2e                                                   # or: cd e2e && npm run e2e   (add -- --headed to watch it)
+```
+
+After the one-time browser download the tests run offline. The suite is 82 tests in 12 files and takes about 1.9 minutes. It covers the queue
+and filters, ticket detail, the automatic brief and similar cards, answers and citations (including a sentence-by-sentence grounding check),
+drafts and the real clipboard, review and idempotency, the full keyboard path with real key presses, MCP and database failure states (it kills
+the real MCP child), responsive layouts at 1440, 1100, 820 and 390, axe accessibility scans in both themes, and every case in
+`expected_cases.json` through the UI. Tests that record a known, not-yet-fixed finding use `test.fail()`, so the run turns red if one starts
+passing; they are named `BUG-n`.
+
 ## Known limitations
 
 - Retrieval is lexical: no synonyms or paraphrase. Paraphrase is the weakest kind in the evaluation (holdout P@1 0.500). A larger corpus would need a re-tuned threshold and probably BM25 or hybrid ranking.
