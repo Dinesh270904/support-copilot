@@ -145,13 +145,13 @@ test("text typed immediately after / goes into the Ask box, not into shortcuts",
   expect((await apiTicket(request, "T-101")).reviewed_at).toBeNull();
 });
 
-// BUG-3 candidate (awaiting approval): j/k read the selected ticket from React state, which updates on the hashchange
-// event, so two quick presses can both step from the same ticket and the second one is lost.
-test("BUG-3: two quick j presses advance two tickets", async ({ page }) => {
-  test.fail();
-  await page.goto("/#/ticket/T-101");
-  await expect(page.getByRole("heading", { level: 2, name: /Checkout timed out/ })).toBeVisible();
-  await page.keyboard.press("j");
-  await page.keyboard.press("j");
-  await expect(page.getByRole("heading", { level: 2, name: /Checkout shows timeout but no debit/ })).toBeVisible(); // T-102, two steps from T-101
+test("five quick j presses then five quick k presses land on exactly the right tickets", async ({ page }) => {
+  await page.goto("/#/ticket/T-112"); // first in the queue: T-112, T-104, T-101, T-108, T-102, T-106, T-110
+  await expect(page.getByRole("heading", { level: 2, name: /Request to export records to an SFTP server/ })).toBeVisible();
+  for (let i = 0; i < 5; i++) await page.keyboard.press("j"); // no delay between presses
+  await expect(page).toHaveURL(/#\/ticket\/T-106/);
+  await expect(page.getByRole("heading", { level: 2, name: /Plan change invoice has an unfamiliar proration line/ })).toBeVisible();
+  for (let i = 0; i < 5; i++) await page.keyboard.press("k");
+  await expect(page).toHaveURL(/#\/ticket\/T-112/);
+  await expect(page.getByRole("heading", { level: 2, name: /Request to export records to an SFTP server/ })).toBeVisible();
 });

@@ -16,7 +16,7 @@ import { useCopilot } from "./hooks/useCopilot";
 import { useTheme } from "./hooks/useTheme";
 import { untrustedPositions } from "./lib/untrusted";
 import { NO_FILTERS, VIEWS, countViews, visibleTickets, type QueueFilters, type SortId, type ViewId } from "./lib/views";
-import { useHashRoute } from "./hooks/useHashRoute";
+import { parseHash, useHashRoute } from "./hooks/useHashRoute";
 import { useHotkeys } from "./hooks/useHotkeys";
 import { useLayoutMode } from "./hooks/useLayoutMode";
 import type { Meta, TicketDetail as Ticket, TicketListItem } from "./types";
@@ -166,7 +166,9 @@ export default function App() {
   const shown = useMemo(() => visibleTickets(tickets, route.view, filters, sort), [tickets, route.view, filters, sort]);
   const step = (delta: 1 | -1) => {
     if (shown.length === 0) return;
-    const at = shown.findIndex((t) => t.id === selectedId);
+    // Read the ticket from the URL at keypress time: state updates on hashchange, so quick presses must not step from a stale one.
+    const current = parseHash(window.location.hash).ticketId;
+    const at = shown.findIndex((t) => t.id === current);
     const next = at === -1 ? (delta === 1 ? 0 : shown.length - 1) : Math.min(Math.max(at + delta, 0), shown.length - 1);
     navigate({ ticketId: shown[next].id });
   };
