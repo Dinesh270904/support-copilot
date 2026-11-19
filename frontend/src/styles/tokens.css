@@ -18,6 +18,7 @@
   --ok: #3fb68b; --warn: #e2a33b; --danger: #e5645b; --draft: #a78bfa;
   --ok-text: #3fb68b; --warn-text: #e2a33b; --danger-text: #e66c63; --accent-text: #808ae7; --draft-text: #a78bfa;
   --tint-a: 12%; --evidence-a: 14%;
+  --btn-highlight: inset 0 1px 0 rgb(255 255 255 / 14%); /* 1px inner highlight on primary buttons, dark theme only */
   --popover-shadow: 0 8px 24px -6px rgb(0 0 0 / 45%); --scrim: rgb(0 0 0 / 40%);
   --cat-checkout: #4FB3BF;
   --cat-account-access: #9B8AFB;
@@ -38,6 +39,7 @@
     --ok: #18775a; --warn: #8f5a00; --danger: #c2362c; --draft: #6d4fd1;
     --ok-text: #166f54; --warn-text: #895600; --danger-text: #b23228; --accent-text: #4a56c8; --draft-text: #684bc7;
     --tint-a: 10%; --evidence-a: 12%;
+    --btn-highlight: none;
     --popover-shadow: 0 8px 24px -8px rgb(16 24 40 / 18%); --scrim: rgb(16 24 40 / 25%);
     --cat-checkout: #137A86;
     --cat-account-access: #5B45D6;
@@ -58,6 +60,7 @@
   --ok: #18775a; --warn: #8f5a00; --danger: #c2362c; --draft: #6d4fd1;
   --ok-text: #166f54; --warn-text: #895600; --danger-text: #b23228; --accent-text: #4a56c8; --draft-text: #684bc7;
   --tint-a: 10%; --evidence-a: 12%;
+  --btn-highlight: none;
   --popover-shadow: 0 8px 24px -8px rgb(16 24 40 / 18%); --scrim: rgb(16 24 40 / 25%);
   --cat-checkout: #137A86;
   --cat-account-access: #5B45D6;

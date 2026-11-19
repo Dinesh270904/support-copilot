@@ -1,7 +1,7 @@
 import { Fragment } from "react";
 import { formatDay, formatTime, formatTimestamp, humanize } from "../format";
 import type { Message } from "../types";
-import { ShieldIcon } from "./Icons";
+import { HeadsetIcon, ShieldIcon, UserIcon } from "./Icons";
 
 interface Props {
   messages: Message[];
@@ -25,7 +25,7 @@ export function Conversation({ messages, untrusted }: Props) {
           <Fragment key={m.position}>
             {showDay && <li className="convo-day"><span>{day}</span></li>}
             <li className={`msg msg-${m.author}${flagged ? " msg-untrusted" : ""}`}>
-              <span className="avatar" aria-hidden="true">{m.author === "agent" ? "A" : "C"}</span>
+              <span className="avatar" aria-hidden="true">{m.author === "agent" ? <HeadsetIcon size={16} /> : <UserIcon size={16} />}</span>
               <div className="bubble" title={flagged ? UNTRUSTED_TIP : undefined}>
                 {flagged && <p className="untrusted-label"><ShieldIcon size={13} /> Untrusted content: not followed</p>}
                 <div className="msg-head">

@@ -183,7 +183,13 @@ Client config: `backend/mcp.json` (`command` is `.venv/bin/python`, resolved aga
 
 ## Frontend
 
-React 19 + TypeScript + Vite with plain CSS custom properties: no UI framework and no extra runtime dependencies. The design source is
+React 19 + TypeScript + Vite with plain CSS custom properties: no UI framework. The one icon dependency is
+[`@phosphor-icons/react`](https://github.com/phosphor-icons/react) (MIT). It ships the icons as bundled SVG components, so nothing is fetched
+at runtime and the UI still works offline. Phosphor was chosen over a hand-drawn set for consistent, professionally drawn geometry
+and multiple weights (regular, fill for active states, duotone for the brand mark). Only `src/components/Icons.tsx` imports it.
+Cost, measured with `vite build`: the JS bundle went from 298.5 KB (91.3 KB gzip) to 387.0 KB (111.6 KB gzip), +20.3 KB gzip,
+because each icon carries all six weights; CSS is 56.4 KB (11.1 KB gzip). Lighthouse on the production build: desktop performance,
+accessibility and best practices 1.00; mobile performance 0.98 (v1.0 icons: 0.99), accessibility and best practices 1.00. The design source is
 `docs/UI_HANDOFF.md` (a longer addendum was also supplied during the build; it is not stored in this repo). Five screenshots are committed below; the full set
 (about 2.4 MB) was kept out of the repo to stay within its size budget.
 

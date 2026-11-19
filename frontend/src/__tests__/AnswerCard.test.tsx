@@ -163,7 +163,7 @@ describe("AnswerCard: answered", () => {
     const failed = run({ ...ANSWERED, tool_trace: [{ tool: "search_knowledge", arguments: {}, status: "error", duration_ms: 4, error: "tool_error" }] });
     render(<Card result={failed} />);
     const how = screen.getByRole("region", { name: "How this was answered" });
-    expect(within(how).getByLabelText("failed: tool_error")).toHaveTextContent("✕");
+    expect(within(how).getByLabelText("failed: tool_error").querySelector("svg")).not.toBeNull(); // a cross icon, with the error as its label
     expect(within(how).getByText("tool_error")).toBeInTheDocument();
   });
 });

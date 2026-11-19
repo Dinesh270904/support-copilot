@@ -40,11 +40,11 @@ export function TopBar({ health, theme, onToggleTheme, onOpenPalette, onOpenShor
   return (
     <header className="topbar">
       <div className="brand">
-        <span className="brand-mark" aria-hidden="true"><SparkleIcon size={14} /></span>
+        <span className="brand-mark" aria-hidden="true"><SparkleIcon size={16} weight="duotone" /></span>
         <span className="brand-name">Support Copilot</span>
       </div>
       <button type="button" className="searchbtn" onClick={onOpenPalette} title="Search tickets or run an action · ⌘K">
-        <SearchIcon size={16} />
+        <SearchIcon size={18} />
         <span className="searchbtn-text">Search tickets or run an action…</span>
         <kbd>⌘K</kbd>
       </button>
@@ -72,7 +72,7 @@ export function TopBar({ health, theme, onToggleTheme, onOpenPalette, onOpenShor
           </div>
         )}
       </div>
-      <button type="button" className="icon-btn kbd-help" onClick={onOpenShortcuts} aria-label="Keyboard shortcuts" title="Keyboard shortcuts · ?"><KeyboardIcon size={16} /></button>
+      <button type="button" className="icon-btn kbd-help" onClick={onOpenShortcuts} aria-label="Keyboard shortcuts" title="Keyboard shortcuts · ?"><KeyboardIcon size={18} /></button>
       <ThemeToggle theme={theme} onToggle={onToggleTheme} />
     </header>
   );

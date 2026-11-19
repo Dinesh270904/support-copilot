@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { RunState } from "../hooks/useCopilot";
 import { CardSkeleton, ErrorNote } from "./ErrorNote";
-import { CopyIcon, PenIcon, ResetIcon, SparkleIcon } from "./Icons";
+import { CaretDownIcon, CaretUpIcon, CopyIcon, PenIcon, ResetIcon, SparkleIcon } from "./Icons";
 
 interface Props {
   draft: RunState;
@@ -81,7 +81,7 @@ export function ReplyComposer({ draft, text, onText, onDraft, onReset }: Props) 
           {notes.length > 0 && (
             <div className="agent-notes">
               <button type="button" className="notes-toggle" aria-expanded={notesOpen} onClick={() => setNotesOpen((o) => !o)}>
-                Notes for the agent <span className="num">({notes.length})</span> <span aria-hidden="true">{notesOpen ? "▴" : "▾"}</span>
+                Notes for the agent <span className="num">({notes.length})</span> {notesOpen ? <CaretUpIcon size={12} /> : <CaretDownIcon size={12} />}
               </button>
               {notesOpen && <ul>{notes.map((n, i) => <li key={i}>{n}</li>)}</ul>}
             </div>

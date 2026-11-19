@@ -5,7 +5,7 @@ import { useFocusTrap } from "../hooks/useFocusTrap";
 import { rank } from "../lib/fuzzy";
 import { VIEWS, type ViewId } from "../lib/views";
 import type { AssistantRunResponse, TicketListItem } from "../types";
-import { BookIcon, CheckCircleIcon, CheckIcon, EyeIcon, FileTextIcon, HashIcon, InboxIcon, KeyboardIcon, LayersIcon, MoonIcon, PenIcon, PriorityIcon, SearchIcon, SignalIcon, SunIcon } from "./Icons";
+import { BookIcon, CheckCircleIcon, EyeIcon, FileTextIcon, HashIcon, InboxIcon, KeyboardIcon, LayersIcon, MoonIcon, PenIcon, PriorityIcon, SearchIcon, SignalIcon, SunIcon } from "./Icons";
 
 type Group = "Tickets" | "Actions" | "Views" | "Preferences";
 interface Item {
@@ -74,7 +74,7 @@ export function CommandPalette(p: Props) {
       ...(p.hasTicket ? [
         { id: "a-summarize", group: "Actions" as const, label: "Summarize current ticket", text: "summarize current ticket brief refresh", hint: "S", icon: <FileTextIcon size={16} />, run: done(p.onRefreshBrief) },
         { id: "a-draft", group: "Actions" as const, label: "Draft reply for current ticket", text: "draft reply for current ticket", hint: "D", icon: <PenIcon size={16} />, run: done(p.onDraft) },
-        { id: "a-review", group: "Actions" as const, label: "Mark current ticket reviewed", text: "mark current ticket reviewed", hint: "R", icon: <CheckIcon size={16} />, run: done(p.onMarkReviewed) },
+        { id: "a-review", group: "Actions" as const, label: "Mark current ticket reviewed", text: "mark current ticket reviewed", hint: "R", icon: <CheckCircleIcon size={16} />, run: done(p.onMarkReviewed) },
       ] : []),
       { id: "a-ask", group: "Actions", label: "Ask knowledge…", text: "ask knowledge question", hint: "/", icon: <BookIcon size={16} />, run: done(p.onFocusAsk) },
       { id: "a-count", group: "Actions", label: "Count open high-priority tickets", text: "count open high priority tickets", icon: <HashIcon size={16} />, run: () => runCount("open high-priority tickets") },
