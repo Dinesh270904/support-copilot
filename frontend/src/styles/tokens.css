@@ -1,4 +1,4 @@
-/* Design tokens (docs/UI_HANDOFF.md section 4 and the detailed UI spec, sections 1-2 (an addendum to docs/UI_HANDOFF.md that is not stored in this repo)). Dark is the default; light applies via
+/* Design tokens (docs/UI_HANDOFF.md section 4). Dark is the default; light applies via
    [data-theme="light"], or via prefers-color-scheme when the user has not chosen a theme.
 
    Contrast (WCAG AA, 4.5:1 for text) was MEASURED, not assumed, on every surface a token is used on. Where a literal value

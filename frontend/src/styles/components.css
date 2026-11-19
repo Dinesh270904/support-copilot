@@ -395,7 +395,7 @@
 .mini-keys dd { margin: 0; color: var(--text-2); font: var(--t-meta); }
 
 
-/* ---- responsive (the detailed UI spec, section 14) --------------------------------- */
+/* ---- responsive (docs/UI_HANDOFF.md section 8) --------------------------------- */
 [hidden] { display: none !important; }
 .drawer-left { justify-content: flex-start; }
 .drawer-left .drawer { width: min(320px, 100%); border-left: 0; border-right: 1px solid var(--border); }
