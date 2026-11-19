@@ -25,8 +25,7 @@ test.describe("draft", () => {
     await expect(draft).toHaveValue(/Hello,/);
     const original = await draft.inputValue();
     await expect(page.getByRole("button", { name: "Reset", exact: true })).toBeDisabled();
-    await draft.click();
-    await page.keyboard.press("Control+End");
+    await draft.evaluate((el: HTMLTextAreaElement) => { el.focus(); el.setSelectionRange(el.value.length, el.value.length); }); // caret at the end (Ctrl+End is not the same on every OS)
     await page.keyboard.type(" Edited by the agent.");
     const edited = await draft.inputValue();
     expect(edited).toBe(`${original} Edited by the agent.`);
@@ -42,8 +41,7 @@ test.describe("draft", () => {
     await page.getByRole("button", { name: /Draft with Copilot/ }).click();
     const draft = page.getByRole("textbox", { name: "Reply draft" });
     await expect(draft).toHaveValue(/Hello,/);
-    await draft.click();
-    await page.keyboard.press("Control+End");
+    await draft.evaluate((el: HTMLTextAreaElement) => { el.focus(); el.setSelectionRange(el.value.length, el.value.length); }); // caret at the end (Ctrl+End is not the same on every OS)
     await page.keyboard.type(" Clipboard check 123.");
     const edited = await draft.inputValue();
     await page.getByRole("button", { name: "Copy draft" }).click();
