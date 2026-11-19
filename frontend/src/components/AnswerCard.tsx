@@ -86,7 +86,7 @@ export function AnswerCard({ result, onViewSource, onViewTrace, onOpenTicket, on
   return (
     <article className={`acard acard-${state}`} aria-label="Answer">
       <header className="acard-head">
-        <h4 className="acard-state" ref={headingRef} tabIndex={-1}><StateIcon size={15} /> <span>{headline}</span>{scope && !isCount && <>{" "}<span className="acard-scope">· {scope}</span></>}</h4>
+        <h4 className="acard-state" ref={headingRef} tabIndex={-1}><StateIcon size={15} /><span className="acard-title">{headline}{scope && !isCount && <>{" "}<span className="acard-scope">· {scope}</span></>}</span></h4>
         <span className="acard-ms num">{Math.round(result.duration_ms)} ms</span>
         <CardMenu label="Answer options" items={[{ label: "View raw trace", onSelect: (opener) => onViewTrace(result, opener) }]} />
       </header>

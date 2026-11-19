@@ -2,7 +2,11 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ApiError, api } from "./api";
 import { CommandPalette } from "./components/CommandPalette";
 import { CopilotPanel } from "./components/CopilotPanel";
+import { Drawer } from "./components/Drawer";
 import { EmptyOverview } from "./components/EmptyOverview";
+import { SparkleIcon } from "./components/Icons";
+import { QueueRail } from "./components/QueueRail";
+import { TabBar, type Tab } from "./components/TabBar";
 import { ShortcutSheet } from "./components/ShortcutSheet";
 import { TopBar, type HealthState } from "./components/TopBar";
 import { QueuePane } from "./components/QueuePane";
@@ -11,9 +15,10 @@ import { TicketPane, type ReviewState } from "./components/TicketPane";
 import { useCopilot } from "./hooks/useCopilot";
 import { useTheme } from "./hooks/useTheme";
 import { untrustedPositions } from "./lib/untrusted";
-import { NO_FILTERS, VIEWS, visibleTickets, type QueueFilters, type SortId, type ViewId } from "./lib/views";
+import { NO_FILTERS, VIEWS, countViews, visibleTickets, type QueueFilters, type SortId, type ViewId } from "./lib/views";
 import { useHashRoute } from "./hooks/useHashRoute";
 import { useHotkeys } from "./hooks/useHotkeys";
+import { useLayoutMode } from "./hooks/useLayoutMode";
 import type { Meta, TicketDetail as Ticket, TicketListItem } from "./types";
 
 function message(err: unknown): string {
@@ -26,6 +31,11 @@ export default function App() {
   const [health, setHealth] = useState<HealthState>(null);
   // The URL hash is the source of truth for the selected ticket and view (#/ticket/T-101?view=high).
   const { route, navigate } = useHashRoute();
+  const layout = useLayoutMode();
+  const drawerMode = layout === "drawer" || layout === "rail"; // the Copilot is a drawer
+  const [copilotOpen, setCopilotOpen] = useState(false);
+  const [queueOpen, setQueueOpen] = useState(false); // the queue list's left drawer (rail layout)
+  const [tab, setTab] = useState<Tab>(route.ticketId ? "ticket" : "queue"); // phone layout
   const [filters, setFilters] = useState<QueueFilters>(NO_FILTERS);
   const [sort, setSort] = useState<SortId>("priority");
   const [tickets, setTickets] = useState<TicketListItem[]>([]);
@@ -92,7 +102,11 @@ export default function App() {
     return () => controller.abort();
   }, [selectedId]);
 
-  const selectTicket = useCallback((id: string) => navigate({ ticketId: id }), [navigate]);
+  const selectTicket = useCallback((id: string) => {
+    navigate({ ticketId: id });
+    setQueueOpen(false);
+    setTab("ticket");
+  }, [navigate]);
 
   // Optimistic: the UI flips to "Reviewed" at once and rolls back, with an inline error, if the request fails.
   const markReviewed = useCallback(async () => {
@@ -116,6 +130,21 @@ export default function App() {
   }, [ticket]);
 
   const copilot = useCopilot(ticket?.id ?? null);
+
+  // A new answer brings the Copilot into view when it is a drawer or its own tab. Only genuinely new answers (ids only
+  // grow), so switching to a ticket that already has history does not pop it open.
+  const newestAnswer = copilot.session.answers[0]?.id;
+  const maxSeen = useRef(0);
+  useEffect(() => {
+    if (newestAnswer === undefined || newestAnswer <= maxSeen.current) return;
+    maxSeen.current = newestAnswer;
+    if (drawerMode) setCopilotOpen(true);
+    else if (layout === "phone") setTab("copilot");
+  }, [newestAnswer, drawerMode, layout]);
+  // Back/forward or a reload with a ticket in the URL: show the ticket on the phone layout.
+  useEffect(() => {
+    if (layout === "phone" && selectedId) setTab((t) => (t === "queue" ? "ticket" : t));
+  }, [selectedId, layout]);
   const untrusted = untrustedPositions(copilot.session.brief.response?.warnings ?? [], ticket?.messages ?? []);
 
   // ---- keyboard: overlays own the keyboard while open; single-letter keys never fire while typing
@@ -129,7 +158,11 @@ export default function App() {
     const next = at === -1 ? (delta === 1 ? 0 : shown.length - 1) : Math.min(Math.max(at + delta, 0), shown.length - 1);
     navigate({ ticketId: shown[next].id });
   };
-  const focusAsk = () => window.setTimeout(() => askRef.current?.focus(), 0);
+  const focusAsk = () => {
+    if (drawerMode) setCopilotOpen(true); // the Ask box lives in the drawer
+    if (layout === "phone") setTab("copilot");
+    window.setTimeout(() => askRef.current?.focus(), 60);
+  };
   useHotkeys(
     {
       "mod+k": () => setPalette(true),
@@ -141,37 +174,61 @@ export default function App() {
       r: () => void markReviewed(),
       t: toggleTheme,
       "?": () => setSheet(true),
+      c: () => {
+        if (drawerMode) setCopilotOpen((o) => !o);
+        else if (layout === "phone") setTab((t) => (t === "copilot" ? "ticket" : "copilot"));
+      },
       Escape: () => {
         const el = document.activeElement as HTMLElement | null;
         if (el && (el.tagName === "TEXTAREA" || el.tagName === "INPUT")) el.blur(); // Esc leaves an input
+        else if (drawerMode && copilotOpen) setCopilotOpen(false);
       },
       ...Object.fromEntries(VIEWS.map((v, i) => [String(i + 1), () => navigate({ view: v.id })])),
     },
     !palette && !sheet,
   );
 
+  const queuePane = (
+    <QueuePane
+      meta={meta}
+      tickets={tickets}
+      view={route.view}
+      onView={(view: ViewId) => navigate({ view })}
+      filters={filters}
+      onFilters={setFilters}
+      sort={sort}
+      onSort={setSort}
+      loading={listLoading}
+      error={listError}
+      onRetry={() => setReloadKey((k) => k + 1)}
+      selectedId={selectedId}
+      onSelect={selectTicket}
+    />
+  );
+
   return (
-    <div className="app-shell">
-      <TopBar health={health} theme={theme} onToggleTheme={toggleTheme} onOpenPalette={() => setPalette(true)} onOpenShortcuts={() => setSheet(true)} />
+    <div className="app-shell" data-layout={layout}>
+      <TopBar
+        health={health}
+        theme={theme}
+        onToggleTheme={toggleTheme}
+        onOpenPalette={() => setPalette(true)}
+        onOpenShortcuts={() => setSheet(true)}
+        copilotToggle={drawerMode ? (
+          <button type="button" className="copilot-btn" aria-expanded={copilotOpen} aria-controls="copilot-pane" onClick={() => setCopilotOpen((o) => !o)} title="Toggle Copilot · C">
+            <SparkleIcon size={14} /> Copilot <kbd>C</kbd>
+          </button>
+        ) : undefined}
+      />
       <div className="panes">
-        <nav className="pane pane-queue" aria-label="Ticket queue">
-          <QueuePane
-            meta={meta}
-            tickets={tickets}
-            view={route.view}
-            onView={(view: ViewId) => navigate({ view })}
-            filters={filters}
-            onFilters={setFilters}
-            sort={sort}
-            onSort={setSort}
-            loading={listLoading}
-            error={listError}
-            onRetry={() => setReloadKey((k) => k + 1)}
-            selectedId={selectedId}
-            onSelect={selectTicket}
-          />
+        <nav className="pane pane-queue" aria-label="Ticket queue" hidden={layout === "phone" && tab !== "queue"}>
+          {layout === "rail" ? (
+            <QueueRail view={route.view} counts={countViews(tickets)} onView={(view) => { navigate({ view }); setQueueOpen(true); }} />
+          ) : (
+            queuePane
+          )}
         </nav>
-        <main className="pane pane-ticket">
+        <main className="pane pane-ticket" hidden={layout === "phone" && tab !== "ticket"}>
           <TicketPane
             ticket={ticket}
             loading={ticketLoading}
@@ -193,10 +250,22 @@ export default function App() {
             }
           />
         </main>
-        <aside className="pane pane-copilot" aria-label="Copilot">
+        <aside
+          id="copilot-pane"
+          className={`pane pane-copilot${copilotOpen ? " open" : ""}`}
+          aria-label="Copilot"
+          hidden={layout === "phone" && tab !== "copilot"}
+          inert={drawerMode && !copilotOpen}
+        >
           <CopilotPanel ticket={ticket} meta={meta} copilot={copilot} onOpenTicket={selectTicket} askRef={askRef} pendingTicket={selectedId !== null && ticket === null && ticketError === null} />
         </aside>
       </div>
+      {layout === "rail" && (
+        <Drawer open={queueOpen} side="left" title="Queue" label="Ticket queue list" onClose={() => setQueueOpen(false)}>
+          {queuePane}
+        </Drawer>
+      )}
+      {layout === "phone" && <TabBar tab={tab} onTab={setTab} />}
       <CommandPalette
         open={palette}
         onClose={() => setPalette(false)}

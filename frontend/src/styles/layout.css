@@ -20,14 +20,34 @@
 .pane { min-width: 0; min-height: 0; overflow-y: auto; background: var(--surface-1); }
 .pane + .pane { border-left: 1px solid var(--border); }
 
-/* Interim narrow-screen fallback (stacked). Step 9 of the handoff replaces this with the real
-   responsive behaviour (Copilot drawer at 1024-1279px, bottom tab bar under 768px). */
-@media (max-width: 900px) {
-  .app-shell { height: auto; min-height: 100%; }
-  .panes { display: block; }
-  .pane { overflow: visible; border-left: none; border-top: 1px solid var(--border); }
+/* Layouts (set from JS as data-layout so the structure and the React state agree). */
+.app-shell[data-layout="wide"] .panes { grid-template-columns: 280px minmax(0, 1fr) 400px; }
+@media (min-width: 1440px) { .app-shell[data-layout="wide"] .panes { grid-template-columns: 300px minmax(0, 1fr) 440px; } }
+
+/* 1024-1279: the Copilot is a 420px drawer on the right. It is not modal; closed, it is inert and off-screen. */
+.app-shell[data-layout="drawer"] .panes, .app-shell[data-layout="rail"] .panes { grid-template-columns: 280px minmax(0, 1fr); }
+.app-shell[data-layout="rail"] .panes { grid-template-columns: 56px minmax(0, 1fr); }
+.app-shell[data-layout="drawer"] .pane-copilot, .app-shell[data-layout="rail"] .pane-copilot {
+  position: fixed; top: 48px; right: 0; bottom: 0; z-index: 25; width: min(420px, 100vw); border-left: 1px solid var(--border);
+  box-shadow: var(--popover-shadow); transform: translateX(100%); visibility: hidden;
+}
+.app-shell[data-layout="drawer"] .pane-copilot.open, .app-shell[data-layout="rail"] .pane-copilot.open { transform: none; visibility: visible; }
+@media (prefers-reduced-motion: no-preference) {
+  .app-shell[data-layout="drawer"] .pane-copilot, .app-shell[data-layout="rail"] .pane-copilot { transition: transform 180ms ease-out, visibility 180ms; }
 }
 
+/* <768: one pane at a time with a bottom tab bar; the composer stays above it. */
+.app-shell[data-layout="phone"] { padding-bottom: calc(56px + env(safe-area-inset-bottom, 0px)); }
+.app-shell[data-layout="phone"] .panes { display: block; overflow: hidden; }
+.app-shell[data-layout="phone"] .pane { height: 100%; border: 0; }
+.app-shell[data-layout="phone"] .pane-ticket, .app-shell[data-layout="phone"] .pane-copilot { display: flex; }
+
+/* Top bar on narrower screens: the search field shrinks to an icon, then the help button goes. */
+@media (max-width: 1023px) {
+  .searchbtn { flex: none; width: 36px; padding: 0; justify-content: center; margin-left: auto; }
+  .searchbtn-text, .searchbtn kbd { display: none; }
+}
+@media (max-width: 767px) { .kbd-help { display: none; } }
 @media (max-width: 480px) {
   .hide-narrow { display: none; }
   .topbar { padding: 0 var(--s-3); gap: var(--s-2); }

@@ -225,12 +225,14 @@
 .acard-insufficient_evidence .acard-head { background: var(--warn-bg); border-bottom-color: var(--warn-border); }
 .acard-no_results .acard-head { background: var(--surface-3); }
 .acard-main { display: flex; flex-direction: column; gap: var(--s-3); padding: var(--s-3) var(--s-4) var(--s-4); }
-.acard-state { display: inline-flex; align-items: center; gap: 6px; margin: 0; font: var(--t-ui); font-weight: 600; }
+.acard-state { display: flex; flex: 1; min-width: 0; align-items: flex-start; gap: 6px; margin: 0; font: var(--t-ui); font-weight: 600; }
+.acard-state > svg { flex: none; margin-top: 1px; }
+.acard-title { min-width: 0; }
 .acard-answered .acard-state { color: var(--ok-text); }
 .acard-insufficient_evidence .acard-state { color: var(--warn-text); }
 .acard-no_results .acard-state { color: var(--text-2); }
 .acard-scope { font-weight: 500; }
-.acard-ms { margin-left: auto; color: var(--text-2); font: var(--t-meta); }
+.acard-ms { flex: none; margin-left: auto; white-space: nowrap; color: var(--text-2); font: var(--t-meta); }
 .acard-head .card-menu { margin-left: 0; }
 .acard-q { margin: 0; color: var(--text-3); font: var(--t-meta); }
 .acard-q span { font-weight: 700; margin-right: 4px; }
@@ -387,3 +389,36 @@
 .mini-keys > div { display: flex; align-items: center; gap: var(--s-2); }
 .mini-keys dt { margin: 0; min-width: 52px; }
 .mini-keys dd { margin: 0; color: var(--text-2); font: var(--t-meta); }
+
+
+/* ---- responsive (docs/UI_SPEC_DETAIL.md section 14) --------------------------------- */
+[hidden] { display: none !important; }
+.drawer-left { justify-content: flex-start; }
+.drawer-left .drawer { width: min(320px, 100%); border-left: 0; border-right: 1px solid var(--border); }
+.drawer-left .drawer-body { padding: 0; align-items: stretch; }
+.copilot-btn { height: 32px; display: inline-flex; align-items: center; gap: 6px; padding: 0 10px; border: 1px solid var(--border); border-radius: var(--r-control); background: var(--surface-2); color: var(--text); font: var(--t-ui); cursor: pointer; }
+.copilot-btn:hover { background: var(--surface-3); }
+.copilot-btn[aria-expanded="true"] { border-color: var(--accent); }
+
+.rail { list-style: none; margin: 0; padding: var(--s-2) 0; display: flex; flex-direction: column; align-items: center; gap: var(--s-1); }
+.rail-btn { position: relative; width: 40px; height: 40px; display: grid; place-items: center; border: 0; border-radius: var(--r-control); background: transparent; color: var(--text-2); cursor: pointer; }
+.rail-btn:hover { background: var(--surface-2); color: var(--text); }
+.rail-btn[aria-pressed="true"] { background: var(--surface-3); color: var(--text); }
+.rail-btn[aria-pressed="true"]::before { content: ""; position: absolute; left: -8px; top: 8px; bottom: 8px; width: 2px; border-radius: 2px; background: var(--accent); }
+.rail-count { position: absolute; right: 2px; top: 2px; min-width: 16px; padding: 0 3px; border-radius: var(--r-pill); background: var(--surface-3); color: var(--text-2); font: var(--t-micro); text-align: center; }
+
+.tabbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 30; height: calc(56px + env(safe-area-inset-bottom, 0px)); padding-bottom: env(safe-area-inset-bottom, 0px); display: flex; border-top: 1px solid var(--border); background: var(--surface-1); }
+.tab { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; border: 0; background: transparent; color: var(--text-2); font: var(--t-meta); cursor: pointer; }
+.tab[aria-current="page"] { color: var(--accent-text); box-shadow: inset 0 2px 0 var(--accent); }
+
+/* Phone: the ticket header stacks (title full width, review button beneath) and scrolls away instead of sticking. */
+@media (max-width: 767px) {
+  .ticket-scroll { padding: 0 var(--s-4) var(--s-5); }
+  .ticket-head { position: static; flex-direction: column; align-items: stretch; gap: var(--s-3); margin: 0 calc(-1 * var(--s-4)); padding: var(--s-3) var(--s-4); }
+  .review-box { align-items: flex-start; }
+  .composer { padding: var(--s-3) var(--s-4); max-height: 50%; }
+  .composer-hint { display: none; }
+  .msg { max-width: 92%; }
+  .overview { padding: var(--s-5) var(--s-4); }
+  .mini-keys { grid-template-columns: 1fr; }
+}

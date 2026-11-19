@@ -72,7 +72,7 @@ export function TopBar({ health, theme, onToggleTheme, onOpenPalette, onOpenShor
           </div>
         )}
       </div>
-      <button type="button" className="icon-btn" onClick={onOpenShortcuts} aria-label="Keyboard shortcuts" title="Keyboard shortcuts · ?"><KeyboardIcon size={16} /></button>
+      <button type="button" className="icon-btn kbd-help" onClick={onOpenShortcuts} aria-label="Keyboard shortcuts" title="Keyboard shortcuts · ?"><KeyboardIcon size={16} /></button>
       <ThemeToggle theme={theme} onToggle={onToggleTheme} />
     </header>
   );
