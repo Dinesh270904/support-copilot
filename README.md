@@ -11,7 +11,7 @@ React/TS (Vite) ──HTTP──▶ FastAPI ──MCP client (stdio)──▶ MC
 
 ## Quick start
 
-Prerequisites: Python 3.11, 3.12 or 3.13 (tested on all three), Node 20+ (tested on Node 22).
+Prerequisites: Python 3.11, 3.12 or 3.13 (the backend suite and the tuning evaluation were run on all three on macOS by Claude Code, and on 3.13 earlier on Linux in a separate session), Node 20+ (tested on Node 22).
 
 **Use the project virtualenv, `backend/.venv`.** A bare `python3` is often a different interpreter without the
 dependencies (it was 3.14 on the author's machine). The Makefile and `scripts/dev.sh` use `backend/.venv/bin/python`
@@ -230,7 +230,7 @@ The seed (`app/seed.py`) validates the JSON pack with Pydantic, which rejects du
 ## Tests
 
 ```bash
-make test            # backend: 108 pytest tests (+1 expected failure); frontend: 88 Vitest tests (10 files)
+make test            # backend: 152 pytest tests (+1 expected failure); frontend: 94 Vitest tests (11 files)
 ```
 
 | Requirement | Tests |
@@ -258,6 +258,12 @@ make test            # backend: 108 pytest tests (+1 expected failure); frontend
 - Drafts quote internal wording verbatim ("first check the order…"); the agent is told to rephrase before sending. Draft steps come from the top-ranked article only; agent-facing prohibitions and sentences from other articles are listed under "Notes for the agent", not in the customer text.
 - FTS rows are rebuilt by the seed. Tickets are immutable in this prototype apart from `reviewed_at`.
 - There is no authentication or role model. It is a single local agent.
+- The API accepts request bodies of any size and rejects oversized fields only after parsing them (a 2 MB body gets a 422, not a 413); there is no size-limit middleware.
+- `assistant_runs` is never pruned, and opening a ticket writes two rows (the automatic brief and similar-tickets runs). Fine for a local demo; a real deployment would add retention.
+- SQLite uses the default rollback journal, not WAL. A 5-second stress with one writer and four readers (12,196 writes, 1,305 reads) produced no lock errors, so WAL was not added.
+- A few routes are `async def` yet make short synchronous database calls (`/health`, the category check before an assistant run); they block the event loop for microseconds, which does not matter at this scale.
+- The route handler attaches the run record to the raised exception (`exc.run_record`) so failed runs are still logged; it works but is a shortcut a larger codebase would replace with a result type.
+- The TF-IDF index is built once when the MCP server starts. Changing articles needs a re-seed and a restart of the API (which restarts the MCP server).
 - Instruction-like text detection is a regex that *flags* content for the agent. Safety comes from the structural guarantees: the fixed tool plan, typed tools and read-only SQLite access.
 
 **With a local LLM or a larger corpus**, I would keep this pipeline as the retrieval and citation layer and the fallback:
@@ -273,7 +279,7 @@ The original implementation was produced with AI assistance (Claude, per the ori
 
 Each item was executed, not assumed, and its output was reported back to the owner.
 
-- Created a Python 3.11 virtualenv, ran the backend and frontend suites, and re-ran the backend suite on 3.12 (all passing). Python 3.13 was verified separately by the owner. `python3` on the development machine is 3.14 and does not have the dependencies installed, which is why the docs insist on `backend/.venv`.
+- Created a Python 3.11 virtualenv, ran the backend and frontend suites, and re-ran the backend suite and the tuning evaluation on 3.12 and 3.13 on the same machine (all passing, identical metrics); 3.13 was also run earlier on Linux in a separate session. `python3` on the development machine is 3.14 and does not have the dependencies installed, which is why the docs insist on `backend/.venv`.
 - Ran all ten cases in `backend/data/seed/expected_cases.json` through the live API with curl and compared the answer state, tool calls and citation IDs with the expectations.
 - Implemented the redesigned UI test-first from two written specifications supplied by the owner, one step at a time, checking each step in a browser at real viewport widths (an iframe of the exact width, because resizing the window did not change the viewport) in both themes. Screenshots exposed defects that tests had not, such as the previous ticket staying on screen under a new ticket's URL while it loaded.
 - Exercised the MCP server three ways: an official Python SDK client, the Inspector CLI (including `--config mcp.json`), and the Inspector web UI v2.13, driven through browser automation (connect, list tools, call `search_knowledge`, read `support://tickets/T-104`). The README steps were corrected to match what the UI actually shows. The owner has not run this walkthrough personally in this record.
