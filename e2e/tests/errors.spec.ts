@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import fs from "node:fs";
 import { DB, UI_NO_API, UI_NO_DB } from "../env";
-import { answerCard, ask, mcpChildPid, openTicket } from "../helpers";
+import { answerCard, ask, mcpChildPid, openTicket, shot } from "../helpers";
 
 test("MCP child killed: browsing still works, the next action reconnects, the pill recovers", async ({ page }) => {
   const pid = mcpChildPid();
@@ -9,6 +9,7 @@ test("MCP child killed: browsing still works, the next action reconnects, the pi
 
   await page.goto("/"); // a fresh health check pings the dead child
   await expect(page.getByRole("button", { name: /Assistant offline/ })).toBeVisible();
+  await shot(page, "state-offline-pill");
   await page.getByRole("button", { name: /Assistant offline/ }).click();
   await expect(page.getByRole("dialog", { name: "Assistant tool status" })).toContainText("Assistant offline");
   await page.keyboard.press("Escape");
@@ -39,6 +40,7 @@ test("MCP unrecoverable: the 503 card has Retry and a request ID, and Retry reco
     await expect(card).toContainText("Ticket browsing still works");
     await expect(card).toContainText(/Request ID [0-9a-f]{12}/);
     await expect(card.getByRole("button", { name: "Retry" })).toBeVisible();
+    await shot(page, "state-mcp-503-card");
     // the queue (already loaded) is still on screen
     await expect(page.getByRole("region", { name: "Queue" })).toBeVisible();
     await page.getByRole("button", { name: /Assistant offline/ }).waitFor({ timeout: 20_000 });
@@ -54,6 +56,7 @@ test("database not initialized: a clear 'Run make setup first' state, no crash",
   await page.goto(UI_NO_DB);
   await expect(page.getByRole("alert").filter({ hasText: "Database not initialized. Run make setup first." }).first()).toBeVisible();
   await expect(page.getByText("Support Copilot").first()).toBeVisible(); // the shell is still there, not a blank page
+  await shot(page, "state-database-not-initialized");
   await expect(page.getByRole("button", { name: /Assistant offline/ })).toBeVisible();
 });
 
@@ -69,5 +72,6 @@ test("API down: the shell stays, an error with Retry is shown, and the pill says
 test("API down says 'API unreachable' (a proxy 502 is not shown as 'Request failed')", async ({ page }) => {
   await page.goto(UI_NO_API);
   await expect(page.getByRole("alert").first()).toContainText(/API unreachable/);
+  await shot(page, "state-api-unreachable");
   await expect(page.getByRole("alert").first()).not.toContainText("Request failed");
 });

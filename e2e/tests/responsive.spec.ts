@@ -1,5 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import { answerCard, ask, isRun } from "../helpers";
+import { answerCard, ask, isRun, shot } from "../helpers";
 
 async function noHorizontalScroll(page: Page) {
   const { scroll, client } = await page.evaluate(() => ({ scroll: document.documentElement.scrollWidth, client: document.documentElement.clientWidth }));
@@ -9,6 +9,7 @@ async function noHorizontalScroll(page: Page) {
 const sizes = [
   { name: "1440 wide", width: 1440, height: 900 },
   { name: "1100 drawer", width: 1100, height: 900 },
+  { name: "1024 drawer (smallest)", width: 1024, height: 768 },
   { name: "820 rail", width: 820, height: 900 },
   { name: "390 phone", width: 390, height: 844 },
 ];
@@ -51,6 +52,7 @@ for (const s of sizes) {
       await expect(copilot).toBeHidden();
     }
     await noHorizontalScroll(page);
+    await shot(page, `layout-${s.width}`);
   });
 }
 

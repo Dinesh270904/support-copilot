@@ -63,3 +63,8 @@ export function mcpChildPid(): number {
   const api = execSync(`pgrep -f "uvicorn app.api.main:app --host 127.0.0.1 --port 8100"`).toString().trim().split("\n")[0];
   return Number(execSync(`pgrep -P ${api} -f app.mcp_server`).toString().trim().split("\n")[0]);
 }
+
+/** Save a screenshot of the current state under e2e/screenshots (gitignored). */
+export async function shot(page: Page, name: string) {
+  await page.screenshot({ path: `screenshots/${name}.png` });
+}
