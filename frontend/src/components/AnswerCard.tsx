@@ -108,7 +108,6 @@ export function AnswerCard({ result, onViewSource, onViewTrace, onOpenTicket, on
                 <blockquote className="gap-quote">{gapMatch ? `“${gapMatch[1]}”` : gapCitation.excerpt}</blockquote>
                 <p className="gap-ref">
                   <span className="num">{gapCitation.source_id}</span>
-                  {marker(gapCitation.source_id, "gap")}
                   {gapCitation.score !== null && <ScoreLine citation={gapCitation} threshold={min} />}
                 </p>
                 {gapCitation.score !== null && min !== null && gapCitation.score >= min && (

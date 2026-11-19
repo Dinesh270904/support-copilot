@@ -122,19 +122,11 @@ test("not enough evidence: bank fee in Billing shows the out-of-scope quote and 
   await expect(card).toContainText("Closest source says this is out of scope:");
   await expect(card.getByRole("blockquote")).toContainText("does not define bank decline fees");
   await expect(card).toContainText("KB-06#chunk-2");
+  await expect(card.getByRole("button", { name: /^Source \d/ })).toHaveCount(0); // no source markers on an insufficient-evidence card
   await expect(card.getByRole("button", { name: "Draft a holding reply" })).toBeVisible();
   const wider = page.waitForRequest((r) => isRun(r) && r.postDataJSON().query === "Does the product reimburse a bank decline fee?");
   await card.getByRole("button", { name: "Search all categories" }).click();
   expect((await wider).postDataJSON().category).toBeUndefined(); // re-run without the scope
-});
-
-// BUG-1 (awaiting approval): docs/UI_HANDOFF.md section 12 item 3 says an insufficient-evidence card has "no source markers",
-// but the coverage-gap block renders a numbered marker next to KB-06#chunk-2. Expected to fail until that is decided;
-// test.fail() makes the run go red if it ever starts passing, so the marker is removed from this test then.
-test("BUG-1: the not-enough-evidence card shows no source markers", async ({ page }) => {
-  test.fail();
-  await ask(page, "Does the product reimburse a bank decline fee?", "Billing");
-  await expect(answerCard(page).getByRole("button", { name: /^Source \d/ })).toHaveCount(0);
 });
 
 test("no candidates: SFTP in Integrations says no articles exist in that scope", async ({ page }) => {
