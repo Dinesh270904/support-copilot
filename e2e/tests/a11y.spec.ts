@@ -111,6 +111,20 @@ for (const scheme of schemes) {
       await scan(page, "untrusted message");
       await checkKeyboard(page, "T-112 ticket");
     });
+
+    // axe supports target-size since 4.8 but disables it by default; enable it and run
+    // the whole WCAG 2.2 AA tag set, so touch-target coverage stays enforced.
+    test("ticket page passes axe WCAG 2.2 AA, including target-size", async ({ page }) => {
+      await page.emulateMedia({ colorScheme: scheme });
+      await openTicket(page, "T-101", /Checkout timed out/);
+      const r = await new AxeBuilder({ page })
+        .options({ runOnly: { type: "tag", values: ["wcag22aa"] }, rules: { "target-size": { enabled: true } } })
+        .analyze();
+      expect(
+        r.violations.map((v) => `${v.id} (${v.impact}): ${v.nodes.slice(0, 3).map((n) => n.target.join(" ")).join(" | ")}`),
+        "wcag22aa + target-size violations on the ticket page",
+      ).toEqual([]);
+    });
   });
 }
 
