@@ -181,6 +181,31 @@ Client config: `backend/mcp.json` (`command` is `.venv/bin/python`, resolved aga
 | `POST /api/assistant/run` | Unsupported action, extra fields, oversized query or missing requirements return 422; MCP down 503; MCP timeout 504 |
 | `GET /api/assistant/runs` | Recent run metadata (audit view) |
 
+## Frontend
+
+React 19 + TypeScript + Vite with plain CSS custom properties: no UI framework and no extra runtime dependencies. The design source is
+`docs/UI_HANDOFF.md` (plus a longer addendum that was supplied in the same way); screenshots of every state are in `docs/screenshots/`
+(kept out of git if they exceed 2 MB).
+
+- **Layout**: queue, ticket and Copilot panes. The queue has five views (Open, High priority, Needs review, Resolved, All) with counts
+  computed from the loaded list, filters, and a sort. The ticket pane has the conversation (instruction-like messages are flagged and left
+  unfollowed) and a reply composer that always says "Draft, not sent". The Copilot pane has the brief, similar resolved tickets and an Ask box.
+- **The answer card** is the point of the UI: the answer as prose, each sentence tied to a numbered source; hovering or focusing a marker previews
+  the exact excerpt with the quoted sentence highlighted; a score meter shows each similarity against the minimum; the tool calls that produced
+  the answer are shown by default and the raw trace is one click away. Insufficient evidence leads with a plain sentence and keeps the backend's
+  specific reason beneath it.
+- **Auto-runs**: opening a ticket starts two assistant runs in parallel (`summarize_ticket` and `search_resolved_tickets`), so each ticket opened
+  adds **2 entries to `GET /api/assistant/runs`**. Leaving a ticket aborts its in-flight runs; reopening one already loaded does not re-run them.
+- **URL state**: `#/ticket/T-101?view=high` (no router dependency). Reload and back/forward restore the ticket and view; an unknown ID shows
+  "Ticket not found".
+- **Keyboard**: Cmd/Ctrl+K opens a command palette (tickets, actions, views, `count ...` inline); `j`/`k` move through the queue, `/` focuses
+  Ask, `s` refreshes the brief, `d` drafts, `r` marks reviewed, `t` toggles the theme, `1`-`5` switch view, `?` lists everything. Single-letter
+  keys are ignored while typing.
+- **Responsive**: three panes from 1280px; the Copilot becomes a drawer from 1279px down (toggle `c`, opens when an answer arrives); the queue
+  becomes an icon rail below 1024px; below 768px there is one pane with a bottom tab bar.
+- **Themes and contrast**: dark by default, light on request, remembered per browser. Text contrast was measured, not assumed; where a literal
+  token failed WCAG AA the text colour was adjusted (see the comment at the top of `frontend/src/styles/tokens.css`), never a tint's alpha.
+
 ## Data model
 
 The schema is created by Alembic migration `0001_initial`:
@@ -196,7 +221,7 @@ The seed (`app/seed.py`) validates the JSON pack with Pydantic, which rejects du
 ## Tests
 
 ```bash
-make test            # backend: 104 pytest tests (+1 expected failure); frontend: 5 Vitest tests
+make test            # backend: 108 pytest tests (+1 expected failure); frontend: 86 Vitest tests (10 files)
 ```
 
 | Requirement | Tests |
@@ -212,7 +237,7 @@ make test            # backend: 104 pytest tests (+1 expected failure); frontend
 | Similar-ticket relevance floor | `test_similar_tickets.py` |
 | MCP reliability: real `SIGKILL` (idle and mid-request), 504 mapping, env passthrough, typed errors, honest `/health` | `test_gateway_reliability.py` |
 | Eval harness: label validity, metric arithmetic, holdout not read by default | `test_eval.py` |
-| UI: evidence, insufficient evidence, validation and outage states, draft label, edit and copy | `frontend/src/__tests__/AssistantPanel.test.tsx` |
+| UI: answer card and citations (markers, preview, drawer, meter, timeline), insufficient / no-results / error states, queue views and routing, composer, Copilot cards and Ask box, keyboard and palette, responsive layouts, theme | `frontend/src/__tests__/*.test.ts(x)` |
 
 ## Known limitations
 
@@ -241,6 +266,7 @@ Each item was executed, not assumed, and its output was reported back to the own
 
 - Created a Python 3.11 virtualenv, ran the backend and frontend suites, and re-ran the backend suite on 3.12 (all passing). Python 3.13 was verified separately by the owner. `python3` on the development machine is 3.14 and does not have the dependencies installed, which is why the docs insist on `backend/.venv`.
 - Ran all ten cases in `backend/data/seed/expected_cases.json` through the live API with curl and compared the answer state, tool calls and citation IDs with the expectations.
+- Implemented the redesigned UI test-first from two written specifications supplied by the owner, one step at a time, checking each step in a browser at real viewport widths (an iframe of the exact width, because resizing the window did not change the viewport) in both themes. Screenshots exposed defects that tests had not, such as the previous ticket staying on screen under a new ticket's URL while it loaded.
 - Exercised the MCP server three ways: an official Python SDK client, the Inspector CLI (including `--config mcp.json`), and the Inspector web UI v2.13, driven through browser automation (connect, list tools, call `search_knowledge`, read `support://tickets/T-104`). The README steps were corrected to match what the UI actually shows. The owner has not run this walkthrough personally in this record.
 - Killed the MCP child process for real (`SIGKILL`, and `SIGSTOP` then `SIGKILL` during an in-flight call) to test reconnect behaviour, then turned those experiments into tests.
 - Built the offline evaluation harness (`app/eval.py`) and the tuning set, and ran the sweeps and comparisons whose numbers appear above.
