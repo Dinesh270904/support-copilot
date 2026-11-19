@@ -184,8 +184,8 @@ Client config: `backend/mcp.json` (`command` is `.venv/bin/python`, resolved aga
 ## Frontend
 
 React 19 + TypeScript + Vite with plain CSS custom properties: no UI framework and no extra runtime dependencies. The design source is
-`docs/UI_HANDOFF.md` (plus a longer addendum that was supplied in the same way); screenshots of every state are in `docs/screenshots/`
-(kept out of git if they exceed 2 MB).
+`docs/UI_HANDOFF.md` (plus a longer addendum that was supplied in the same way). Screenshots of the states and layouts were taken
+during the build and live in `docs/screenshots/` on the author's machine; they are not committed (2.4 MB, over the repo's size budget).
 
 - **Layout**: queue, ticket and Copilot panes. The queue has five views (Open, High priority, Needs review, Resolved, All) with counts
   computed from the loaded list, filters, and a sort. The ticket pane has the conversation (instruction-like messages are flagged and left

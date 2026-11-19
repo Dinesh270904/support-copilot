@@ -7,3 +7,6 @@ frontend/node_modules/
 frontend/dist/
 *.tsbuildinfo
 .venv/
+
+# Local UI screenshots (2.4 MB, over the repo size budget); regenerate by following docs/UI_HANDOFF.md section 12
+docs/screenshots/
