@@ -51,8 +51,24 @@ log = logging.getLogger("support_copilot.api")
 TicketIdPath = Annotated[str, Path(pattern=TICKET_ID_PATTERN, description="Ticket ID, e.g. T-104")]
 
 
+class AppError(Exception):
+    def __init__(self, status_code: int, code: str, message: str):
+        super().__init__(message)
+        self.status_code, self.code, self.message = status_code, code, message
+
+
+DB_NOT_INITIALIZED = "Database not initialized. Run make setup first."
+
+
+def _sessions_of(app: FastAPI) -> sessionmaker[Session]:
+    """The API never creates the database file: without one, data routes answer 503 instead."""
+    if app.state.sessions is None:
+        raise AppError(503, "database_not_initialized", DB_NOT_INITIALIZED)
+    return app.state.sessions
+
+
 def get_session(request: Request) -> Iterator[Session]:
-    session: Session = request.app.state.sessions()
+    session: Session = _sessions_of(request.app)()
     try:
         yield session
     finally:
@@ -60,12 +76,6 @@ def get_session(request: Request) -> Iterator[Session]:
 
 
 SessionDep = Annotated[Session, Depends(get_session)]
-
-
-class AppError(Exception):
-    def __init__(self, status_code: int, code: str, message: str):
-        super().__init__(message)
-        self.status_code, self.code, self.message = status_code, code, message
 
 
 def mcp_server_params(settings: Settings) -> StdioServerParameters:
@@ -93,10 +103,9 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
-        if not settings.db_path.exists():
-            log.error("Database missing; run `python -m app.seed` first", extra={"fields": {"db": str(settings.db_path)}})
-        engine = make_engine(settings.db_path)
-        app.state.sessions = make_sessionmaker(engine)
+        db_ready = settings.db_path.exists()
+        engine = make_engine(settings.db_path) if db_ready else None  # make_engine would create the file
+        app.state.sessions = make_sessionmaker(engine) if engine else None
         gateway = McpGateway(
             mcp_server_params(settings),
             startup_timeout_s=settings.mcp_startup_timeout_s,
@@ -104,20 +113,25 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         )
         app.state.gateway = gateway
         app.state.index_status = None
-        try:
-            await gateway.start()
-            app.state.index_status = json.loads(await gateway.read_resource("support://index/status"))
-        except (McpUnavailableError, McpToolError):
-            log.error("MCP server failed to start; assistant actions will return 503 until it recovers")
+        if not db_ready:
+            log.error("Database missing; run `make setup` first", extra={"fields": {"db": settings.db_path.name}})
+            gateway.last_error = DB_NOT_INITIALIZED
+        else:
+            try:
+                await gateway.start()
+                app.state.index_status = json.loads(await gateway.read_resource("support://index/status"))
+            except (McpUnavailableError, McpToolError):
+                log.error("MCP server failed to start; assistant actions will return 503 until it recovers")
 
         def known_categories() -> list[str]:
-            with app.state.sessions() as session:
+            with _sessions_of(app)() as session:
                 return repository.known_categories(session)
 
         app.state.assistant = AssistantService(gateway, settings, known_categories)
         yield
         await gateway.stop()
-        engine.dispose()
+        if engine:
+            engine.dispose()
 
     app = FastAPI(
         title="Support Copilot API",
@@ -180,9 +194,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     # ---------------------------------------------------------------- routes
     @app.get("/health", response_model=HealthResponse, tags=["system"])
-    async def health(request: Request, session: SessionDep) -> HealthResponse:
+    async def health(request: Request) -> HealthResponse:
         try:
-            session.execute(text("SELECT 1 FROM tickets LIMIT 1"))
+            with _sessions_of(request.app)() as session:
+                session.execute(text("SELECT 1 FROM tickets LIMIT 1"))
             db_ok = True
         except Exception:  # noqa: BLE001
             db_ok = False
@@ -258,7 +273,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         },
     )
     async def run_assistant(body: AssistantRunRequest, request: Request) -> AssistantRunResponse:
-        sessions: sessionmaker[Session] = request.app.state.sessions
+        sessions = _sessions_of(request.app)
         if body.category is not None:
             with sessions() as session:
                 _check_category(session, body.category)
@@ -288,6 +303,12 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         return [AssistantRunRecord.model_validate(r, from_attributes=True) for r in rows]
 
     return app
+
+
+def _sessionmaker_from(app: FastAPI) -> sessionmaker[Session]:
+    if app.state.sessions is None:
+        raise AppError(503, "database_not_initialized", DB_NOT_INITIALIZED)
+    return app.state.sessions
 
 
 def _save_run(sessions: sessionmaker[Session], record: dict) -> None:

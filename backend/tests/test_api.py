@@ -257,3 +257,24 @@ def test_knowledge_citations_carry_matched_terms_and_identifiers(client):
     assert citation["matched_identifiers"] == ["PAYMENT_TIMEOUT"]
     assert citation["matched_terms"], "the UI shows which words matched for every source"
     assert all(t == t.lower() for t in citation["matched_terms"])  # words, not stems or ids
+
+
+def test_missing_database_is_never_created_and_routes_say_so(tmp_path):
+    from app.api.main import create_app
+
+    db = tmp_path / "absent.db"
+    with TestClient(create_app(settings_for(db))) as c:
+        health = c.get("/health").json()
+        assert health["status"] == "degraded" and health["database"] == "error"
+        assert health["mcp"]["last_error"] == "Database not initialized. Run make setup first."
+        for resp in (
+            c.get("/api/tickets"),
+            c.get("/api/tickets/T-101"),
+            c.get("/api/meta"),
+            c.patch("/api/tickets/T-101/reviewed"),
+            c.post("/api/assistant/run", json={"action": "count_tickets"}),
+        ):
+            assert resp.status_code == 503, resp.text
+            error = resp.json()["error"]
+            assert error["code"] == "database_not_initialized" and "make setup" in error["message"]
+    assert not db.exists()  # nothing created the file
