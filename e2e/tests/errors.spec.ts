@@ -66,10 +66,8 @@ test("API down: the shell stays, an error with Retry is shown, and the pill says
   await expect(page.getByRole("button", { name: /Assistant offline/ })).toBeVisible();
 });
 
-// BUG-4 (awaiting approval): with the API down behind the dev proxy the queue says "Request failed (502)". The 'API unreachable'
-// wording only exists for a failed fetch (kind "network"), which a proxy never produces. Expected to fail until mapped.
-test("BUG-4: API down says 'API unreachable'", async ({ page }) => {
-  test.fail();
+test("API down says 'API unreachable' (a proxy 502 is not shown as 'Request failed')", async ({ page }) => {
   await page.goto(UI_NO_API);
   await expect(page.getByRole("alert").first()).toContainText(/API unreachable/);
+  await expect(page.getByRole("alert").first()).not.toContainText("Request failed");
 });

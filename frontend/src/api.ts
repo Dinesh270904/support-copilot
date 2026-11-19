@@ -30,6 +30,8 @@ function kindFor(status: number): ErrorKind {
   return "server";
 }
 
+const UNREACHABLE = "API unreachable. Check that the backend is running.";
+
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   let response: Response;
   try {
@@ -38,7 +40,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
       headers: { "Content-Type": "application/json", ...(init?.headers ?? {}) },
     });
   } catch {
-    throw new ApiError("Cannot reach the Support Copilot API. Is the backend running?", 0, "network_error", "network");
+    throw new ApiError(UNREACHABLE, 0, "network_error", "network");
   }
   if (!response.ok) {
     let body: ApiErrorBody | undefined;
@@ -47,6 +49,8 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     } catch {
       /* non-JSON error (e.g. proxy failure) */
     }
+    // A 502 or 504 with no JSON error body comes from a proxy in front of a dead backend: say "unreachable", not "Request failed (502)".
+    if (!body && (response.status === 502 || response.status === 504)) throw new ApiError(UNREACHABLE, response.status, "network_error", "network");
     const message = body?.error?.message ?? `Request failed (${response.status})`;
     throw new ApiError(message, response.status, body?.error?.code ?? "http_error", kindFor(response.status), body?.error?.request_id);
   }
