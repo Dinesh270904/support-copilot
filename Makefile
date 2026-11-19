@@ -1,7 +1,7 @@
 # Prefer the project venv (backend/.venv) when it exists; override with `make PYTHON=...`.
 PYTHON ?= $(if $(wildcard backend/.venv/bin/python),$(CURDIR)/backend/.venv/bin/python,python3)
 
-.PHONY: install setup dev api ui test test-backend test-frontend typecheck mcp-inspect clean
+.PHONY: install setup dev api ui test test-backend test-frontend typecheck mcp-inspect e2e clean
 
 install:            ## Install backend + frontend dependencies
 	cd backend && $(PYTHON) -m pip install -r requirements-dev.txt
@@ -35,3 +35,6 @@ mcp-inspect:        ## Open the MCP Inspector against the stdio server
 
 clean:
 	rm -f backend/data/support.db
+
+e2e:                ## Real end-to-end tests (Playwright): real API, MCP subprocess, SQLite and browser
+	cd e2e && npm run e2e

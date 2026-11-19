@@ -1,0 +1,17 @@
+{
+  "name": "support-copilot-e2e",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Real end-to-end tests: real API, real MCP subprocess, real SQLite, real browser. Dev-only.",
+  "scripts": {
+    "e2e": "playwright test",
+    "e2e:headed": "playwright test --headed",
+    "install:browser": "playwright install chromium"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "^4.10.0",
+    "@playwright/test": "^1.49.0",
+    "@types/node": "^22.0.0",
+    "typescript": "^5.6.0"
+  }
+}
