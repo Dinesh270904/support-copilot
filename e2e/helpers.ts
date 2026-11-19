@@ -36,3 +36,18 @@ export async function openFilters(page: Page) {
   await page.getByRole("button", { name: /^Filters/ }).click();
   return page.getByRole("dialog", { name: "Filters" });
 }
+
+import type { Request } from "@playwright/test";
+export const isRun = (r: Request) => r.url().endsWith("/api/assistant/run") && r.method() === "POST";
+
+/** Type a question into the Ask box and submit it with the real Enter key; resolves with the API response body. */
+export async function ask(page: Page, text: string, scope?: string) {
+  if (scope) await page.getByRole("combobox", { name: /Scope/ }).selectOption({ label: scope });
+  await page.getByRole("textbox", { name: "Ask a question" }).fill(text);
+  const response = page.waitForResponse((r) => isRun(r.request()) && r.request().postDataJSON().action === "search_knowledge");
+  await page.keyboard.press("Enter");
+  return (await response).json();
+}
+
+/** The newest answer card. */
+export const answerCard = (page: Page) => page.getByRole("article", { name: "Answer" }).first();
