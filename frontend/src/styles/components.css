@@ -299,6 +299,9 @@
 .sources { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--s-2); }
 .source { padding: var(--s-1) var(--s-2); margin: 0 calc(-1 * var(--s-2)); border-radius: var(--r-control); }
 .source-active { background: var(--accent-bg); }
+/* On the highlighted row the chip would sit on a doubled accent tint (4.27:1) and --text-3 is not allowed on a tint; src/__tests__/contrast.test.ts guards both. */
+.source-active .source-id { background: var(--surface-1); }
+.source-active .matched-line { color: var(--text-2); }
 .source-dim { opacity: 0.6; }
 .source-line { display: flex; align-items: center; gap: var(--s-2); margin: 0; min-width: 0; }
 .source-id { flex: none; color: var(--text-2); font: var(--t-meta); font-weight: 600; }

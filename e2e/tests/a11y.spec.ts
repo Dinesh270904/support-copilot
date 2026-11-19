@@ -8,11 +8,10 @@ const schemes: Scheme[] = ["light", "dark"];
 async function scan(page: Page, label: string) {
   // Colours are measured once transitions and animations have finished (a half-faded tint is not a real contrast failure).
   await page.evaluate(() => Promise.all(document.getAnimations().map((a) => a.finished.catch(() => undefined))));
-  // BUG-5 and BUG-6 below track two known findings; their nodes are excluded here so every other check stays live.
+  // BUG-5 below tracks a known finding; its nodes are excluded here so every other check stays live.
   const results = await new AxeBuilder({ page })
     .withTags(["wcag2a", "wcag2aa", "wcag21a", "wcag21aa", "best-practice"])
     .exclude(".tool-status")
-    .exclude(".source-active")
     .analyze();
   const bad = results.violations.filter((v) => v.impact === "serious" || v.impact === "critical");
   expect(
@@ -119,8 +118,6 @@ for (const scheme of schemes) {
 
 // BUG-5 (awaiting approval): axe "aria-prohibited-attr" (serious). The tool timeline status icon is a <span aria-label="succeeded"> with no role,
 // and aria-label is not allowed on a generic span. Fix: give it role="img". Expected to fail until fixed.
-// BUG-6 (awaiting approval): axe "color-contrast" (serious), 4.27:1 light and 4.29:1 dark on the highlighted source row (.source-active): the
-// source ID chip (--accent-text on the accent tint) and the matched-terms line (--text-3 on the tint, 4.39:1 light). Expected to fail until fixed.
 for (const scheme of schemes) {
   test(`BUG-5: the tool timeline status has an allowed accessible name (${scheme})`, async ({ page }) => {
     test.fail();
@@ -131,8 +128,7 @@ for (const scheme of schemes) {
     expect(r.violations).toEqual([]);
   });
 
-  test(`BUG-6: the highlighted source row meets contrast (${scheme})`, async ({ page }) => {
-    test.fail();
+  test(`the highlighted source row meets contrast (${scheme})`, async ({ page }) => {
     await page.emulateMedia({ colorScheme: scheme });
     await openTicket(page, "T-101", /Checkout timed out/);
     await ask(page, "Can the customer retry while payment is pending?");
