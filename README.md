@@ -11,7 +11,7 @@ React/TS (Vite) ──HTTP──▶ FastAPI ──MCP client (stdio)──▶ MC
 
 ## Quick start
 
-Prerequisites: Python 3.11, 3.12 or 3.13 (the backend suite and the tuning evaluation were run on all three on macOS by Claude Code, and on 3.13 earlier on Linux in a separate session), Node 20+ (tested on Node 22).
+Prerequisites: Python 3.11, 3.12 or 3.13 (the backend suite and the tuning evaluation were run on all three on macOS by Claude Code), Node 20+ (tested on Node 22).
 
 **Use the project virtualenv, `backend/.venv`.** A bare `python3` is often a different interpreter without the
 dependencies (it was 3.14 on the author's machine). The Makefile and `scripts/dev.sh` use `backend/.venv/bin/python`
@@ -279,7 +279,7 @@ The original implementation was produced with AI assistance (Claude, per the ori
 
 Each item was executed, not assumed, and its output was reported back to the owner.
 
-- Created a Python 3.11 virtualenv, ran the backend and frontend suites, and re-ran the backend suite and the tuning evaluation on 3.12 and 3.13 on the same machine (all passing, identical metrics); 3.13 was also run earlier on Linux in a separate session. `python3` on the development machine is 3.14 and does not have the dependencies installed, which is why the docs insist on `backend/.venv`.
+- Created a Python 3.11 virtualenv, ran the backend and frontend suites, and re-ran the backend suite and the tuning evaluation on 3.12 and 3.13 on the same machine (all passing, identical metrics). `python3` on the development machine is 3.14 and does not have the dependencies installed, which is why the docs insist on `backend/.venv`.
 - Ran all ten cases in `backend/data/seed/expected_cases.json` through the live API with curl and compared the answer state, tool calls and citation IDs with the expectations.
 - Implemented the redesigned UI test-first from two written specifications supplied by the owner, one step at a time, checking each step in a browser at real viewport widths (an iframe of the exact width, because resizing the window did not change the viewport) in both themes. Screenshots exposed defects that tests had not, such as the previous ticket staying on screen under a new ticket's URL while it loaded.
 - Exercised the MCP server three ways: an official Python SDK client, the Inspector CLI (including `--config mcp.json`), and the Inspector web UI v2.13, driven through browser automation (connect, list tools, call `search_knowledge`, read `support://tickets/T-104`). The README steps were corrected to match what the UI actually shows. The owner has not run this walkthrough personally in this record.
