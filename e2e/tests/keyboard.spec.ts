@@ -71,7 +71,7 @@ test("the full demo path with real keys only: palette, ask, preview, draft, edit
 test("j and k move the selection through the queue", async ({ page }) => {
   await page.goto("/#/ticket/T-101");
   await expect(page.getByRole("heading", { level: 2, name: /Checkout timed out/ })).toBeVisible();
-  // Wait for each ticket to be on screen before the next key (see BUG-2 below for what happens when keys outrun the render).
+  // Wait for each ticket to be on screen before the next key.
   await page.keyboard.press("j");
   await expect(page.getByRole("heading", { level: 2, name: "Large CSV export times out" })).toBeVisible();
   await page.keyboard.press("k");
