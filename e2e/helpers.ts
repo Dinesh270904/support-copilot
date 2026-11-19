@@ -51,3 +51,8 @@ export async function ask(page: Page, text: string, scope?: string) {
 
 /** The newest answer card. */
 export const answerCard = (page: Page) => page.getByRole("article", { name: "Answer" }).first();
+
+/** Pre-mark a ticket reviewed at a known time (for idempotency checks). */
+export function setReviewed(id: string, at: string): void {
+  execFileSync(PY, ["-c", `import sqlite3;c=sqlite3.connect(${JSON.stringify(DB)});c.execute("update tickets set reviewed_at=? where id=?",(${JSON.stringify(at)},${JSON.stringify(id)}));c.commit()`]);
+}
