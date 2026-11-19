@@ -13,7 +13,7 @@ export function TabBar({ tab, onTab }: { tab: Tab; onTab: (tab: Tab) => void }) 
     <nav className="tabbar" aria-label="Sections">
       {items.map(({ id, label, Icon }) => (
         <button key={id} type="button" className="tab" aria-current={tab === id ? "page" : undefined} onClick={() => onTab(id)}>
-          <Icon size={20} />
+          <Icon size={20} weight={tab === id ? "fill" : "regular"} />
           <span>{label}</span>
         </button>
       ))}

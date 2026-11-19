@@ -19,7 +19,7 @@ export function QueueRail({ view, counts, onView }: Props) {
         return (
           <li key={v.id}>
             <button type="button" className="rail-btn" aria-pressed={view === v.id} aria-label={`${v.label} ${counts[v.id]}`} title={`${v.label} · ${counts[v.id]}`} onClick={() => onView(v.id)}>
-              <Icon size={18} />
+              <Icon size={18} weight={view === v.id ? "fill" : "regular"} />
               <span className="rail-count num" aria-hidden="true">{counts[v.id]}</span>
             </button>
           </li>

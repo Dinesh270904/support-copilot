@@ -2,7 +2,7 @@ import { Fragment, useState, type Ref } from "react";
 import { humanize } from "../format";
 import { parseAnswer } from "../lib/answer";
 import type { AssistantRunResponse, Citation } from "../types";
-import { AlertIcon, CheckIcon, CircleSlashIcon, ShieldIcon } from "./Icons";
+import { AlertIcon, CheckCircleIcon, CircleIcon, CircleSlashIcon, InfoIcon, ShieldIcon } from "./Icons";
 import { CardMenu } from "./CardMenu";
 import { CitationMarker } from "./CitationMarker";
 import { ScoreMeter } from "./ScoreMeter";
@@ -52,7 +52,7 @@ export function AnswerCard({ result, onViewSource, onViewTrace, onOpenTicket, on
   const headline =
     state === "answered" ? (isCount ? "Count complete" : `Answered from ${articles.size} article${articles.size === 1 ? "" : "s"}`)
       : state === "insufficient_evidence" ? "Not enough evidence" : "Nothing found";
-  const StateIcon = state === "answered" ? CheckIcon : state === "insufficient_evidence" ? AlertIcon : CircleSlashIcon;
+  const StateIcon = state === "answered" ? CheckCircleIcon : state === "insufficient_evidence" ? AlertIcon : CircleSlashIcon;
   const scopeName = retrieval?.category ? humanize(retrieval.category) : null;
 
   // ---- answered: prose with markers
@@ -167,7 +167,7 @@ export function AnswerCard({ result, onViewSource, onViewTrace, onOpenTicket, on
                 return (
                   <li key={c.source_id} className={`source${dim ? " source-dim" : ""}${active === c.source_id ? " source-active" : ""}`}>
                     <p className="source-line">
-                      <span className="source-n num" aria-hidden="true">{ref.n ?? "○"}</span>
+                      <span className="source-n num" aria-hidden="true">{ref.n ?? <CircleIcon size={10} />}</span>
                       <span className="source-id num">{c.source_id}</span>
                       <span className="source-title">{c.title}</span>
                       <span className="source-usage">{dim ? "not quoted" : c.usage === "evidence" ? "quoted" : usageLabel(c.usage)}</span>
@@ -192,7 +192,7 @@ export function AnswerCard({ result, onViewSource, onViewTrace, onOpenTicket, on
         {result.limitations.length > 0 && (
           <div className="acard-block">
             <button type="button" className="link-btn" aria-expanded={showLimits} onClick={() => setShowLimits((s) => !s)}>
-              ⓘ {result.limitations.length} limitation{result.limitations.length === 1 ? "" : "s"}
+              <InfoIcon size={14} /> {result.limitations.length} limitation{result.limitations.length === 1 ? "" : "s"}
             </button>
             {showLimits && <ul className="plain-list limits">{result.limitations.map((l) => <li key={l}>{l}</li>)}</ul>}
           </div>

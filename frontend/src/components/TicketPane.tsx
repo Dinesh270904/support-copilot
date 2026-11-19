@@ -2,7 +2,7 @@ import { useEffect, useRef, type ReactNode } from "react";
 import { formatTime, formatTimestamp, humanize } from "../format";
 import { useScrollMemory } from "../hooks/useScrollMemory";
 import type { TicketDetail } from "../types";
-import { CategoryDot, CheckIcon, PriorityIcon, StatusIcon } from "./Icons";
+import { CategoryDot, CheckCircleIcon, PriorityIcon, StatusIcon } from "./Icons";
 import { Conversation } from "./Conversation";
 
 export interface ReviewState {
@@ -69,7 +69,7 @@ export function TicketPane({ ticket, loading, error, review, untrusted, onMarkRe
           <div className="review-box">
             {ticket.reviewed_at ? (
               <button type="button" className="btn btn-ghost" disabled>
-                <CheckIcon size={14} /> Reviewed <span className="num">{formatTimestamp(ticket.reviewed_at).replace(/^(\d+ \w+) \d{4}, /, "$1, ")}</span>
+                <CheckCircleIcon size={16} weight="fill" /> Reviewed <span className="num">{formatTimestamp(ticket.reviewed_at).replace(/^(\d+ \w+) \d{4}, /, "$1, ")}</span>
               </button>
             ) : confirming ? (
               <div className="review-confirm" role="group" aria-label={`Confirm marking ${ticket.id} reviewed`}>
@@ -80,7 +80,7 @@ export function TicketPane({ ticket, loading, error, review, untrusted, onMarkRe
                 </span>
               </div>
             ) : (
-              <button type="button" ref={markRef} className="btn btn-primary" onClick={onMarkReviewed} title="Mark reviewed · R"><CheckIcon size={14} /> Mark reviewed <kbd className="kbd-on-accent">R</kbd></button>
+              <button type="button" ref={markRef} className="btn btn-primary" onClick={onMarkReviewed} title="Mark reviewed · R"><CheckCircleIcon size={16} /> Mark reviewed <kbd className="kbd-on-accent">R</kbd></button>
             )}
             <p className="review-live" aria-live="polite">{review.confirmed ? `Marked ${ticket.id} reviewed` : ""}</p>
             {review.error && (

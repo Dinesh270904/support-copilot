@@ -1,6 +1,6 @@
 import type { TicketListItem } from "../types";
 import { humanize, relativeTime } from "../format";
-import { CategoryDot, PriorityIcon, StatusIcon } from "./Icons";
+import { CategoryDot, CheckCircleIcon, PriorityIcon, StatusIcon } from "./Icons";
 
 interface Props {
   ticket: TicketListItem;
@@ -31,7 +31,7 @@ export function QueueRow({ ticket: t, selected, onSelect }: Props) {
         {t.product_area !== t.category && <span className="qrow-area">{humanize(t.product_area)}</span>}
         <span className="qrow-flags">
           <span className="qrow-status"><StatusIcon status={t.status} size={13} />{humanize(t.status)}</span>
-          {t.reviewed_at && <span className="qrow-reviewed" role="img" aria-label="Reviewed" title="Reviewed">✓</span>}
+          {t.reviewed_at && <span className="qrow-reviewed" role="img" aria-label="Reviewed" title="Reviewed"><CheckCircleIcon size={14} weight="fill" /></span>}
           {needsReview && <span className="unreviewed-dot" role="img" aria-label="Needs review" title="Needs review" />}
         </span>
       </span>
