@@ -171,9 +171,12 @@ export default function App() {
     navigate({ ticketId: shown[next].id });
   };
   const focusAsk = () => {
+    const box = askRef.current;
+    // Already on screen: focus now, so characters typed straight after "/" go into the box and not into shortcuts.
+    if (box && box.getClientRects().length > 0 && getComputedStyle(box).visibility !== "hidden") return box.focus();
     if (drawerMode) setCopilotOpen(true); // the Ask box lives in the drawer
     if (layout === "phone") setTab("copilot");
-    window.setTimeout(() => askRef.current?.focus(), 60);
+    window.setTimeout(() => askRef.current?.focus(), 60); // only a drawer or tab that has to open first needs the delay
   };
   useHotkeys(
     {

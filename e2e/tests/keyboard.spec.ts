@@ -128,16 +128,21 @@ test("the palette counts open high-priority checkout tickets inline", async ({ p
   await expect(palette).toContainText("T-101");
 });
 
-// BUG-2 (awaiting approval): `/` focuses the Ask box after a 60 ms timer (App.tsx focusAsk), so characters typed straight
-// after `/` are handled as shortcuts (j/k change ticket, d drafts, r asks to review, t flips the theme) instead of
-// going into the box. Expected to fail until that is fixed; test.fail() turns red if it ever passes.
-test("BUG-2: text typed immediately after / goes into the Ask box", async ({ page }) => {
-  test.fail();
+test("text typed immediately after / goes into the Ask box, not into shortcuts", async ({ page, request }) => {
   await page.goto("/#/ticket/T-101");
   await expect(page.getByRole("heading", { level: 2, name: /Checkout timed out/ })).toBeVisible();
+  const themeBefore = await page.locator("html").evaluate((el) => getComputedStyle(el).colorScheme);
+  const runs: string[] = [];
+  page.on("request", (r) => isRun(r) && runs.push(r.postDataJSON().action));
   await page.keyboard.press("/");
-  await page.keyboard.type("jkdrst");
-  await expect(page.getByRole("textbox", { name: "Ask a question" })).toHaveValue("jkdrst");
+  await page.keyboard.type("j d r t"); // no waiting: every one of these is also a shortcut key
+  await expect(page.getByRole("textbox", { name: "Ask a question" })).toHaveValue("j d r t");
+  await expect(page).toHaveURL(/#\/ticket\/T-101(\?|$)/);
+  await expect(page.getByRole("heading", { name: "Draft · not sent" })).toHaveCount(0);
+  await expect(page.getByText("Mark T-101 reviewed?")).toHaveCount(0);
+  expect(await page.locator("html").evaluate((el) => getComputedStyle(el).colorScheme)).toBe(themeBefore);
+  expect(runs).toEqual([]); // no draft request
+  expect((await apiTicket(request, "T-101")).reviewed_at).toBeNull();
 });
 
 // BUG-3 candidate (awaiting approval): j/k read the selected ticket from React state, which updates on the hashchange
