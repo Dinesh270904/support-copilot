@@ -8,5 +8,6 @@ frontend/dist/
 *.tsbuildinfo
 .venv/
 
-# Local UI screenshots (2.4 MB, over the repo size budget); regenerate by following docs/UI_HANDOFF.md section 12
-docs/screenshots/
+# Local UI screenshots (2.4 MB in total, over the repo size budget). Only the five curated readme-*.jpg files are tracked.
+docs/screenshots/*
+!docs/screenshots/readme-*.jpg

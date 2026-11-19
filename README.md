@@ -184,8 +184,8 @@ Client config: `backend/mcp.json` (`command` is `.venv/bin/python`, resolved aga
 ## Frontend
 
 React 19 + TypeScript + Vite with plain CSS custom properties: no UI framework and no extra runtime dependencies. The design source is
-`docs/UI_HANDOFF.md` (plus a longer addendum that was supplied in the same way). Screenshots of the states and layouts were taken
-during the build and live in `docs/screenshots/` on the author's machine; they are not committed (2.4 MB, over the repo's size budget).
+`docs/UI_HANDOFF.md` (plus a longer addendum that was supplied in the same way). Five screenshots are committed below; the full set
+(about 2.4 MB) was kept out of the repo to stay within its size budget.
 
 - **Layout**: queue, ticket and Copilot panes. The queue has five views (Open, High priority, Needs review, Resolved, All) with counts
   computed from the loaded list, filters, and a sort. The ticket pane has the conversation (instruction-like messages are flagged and left
@@ -206,6 +206,15 @@ during the build and live in `docs/screenshots/` on the author's machine; they a
 - **Themes and contrast**: dark by default, light on request, remembered per browser. Text contrast was measured, not assumed; where a literal
   token failed WCAG AA the text colour was adjusted (see the comment at the top of `frontend/src/styles/tokens.css`), never a tint's alpha.
 
+### Screenshots
+
+| | |
+|---|---|
+| ![Answered, with a citation preview](docs/screenshots/readme-1-answered-citation-preview.jpg)<br>Answered: each sentence carries a numbered source; the preview shows the quoted chunk and its score. | ![Not enough evidence](docs/screenshots/readme-2-not-enough-evidence.jpg)<br>Not enough evidence (bank decline fee): the closest article says the topic is out of scope, so Copilot declines to answer. |
+| ![Untrusted customer message](docs/screenshots/readme-3-untrusted-message.jpg)<br>T-112: an instruction-like customer message is flagged and not followed. | ![Holding-reply draft](docs/screenshots/readme-4-draft-holding.jpg)<br>Holding-reply draft: marked "not sent", with a warning that no guidance was found. |
+
+![Phone layout at 390 px](docs/screenshots/readme-5-mobile-390.jpg)
+
 ## Data model
 
 The schema is created by Alembic migration `0001_initial`:
@@ -221,7 +230,7 @@ The seed (`app/seed.py`) validates the JSON pack with Pydantic, which rejects du
 ## Tests
 
 ```bash
-make test            # backend: 108 pytest tests (+1 expected failure); frontend: 86 Vitest tests (10 files)
+make test            # backend: 108 pytest tests (+1 expected failure); frontend: 88 Vitest tests (10 files)
 ```
 
 | Requirement | Tests |
