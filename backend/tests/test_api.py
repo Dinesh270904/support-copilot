@@ -299,3 +299,30 @@ def test_tool_error_log_has_the_code_but_never_the_error_text(client, monkeypatc
     assert resp.status_code == 502 and "secret" not in resp.text
     logged = " ".join(r.getMessage() + str(getattr(r, "fields", "")) for r in caplog.records)
     assert "invalid_arguments" in logged and "secret customer sentence" not in logged
+
+
+def test_run_log_and_db_row_hold_query_length_but_never_query_or_ticket_text(client, settings, caplog):
+    secret_query = "zebraquasar7731 backup code authenticator"  # a string that appears nowhere in the seed data
+    ticket = client.get("/api/tickets/T-104").json()
+    ticket_texts = [ticket["title"], ticket["description"], *[m["text"] for m in ticket["messages"]]]
+    with caplog.at_level("DEBUG"):
+        resp = client.post(
+            "/api/assistant/run",
+            json={"action": "search_knowledge", "ticket_id": "T-104", "query": secret_query, "category": "account_access"},
+        )
+    assert resp.status_code == 200
+    run_id = resp.json()["run_id"]
+
+    engine = make_engine(settings.db_path, read_only=True)
+    with make_sessionmaker(engine)() as s:
+        run = s.get(AssistantRun, run_id)
+        assert run is not None and run.query_chars == len(secret_query)
+        row = " ".join(str(getattr(run, c.key)) for c in AssistantRun.__table__.columns)
+    engine.dispose()
+    logged = " ".join(r.getMessage() + " " + str(getattr(r, "fields", "")) for r in caplog.records)
+
+    assert run_id in logged and f"'query_chars': {len(secret_query)}" in logged  # the length is logged, the text is not
+    for name, haystack in (("db row", row), ("log output", logged)):
+        assert "zebraquasar7731" not in haystack, f"query text leaked into the {name}"
+        for text in ticket_texts:
+            assert text not in haystack, f"ticket text leaked into the {name}: {text[:40]!r}"
