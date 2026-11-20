@@ -266,7 +266,7 @@ cd e2e && npm install && npx playwright install chromium   # one-time dev downlo
 make e2e                                                   # or: cd e2e && npm run e2e   (add -- --headed to watch it)
 ```
 
-After the one-time browser download the tests run offline. The suite is 82 tests in 12 files and takes about 1.8 minutes. It covers the queue
+After the one-time browser download the tests run offline. The suite is 82 tests in 12 files and takes about 2 minutes (1.8-1.9 measured). It covers the queue
 and filters, ticket detail, the automatic brief and similar cards, answers and citations (including a sentence-by-sentence grounding check),
 drafts and the real clipboard, review and idempotency, the full keyboard path with real key presses, MCP and database failure states (it kills
 the real MCP child), responsive layouts at 1440, 1100, 820 and 390, axe accessibility scans in both themes, and every case in
@@ -290,6 +290,13 @@ passing, and be named `BUG-n`; there are none at v1.2.
 - The route handler attaches the run record to the raised exception (`exc.run_record`) so failed runs are still logged; it works but is a shortcut a larger codebase would replace with a result type.
 - The TF-IDF index is built once when the MCP server starts. Changing articles needs a re-seed and a restart of the API (which restarts the MCP server).
 - Instruction-like text detection is a regex that *flags* content for the agent. Safety comes from the structural guarantees: the fixed tool plan, typed tools and read-only SQLite access.
+
+**Not built** (deliberately, to keep the prototype small and checkable):
+- No streaming: answers come back in one response, with no SSE or WebSocket.
+- No authentication or role checks (see above); `GET /api/assistant/runs` is open to any local caller.
+- No audit view in the UI: run history is available only through that API endpoint.
+- No model adapter or LLM call of any kind, so there is nothing to configure and no API key.
+- No Docker image or compose file: the app runs from a Python virtualenv and Node, as in the quick start.
 
 **With a local LLM or a larger corpus**, I would keep this pipeline as the retrieval and citation layer and the fallback:
 - Add embeddings (hybrid with BM25) for recall.
