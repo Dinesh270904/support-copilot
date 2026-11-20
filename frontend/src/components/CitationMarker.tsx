@@ -17,6 +17,7 @@ export function CitationMarker({ n, source, threshold, onView, onActive }: Props
   const [open, setOpen] = useState(false);
   const wrap = useRef<HTMLSpanElement>(null);
   const button = useRef<HTMLButtonElement>(null);
+  const preview = useRef<HTMLDivElement>(null); // the preview lives on <body> (a portal), so DOM containment alone cannot tell 'still inside'
   const timer = useRef<number | undefined>(undefined);
   // Set when the drawer opens from this marker: the focus the drawer later hands back must not re-open the preview.
   const restoring = useRef(false);
@@ -50,7 +51,7 @@ export function CitationMarker({ n, source, threshold, onView, onActive }: Props
 
   return (
     <span className="cite" ref={wrap} onKeyDown={onKeyDown} onMouseEnter={hoverShow} onMouseLeave={hideSoon}
-      onBlur={(e) => { if (!wrap.current?.contains(e.relatedTarget as Node | null)) { setOpen(false); onActive?.(null); } }}>
+      onBlur={(e) => { const to = e.relatedTarget as Node | null; if (!wrap.current?.contains(to) && !preview.current?.contains(to)) { setOpen(false); onActive?.(null); } }}>
       <button
         ref={button}
         type="button"
@@ -70,6 +71,7 @@ export function CitationMarker({ n, source, threshold, onView, onActive }: Props
           source={{ ...source, n }}
           threshold={threshold}
           anchor={button}
+          rootRef={preview}
           onEnter={show}
           onLeave={hideSoon}
           onView={() => { restoring.current = true; setOpen(false); onView({ ...source, n, opener: button.current }); }}
