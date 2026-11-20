@@ -82,8 +82,10 @@ export async function answerSettled(page: Page) {
     .toBe(true);
 }
 
-/** The queue has rendered, so the keyboard shortcuts are registered. (They go live ~120 ms after the load event; a test that
+/** The queue and its tickets have loaded, so the keyboard shortcuts have what they act on. (They go live ~120 ms after the load event; a test that
  *  presses a shortcut the instant goto() returns races that.) */
 export async function appReady(page: Page) {
   await expect(page.getByRole("button", { name: /^Open\s*\d+$/ })).toBeVisible();
+  // j/k and the palette's ticket list need the loaded list, not just the first render
+  await expect(page.getByRole("region", { name: "Queue" }).getByRole("button", { name: /T-\d{3}/ }).first()).toBeVisible();
 }

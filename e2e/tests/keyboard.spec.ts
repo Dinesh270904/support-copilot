@@ -7,6 +7,7 @@ test.afterAll(() => resetReviews());
 test("the full demo path with real keys only: palette, ask, preview, draft, edit, copy, review", async ({ page, context, request }) => {
   await context.grantPermissions(["clipboard-read", "clipboard-write"]);
   await page.goto("/");
+  await appReady(page);
   await expect(page.getByText("Pick a ticket to start")).toBeVisible();
 
   // ⌘K / Ctrl+K → T-101 → Enter
@@ -70,6 +71,7 @@ test("the full demo path with real keys only: palette, ask, preview, draft, edit
 
 test("j and k move the selection through the queue", async ({ page }) => {
   await page.goto("/#/ticket/T-101");
+  await appReady(page);
   await expect(page.getByRole("heading", { level: 2, name: /Checkout timed out/ })).toBeVisible();
   // Wait for each ticket to be on screen before the next key.
   await page.keyboard.press("j");
@@ -83,6 +85,7 @@ test("j and k move the selection through the queue", async ({ page }) => {
 
 test("single-letter shortcuts do nothing while typing in Ask", async ({ page, request }) => {
   await page.goto("/#/ticket/T-101");
+  await appReady(page);
   await expect(page.getByRole("heading", { level: 2, name: /Checkout timed out/ })).toBeVisible();
   const runs: string[] = [];
   page.on("request", (r) => isRun(r) && runs.push(r.postDataJSON().action));
@@ -101,6 +104,7 @@ test("single-letter shortcuts do nothing while typing in Ask", async ({ page, re
 
 test("? opens the shortcut sheet and t toggles the theme", async ({ page }) => {
   await page.goto("/#/ticket/T-101");
+  await appReady(page);
   await expect(page.getByRole("heading", { level: 2, name: /Checkout timed out/ })).toBeVisible();
   await page.keyboard.press("?");
   const sheet = page.getByRole("dialog", { name: /shortcuts/i });
@@ -131,6 +135,7 @@ test("the palette counts open high-priority checkout tickets inline", async ({ p
 
 test("text typed immediately after / goes into the Ask box, not into shortcuts", async ({ page, request }) => {
   await page.goto("/#/ticket/T-101");
+  await appReady(page);
   await expect(page.getByRole("heading", { level: 2, name: /Checkout timed out/ })).toBeVisible();
   const themeBefore = await page.locator("html").evaluate((el) => getComputedStyle(el).colorScheme);
   const runs: string[] = [];
@@ -148,6 +153,7 @@ test("text typed immediately after / goes into the Ask box, not into shortcuts",
 
 test("five quick j presses then five quick k presses land on exactly the right tickets", async ({ page }) => {
   await page.goto("/#/ticket/T-112"); // first in the queue: T-112, T-104, T-101, T-108, T-102, T-106, T-110
+  await appReady(page);
   await expect(page.getByRole("heading", { level: 2, name: /Request to export records to an SFTP server/ })).toBeVisible();
   for (let i = 0; i < 5; i++) await page.keyboard.press("j"); // no delay between presses
   await expect(page).toHaveURL(/#\/ticket\/T-106/);
