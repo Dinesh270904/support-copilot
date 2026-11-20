@@ -68,3 +68,24 @@ export function mcpChildPid(): number {
 export async function shot(page: Page, name: string) {
   await page.screenshot({ path: `screenshots/${name}.png` });
 }
+
+/** Wait for the newest answer card and for the Copilot panel to stop scrolling (the new answer is smooth-scrolled into view). */
+export async function answerSettled(page: Page) {
+  await answerCard(page).waitFor();
+  await expect
+    .poll(async () => {
+      const read = () => page.evaluate(() => document.querySelector(".copilot-scroll")!.scrollTop);
+      const a = await read();
+      await page.waitForTimeout(250);
+      return a === (await read());
+    })
+    .toBe(true);
+}
+
+/** The queue and its tickets have loaded, so the keyboard shortcuts have what they act on. (They go live ~120 ms after the load event; a test that
+ *  presses a shortcut the instant goto() returns races that.) */
+export async function appReady(page: Page) {
+  await expect(page.getByRole("button", { name: /^Open\s*\d+$/ })).toBeVisible();
+  // j/k and the palette's ticket list need the loaded list, not just the first render
+  await expect(page.getByRole("region", { name: "Queue" }).getByRole("button", { name: /T-\d{3}/ }).first()).toBeVisible();
+}

@@ -37,11 +37,12 @@ export function CopilotPanel({ ticket, meta, copilot, onOpenTicket, askRef, pend
   const heading = useRef<HTMLHeadingElement>(null);
   const [announce, setAnnounce] = useState("");
   const newestId = session.answers[0]?.id;
+  const newestStatus = session.answers[0]?.state.status;
   useEffect(() => {
-    if (newestId === undefined) return;
+    if (newestId === undefined || newestStatus === "loading") return; // wait until the card has its real height, or the scroll stops short
     const reduce = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
     newest.current?.scrollIntoView?.({ block: "start", behavior: reduce ? "auto" : "smooth" });
-  }, [newestId]);
+  }, [newestId, newestStatus]);
 
   // When the newest answer arrives, move focus to its heading and announce it ("Answer ready: ...").
   const newestState = session.answers[0]?.state;
@@ -55,7 +56,7 @@ export function CopilotPanel({ ticket, meta, copilot, onOpenTicket, askRef, pend
       const r = entry.state.response;
       const n = new Set(r.citations.filter((c) => c.usage === "evidence").map((c) => c.article_id ?? c.source_id)).size;
       setAnnounce(`Answer ready: ${r.answer_state === "answered" ? (r.action === "count_tickets" ? "count complete" : `answered from ${n} article${n === 1 ? "" : "s"}`) : r.answer_state === "insufficient_evidence" ? "not enough evidence" : "no results"}`);
-      window.setTimeout(() => heading.current?.focus(), 0);
+      window.setTimeout(() => heading.current?.focus({ preventScroll: true }), 0); // the card is scrolled into view separately; focus must not cancel that smooth scroll
     }
   }, [newestState, session.answers]);
   const threshold = session.answers.find((a) => a.state.response?.retrieval?.min_score != null)?.state.response?.retrieval?.min_score ?? null;
@@ -71,8 +72,8 @@ export function CopilotPanel({ ticket, meta, copilot, onOpenTicket, askRef, pend
       <div className="copilot-scroll" aria-live="polite" ref={scrollRef}>
         {ticket ? (
           <>
-            <TicketBriefCard key={`brief-${ticket.id}`} state={session.brief} onRetry={copilot.retryBrief} />
-            <SimilarCard state={session.similar} onRetry={copilot.retrySimilar} onOpenTicket={onOpenTicket} />
+            <TicketBriefCard key={`brief-${ticket.id}`} state={session.brief} onRetry={copilot.retryBrief} collapsed={session.answers.length > 0} />
+            <SimilarCard key={`similar-${ticket.id}`} state={session.similar} onRetry={copilot.retrySimilar} onOpenTicket={onOpenTicket} collapsed={session.answers.length > 0} />
           </>
         ) : pendingTicket ? (
           <>

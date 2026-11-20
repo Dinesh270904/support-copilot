@@ -134,7 +134,7 @@ export function QueuePane({ meta, tickets, view, onView, filters, onFilters, sor
       ) : (
         <ul className="qlist">
           {rows.map((t) => (
-            <li key={t.id}><QueueRow ticket={t} selected={t.id === selectedId} onSelect={onSelect} /></li>
+            <li key={t.id}><QueueRow ticket={t} selected={t.id === selectedId} onSelect={onSelect} showStatus={view === "all"} /></li>
           ))}
         </ul>
       )}

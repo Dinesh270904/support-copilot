@@ -22,7 +22,7 @@ describe("Copilot cards", () => {
     const similar = screen.getByRole("region", { name: "Similar resolved" });
     expect(await within(similar).findByText(/Fix: The receipt email was delayed/)).toBeInTheDocument();
     expect(within(similar).getByText("matched: checkout, receipt")).toBeInTheDocument();
-    expect(within(similar).getByText("bm25 1.90")).toBeInTheDocument();
+    expect(within(similar).getByText("relevance 1.90")).toBeInTheDocument();
 
     const actions = api.runs.map((r) => `${r.action}:${r.ticket_id}`).sort();
     expect(actions).toEqual(["search_resolved_tickets:T-101", "summarize_ticket:T-101"]);

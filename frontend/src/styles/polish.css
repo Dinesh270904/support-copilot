@@ -1,0 +1,65 @@
+/* Visual polish layer. Spacing, shape, depth and focus only: no colours or markup change, so the measured contrast
+   (tokens.css) and every accessible name stay as audited. Loaded last so it refines components.css. */
+
+/* Cards: calmer, with a little depth and room to breathe. */
+.card { padding: var(--s-4); border-radius: 12px; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.14); }
+.card-head { margin-bottom: var(--s-3); gap: 8px; }
+.card-head h3 { font-weight: 650; letter-spacing: -0.005em; }
+.card-tag { font-size: 10.5px; letter-spacing: 0.06em; text-transform: uppercase; padding: 1px 7px; border-radius: 999px; }
+.card-ms { font-size: 11.5px; font-variant-numeric: tabular-nums; }
+
+/* The answer is the point of the app: give it presence. */
+.acard { border-radius: 14px; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.22), 0 0 0 1px var(--border); border-color: transparent; }
+.acard-answered { box-shadow: 0 4px 16px rgba(0, 0, 0, 0.22), 0 0 0 1px var(--ok-border); }
+.acard-insufficient_evidence { box-shadow: 0 4px 16px rgba(0, 0, 0, 0.22), 0 0 0 1px var(--warn-border); }
+.acard-head { padding: var(--s-3) var(--s-4); }
+.acard-state { font-size: 14px; letter-spacing: -0.005em; }
+.acard p, .acard li { line-height: 1.6; }
+
+/* Queue rows: clearer hover and selection, quieter metadata. */
+.qrow { border-radius: 10px; padding: 10px 12px; transition: background-color 120ms var(--ease), box-shadow 120ms var(--ease); }
+.qrow:hover { background: var(--accent-bg); }
+.qrow.selected { background: var(--accent-bg); box-shadow: inset 0 0 0 1px var(--accent-border); }
+.qrow-id { font-weight: 600; }
+.qrow-title { font-weight: 560; }
+.qrow-status { font-size: 12px; }
+.qrow-meta { margin-top: 2px; }
+
+/* Controls: one rhythm for height, shape and feedback. */
+.btn, .chip, .searchbtn, .icon-btn { transition: background-color 120ms var(--ease), box-shadow 120ms var(--ease), border-color 120ms var(--ease); }
+.btn { border-radius: 9px; font-weight: 560; }
+.btn-primary { box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25), inset 0 1px 0 var(--btn-highlight); }
+.chip { border-radius: 999px; }
+.searchbtn { border-radius: 10px; }
+.copilot-scroll { gap: var(--s-4); padding-top: var(--s-3); }
+.copilot-head { padding-bottom: var(--s-2); }
+.copilot-head h2 { font-weight: 650; letter-spacing: -0.005em; }
+
+@media (prefers-reduced-motion: reduce) {
+  .qrow, .btn, .chip, .searchbtn, .icon-btn { transition: none; }
+}
+
+/* While drafting, the agent must still be able to read the customer's thread: cap the composer so the conversation keeps
+   at least half of the pane (it was taking ~60% and squeezing the thread to a sliver). The draft scrolls inside its box. */
+.composer { max-height: 46%; }
+.composer-text { max-height: 26vh; min-height: 112px; resize: vertical; }
+@media (max-width: 767px) { .composer { max-height: 50%; } }
+
+/* Start screen: a plain three-step guide. */
+.how { list-style: none; margin: var(--s-2) 0 0; padding: 0; display: flex; flex-direction: column; gap: var(--s-3); }
+.how li { display: flex; align-items: flex-start; gap: var(--s-3); font: var(--t-body); line-height: 1.5; }
+.how-n { flex: none; width: 22px; height: 22px; display: inline-grid; place-items: center; border-radius: 999px; border: 1px solid var(--accent-border); background: var(--accent-bg); font-size: 12px; font-weight: 650; }
+
+/* Collapsed cards: a quiet one-line header with a Show/Hide toggle. */
+.card-toggle { margin-left: auto; font-size: 12.5px; }
+.card-head:has(.card-toggle) { margin-bottom: 0; }
+
+/* Top-bar status pill: the full label on wide screens, a short one on phones (the full label overflowed 390px by 1px). */
+.pill-short { display: none; }
+@media (max-width: 480px) { .pill-full { display: none; } .pill-short { display: inline; } }
+
+/* The answer heading receives focus when an answer arrives (for screen readers). Keep the ring visible but inside the card, not clipped. */
+.acard-state:focus-visible { outline: 2px solid var(--accent); outline-offset: -3px; border-radius: 8px; }
+
+/* The conversation pane is a focusable scroll region (axe: scrollable-region-focusable); keep its ring inside the pane. */
+.ticket-scroll:focus-visible { outline-offset: -3px; }

@@ -1,7 +1,8 @@
 import type { RunState } from "../hooks/useCopilot";
+import { useState } from "react";
 import { CardMenu } from "./CardMenu";
 import { CardSkeleton, ErrorNote } from "./ErrorNote";
-import { CompareIcon } from "./Icons";
+import { HistoryIcon } from "./Icons";
 
 // The backend writes one line per ticket: "- T-103 “title”: <fix> [T-103]".
 const FIX_LINE = /^- (T-\d+) “.+?”: (.+) \[T-\d+\]$/;
@@ -21,19 +22,22 @@ interface Props {
   onOpenTicket: (id: string) => void;
 }
 
-export function SimilarCard({ state, onRetry, onOpenTicket }: Props) {
+export function SimilarCard({ state, onRetry, onOpenTicket, collapsed = false }: Props & { collapsed?: boolean }) {
+  const [override, setOverride] = useState<boolean | null>(null);
+  const open = override ?? !collapsed;
   const r = state.response;
   const rows = r?.citations.filter((c) => c.usage === "similar_ticket") ?? [];
   const fixes = r ? fixesById(r.answer) : new Map<string, string>();
   return (
     <section className="card" aria-labelledby="similar-h">
       <header className="card-head">
-        <CompareIcon size={15} />
+        <HistoryIcon size={15} />
         <h3 id="similar-h">Similar resolved</h3>
-        <span className="card-tag">auto</span>
+        {(collapsed || override !== null) && <button type="button" className="link-btn card-toggle" aria-expanded={open} aria-label={`${open ? "Hide" : "Show"} similar resolved tickets`} onClick={() => setOverride(!open)}>{open ? "Hide" : "Show"}</button>}
         {state.status === "ok" && <span className="card-ms num">{rows.length} found</span>}
         <CardMenu label="Similar resolved options" items={[{ label: "Refresh similar tickets", onSelect: onRetry }]} />
       </header>
+      {open && (<>
       {(state.status === "loading" || state.status === "idle") && <CardSkeleton lines={2} />}
       {state.status === "error" && state.error && <ErrorNote error={state.error} onRetry={onRetry} />}
       {state.status === "ok" && rows.length === 0 && <p className="card-empty">No similar resolved tickets. Nothing in history matches closely enough.</p>}
@@ -48,7 +52,7 @@ export function SimilarCard({ state, onRetry, onOpenTicket }: Props) {
                   <span className="similar-top">
                     <span className="id-chip num">{id}</span>
                     <span className="similar-title">{c.title}</span>
-                    {c.score !== null && <span className="similar-score num" title="SQLite FTS5 bm25 (relative to this result)">bm25 {c.score.toFixed(2)}</span>}
+                    {c.score !== null && <span className="similar-score num" title="How closely this ticket matches (SQLite FTS5 bm25 score, relative to this result)">relevance {c.score.toFixed(2)}</span>}
                   </span>
                   {fix && <span className="similar-fix" title={fix}>Fix: {fix}</span>}
                   {c.matched_terms.length > 0 && <span className="similar-terms">matched: {c.matched_terms.join(", ")}</span>}
@@ -58,6 +62,7 @@ export function SimilarCard({ state, onRetry, onOpenTicket }: Props) {
           })}
         </ul>
       )}
+      </>)}
     </section>
   );
 }

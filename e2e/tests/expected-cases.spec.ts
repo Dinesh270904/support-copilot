@@ -2,7 +2,7 @@ import { expect, test } from "@playwright/test";
 import fs from "node:fs";
 import path from "node:path";
 import { ROOT } from "../env";
-import { answerCard, apiTicket, isRun, openTicket } from "../helpers";
+import { answerCard, apiTicket, appReady, isRun, openTicket } from "../helpers";
 
 interface Case {
   case_id: string;
@@ -67,6 +67,7 @@ for (const c of cases) {
       await testInfo.attach(`${c.case_id}.png`, { body: await similar.screenshot(), contentType: "image/png" });
     } else if (c.action === "count_tickets") {
       await page.goto("/");
+      await appReady(page);
       await page.keyboard.press("ControlOrMeta+K");
       const palette = page.getByRole("dialog", { name: "Command palette" });
       // filters {status: open, priority: high, category: checkout} typed as the palette's natural-language count

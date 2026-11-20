@@ -2,7 +2,7 @@ import type { Icon as PhosphorIcon, IconWeight } from "@phosphor-icons/react";
 import {
   ArrowCounterClockwise, ArrowRight, ArrowSquareOut, BookOpenText, CaretDown, CaretRight, CaretUp, CellSignalHigh,
   CellSignalLow, CellSignalMedium, Check, CheckCircle, Circle, Clock, Copy, Eye, FileText, GitDiff, Hash, Headset, Info,
-  Keyboard, MagnifyingGlass, Moon, PencilSimpleLine, Plug, Prohibit, Pulse, ShieldWarning, SlidersHorizontal, Sparkle,
+  ClockCounterClockwise, Keyboard, MagnifyingGlass, Moon, PencilSimpleLine, Plug, Prohibit, Pulse, ShieldWarning, SlidersHorizontal, Sparkle,
   Stack, Sun, Tray, User, Warning, X, XCircle,
 } from "@phosphor-icons/react";
 
@@ -34,6 +34,7 @@ export const LayersIcon = wrap(Stack);
 export const SlidersIcon = wrap(SlidersHorizontal);
 export const FileTextIcon = wrap(FileText);
 export const CompareIcon = wrap(GitDiff);
+export const HistoryIcon = wrap(ClockCounterClockwise); // past tickets
 export const BookIcon = wrap(BookOpenText);
 export const PenIcon = wrap(PencilSimpleLine);
 export const HashIcon = wrap(Hash);

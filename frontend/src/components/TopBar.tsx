@@ -7,14 +7,17 @@ import { ThemeToggle } from "./ThemeToggle";
 
 export type HealthState = Health | null | "unreachable";
 
+/** Full label on wide screens, a short one on phones (the full label pushed a 390px page 51px sideways). */
+const OFFLINE = (<><span className="pill-full">Assistant offline</span><span className="pill-short">Offline</span></>);
+
 function healthView(health: HealthState): { state: "pending" | "up" | "down"; label: ReactNode; detail: string } {
   if (health === null) return { state: "pending", label: "Checking…", detail: "" };
-  if (health === "unreachable") return { state: "down", label: "Assistant offline", detail: "The API is unreachable." };
+  if (health === "unreachable") return { state: "down", label: OFFLINE, detail: "The API is unreachable." };
   const up = health.mcp.connected && health.database === "ok";
   return {
     state: up ? "up" : "down",
     // On narrow screens "connected" is dropped; "Tools (4)" is still text, so status is never colour alone.
-    label: up ? (<>Tools <span className="hide-narrow">connected</span> ({health.mcp.tools.length})</>) : "Assistant offline",
+    label: up ? (<><span className="pill-full">Assistant ready</span><span className="pill-short">Ready</span></>) : OFFLINE,
     detail: health.mcp.last_error ?? "",
   };
 }

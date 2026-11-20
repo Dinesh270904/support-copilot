@@ -1,7 +1,7 @@
 import { useState, type FormEvent, type KeyboardEvent, type RefObject } from "react";
 import { humanize } from "../format";
 import { suggestionsFor } from "../lib/suggestions";
-import { SparkleIcon } from "./Icons";
+import { BookIcon } from "./Icons";
 
 export const MAX_QUERY_CHARS = 500;
 const MIN_QUERY_CHARS = 3;
@@ -70,7 +70,7 @@ export function AskBox({ categories, ticketCategory, hasTicket, onAsk, onCount, 
           </select>
         </label>
         <span className={`ask-count num${over ? " over" : query.length >= WARN_AT ? " warn" : ""}`} aria-label={`${query.length} of ${MAX_QUERY_CHARS} characters`}>{query.length}/{MAX_QUERY_CHARS}</span>
-        <button type="submit" className="btn btn-primary ask-submit" disabled={busy || over}><SparkleIcon size={14} /> Ask <kbd>⏎</kbd></button>
+        <button type="submit" className="btn btn-primary ask-submit" disabled={busy || over}><BookIcon size={14} /> Ask <kbd>⏎</kbd></button>
       </div>
       <div className="suggestions" role="group" aria-label="Suggested questions">
         {suggestionsFor(scope === ALL ? null : scope, ticketCategory).map((s) => (
