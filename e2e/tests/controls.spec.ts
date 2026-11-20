@@ -163,16 +163,20 @@ test("brief and similar menus: 'Refresh brief' and 'Refresh similar tickets' eac
 });
 
 test("the brief checklist ticks locally: checkbox state changes and nothing is sent", async ({ page }) => {
+  const seen = watch(page); // registered first, so the two automatic runs are seen and can be excluded from the baseline
   await openTicket(page, "T-101", /Checkout timed out/);
+  await expect.poll(() => seen.runs.filter((r) => r.action === "summarize_ticket").length).toBeGreaterThanOrEqual(1);
+  await expect.poll(() => seen.runs.filter((r) => r.action === "search_resolved_tickets").length).toBeGreaterThanOrEqual(1);
   await page.waitForLoadState("networkidle");
-  const seen = watch(page);
+  const runsBefore = seen.runs.length, patchesBefore = seen.patches.length;
   const box = page.getByRole("checkbox", { name: "Order ID or gateway transaction reference" });
   await box.check();
   await expect(box).toBeChecked();
   await box.uncheck();
   await expect(box).not.toBeChecked();
-  expect(seen.runs).toHaveLength(0);
-  expect(seen.patches).toHaveLength(0);
+  await page.waitForTimeout(300);
+  expect(seen.runs.length, "ticking a checkbox must not call the assistant").toBe(runsBefore);
+  expect(seen.patches.length, "ticking a checkbox must not write").toBe(patchesBefore);
 });
 
 test("'Show all' reveals facts beyond four and 'Show fewer' hides them (when a brief has more than four)", async ({ page }) => {
