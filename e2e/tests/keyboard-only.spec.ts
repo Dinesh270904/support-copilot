@@ -105,3 +105,23 @@ test("keyboard only: open a ticket, ask, reach a citation, open and close the dr
   await expect.poll(async () => (await (await request.get("http://127.0.0.1:8100/api/tickets/T-104")).json()).reviewed_at).not.toBeNull();
   await expectFocusVisible(page, "after reviewing, focus is not lost");
 });
+
+test("Tab out of the citation preview carries on to the next element (it does not bounce back to the marker) and closes the preview", async ({ page }) => {
+  await page.goto("/#/ticket/T-101");
+  await appReady(page);
+  await page.waitForLoadState("networkidle");
+  await page.keyboard.press("/");
+  await page.keyboard.type("Can the customer retry while payment is pending?");
+  await page.keyboard.press("Enter");
+  await expect(answerCard(page).getByRole("heading", { name: /Answered from 1 article/ })).toBeVisible();
+  await tabTo(page, /^Source 1:/);
+  const preview = page.getByRole("dialog", { name: /^Source 1/ });
+  await expect(preview).toBeVisible();
+  await page.keyboard.press("Tab");
+  await expectFocusVisible(page, "Tab from the marker enters the preview", /Open source/);
+  await page.keyboard.press("Tab");
+  const f = await focus(page);
+  expect(f.tag, "focus must not be lost").not.toBe("BODY");
+  expect(f.name, "forward Tab must not return to the same marker").not.toMatch(/^Source 1:/);
+  await expect(preview).toBeHidden();
+});

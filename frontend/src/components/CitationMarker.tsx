@@ -11,6 +11,15 @@ interface Props {
   onActive?: (id: string | null) => void;
 }
 
+const FOCUSABLE = 'a[href],button:not([disabled]),input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])';
+/** The next focusable element after `el` in document order, ignoring the (portalled) previews. */
+function nextFocusableAfter(el: HTMLElement | null): HTMLElement | null {
+  if (!el) return null;
+  const all = [...document.querySelectorAll<HTMLElement>(FOCUSABLE)].filter((e) => !e.closest("[hidden],[inert],.preview") && e.getClientRects().length > 0);
+  const i = all.indexOf(el);
+  return i >= 0 ? (all[i + 1] ?? null) : null;
+}
+
 /** A superscript number that is a real button. Hover, focus or tap opens the preview and a click keeps it
  * open (a mouse click is always preceded by a hover, so it must not toggle); Esc, blur or leaving closes it. */
 export function CitationMarker({ n, source, threshold, onView, onActive }: Props) {
@@ -48,15 +57,19 @@ export function CitationMarker({ n, source, threshold, onView, onActive }: Props
       button.current?.focus();
     } else if (e.key === "Tab" && open) {
       // The preview lives on <body> (a portal), so Tab from the marker would skip it. Route Tab explicitly:
-      // marker -> the preview's button; from the preview, back to the marker (a forward Tab also closes it).
+      // marker -> the preview's button; Shift+Tab from the preview -> the marker; Tab from the preview -> the element after the marker (closing it).
       const inPreview = preview.current?.contains(e.target as Node) ?? false;
       if (!inPreview && !e.shiftKey) {
         const into = preview.current?.querySelector<HTMLElement>("button");
         if (into) { e.preventDefault(); into.focus(); }
-      } else if (inPreview) {
+      } else if (inPreview && e.shiftKey) {
         e.preventDefault();
-        if (!e.shiftKey) { restoring.current = true; setOpen(false); onActive?.(null); }
-        button.current?.focus();
+        button.current?.focus(); // back to the marker; the preview stays open
+      } else if (inPreview) {
+        e.preventDefault(); // forward out of the preview: close it and carry on to the element after the marker, as Tab would have
+        setOpen(false);
+        onActive?.(null);
+        (nextFocusableAfter(button.current) ?? button.current)?.focus();
       }
     }
   };
