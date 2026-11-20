@@ -236,7 +236,7 @@ The seed (`app/seed.py`) validates the JSON pack with Pydantic, which rejects du
 ## Tests
 
 ```bash
-make test            # backend: 154 pytest tests (+1 expected failure); frontend: 101 Vitest tests (12 files)
+make test            # backend: 155 pytest tests (+1 expected failure); frontend: 101 Vitest tests (12 files)
 ```
 
 | Requirement | Tests |
