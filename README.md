@@ -187,9 +187,8 @@ React 19 + TypeScript + Vite with plain CSS custom properties: no UI framework. 
 [`@phosphor-icons/react`](https://github.com/phosphor-icons/react) (MIT). It ships the icons as bundled SVG components, so nothing is fetched
 at runtime and the UI still works offline. Phosphor was chosen over a hand-drawn set for consistent, professionally drawn geometry
 and multiple weights (regular, fill for active states, duotone for the brand mark). Only `src/components/Icons.tsx` imports it.
-Cost, measured with `vite build`: the JS bundle is 387.3 KB (111.67 KB gzip) now; the earlier 298.5 KB (91.3 KB gzip) figure, an ad hoc build measurement from before the icon change that cannot be reproduced from this repo, implies about +20.3 KB gzip,
-because each icon carries all six weights; CSS is 58.4 KB (11.5 KB gzip). Lighthouse on the production build: desktop performance,
-accessibility and best practices 1.00; mobile performance 0.98 (v1.0 icons: 0.99), accessibility and best practices 1.00 (ad hoc Lighthouse runs; the reports are not included; a desktop re-run on v1.2 scored 1.00 in all four categories). The design source is
+Cost, measured with `vite build`: the JS bundle is 391.9 KB (112.86 KB gzip) now; the earlier 298.5 KB (91.3 KB gzip) figure, an ad hoc build measurement from before the icon change that cannot be reproduced from this repo, implies about +21.6 KB gzip,
+because each icon carries all six weights; CSS is 59.1 KB (11.67 KB gzip). Lighthouse on the production build (measured in the final verification, headless Chromium, `vite preview`): desktop empty page and ticket page score 1.00 in performance, accessibility, best practices and SEO; mobile scores performance 0.99 and best practices and SEO 1.00, accessibility 1.00 on the ticket page and 0.98 on the phone's queue screen (axe `landmark-one-main`: no main landmark while only the queue is shown, a known gap), and the answered state (user flow) scores 1.00 with an INP of 40 ms. The design source is
 `docs/UI_HANDOFF.md` (a longer addendum was also supplied during the build; it is not stored in this repo). Five screenshots are committed below; the full set
 (about 2.4 MB) was kept out of the repo to stay within its size budget.
 
@@ -256,6 +255,8 @@ make test            # backend: 155 pytest tests (+1 expected failure); frontend
 
 ## End-to-end tests
 
+Verification records kept in `e2e/`: `REQUIREMENTS_MATRIX.md` (the assignment line by line, each with evidence), `CONTROLS.md` (every interactive control, how it is reached and which test asserts its effect) and `UX_FINDINGS.md` (layout, accessibility, performance and the defects found and fixed).
+
 `e2e/` holds a Playwright suite that drives the real app in a real browser: the real FastAPI process, the real MCP stdio subprocess, a real
 SQLite file and real keyboard and mouse input. There are no mocks and no stubbed network. It uses its own ports (API 8100, UI 5180, plus
 8101 for a missing database and 5181 and 5182 for the "database not initialized" and "API down" states) and a temporary database that is
@@ -266,7 +267,7 @@ cd e2e && npm install && npx playwright install chromium   # one-time dev downlo
 make e2e                                                   # or: cd e2e && npm run e2e   (add -- --headed to watch it)
 ```
 
-After the one-time browser download the tests run offline. The suite is 84 tests in 13 files and takes about 2 minutes (1.8-1.9 measured). It covers the queue
+After the one-time browser download the tests run offline. The suite is 144 tests in 21 files and takes about 5 minutes (5.1-5.3 measured, one worker). It covers the queue
 and filters, ticket detail, the automatic brief and similar cards, answers and citations (including a sentence-by-sentence grounding check),
 drafts and the real clipboard, review and idempotency, the full keyboard path with real key presses, MCP and database failure states (it kills
 the real MCP child), responsive layouts at 1440, 1100, 820 and 390, axe accessibility scans in both themes, and every case in
@@ -276,6 +277,8 @@ passing, and be named `BUG-n`; there are none at v1.2.
 ## Known limitations
 
 - Retrieval is lexical: no synonyms or paraphrase. Paraphrase is the weakest kind in the evaluation (holdout P@1 0.500). A larger corpus would need a re-tuned threshold and probably BM25 or hybrid ranking.
+- A reply draft and the brief's checklist live in the page only; reloading discards them (nothing is saved or sent).
+- On a phone the Queue screen has no `main` landmark (the ticket pane, the only `<main>`, is hidden there); the accessibility audit reports it as a best-practice gap (Lighthouse 0.98).
 - Single-word queries can fall below the similarity floor. Bare 'timeout' scored 0.098 against KB-04. The category scope narrows ambiguity, and real questions with more terms retrieve correctly. This is recorded as a strict expected-failure test (`test_ambiguous_single_term_query_surfaces_both_articles_and_exports_scope`).
 - Ambiguous short queries can span categories ("timeout" is a tag of both KB-01 and KB-04). The ticket's category scope resolves them, and the UI defaults to it; unscoped, the answer may come from only one article.
 - The evaluation sets are small (39 tuning, 16 holdout queries) and were labelled by hand; the corpus is 7 articles and 12 tickets. The coverage value (0.6) and the similar-ticket 50% cutoff were chosen on this data.
@@ -318,6 +321,7 @@ Each item can be checked in the repo (code, tests or scripts); the process histo
 - The offline evaluation harness (`app/eval.py`) and the tuning and holdout sets (`backend/data/eval/`).
 - The error-code rule, the stemmer, the coverage gate value, the guardrail fix, the similar-ticket floor, the 504 mapping, environment passthrough, the `/health` ping and the draft split, each with tests.
 - The UI follows the written handoff specification in `docs/UI_HANDOFF.md`; a longer addendum used during the build is not stored in this repo.
+- A final verification pass (an offline run with the network denied, an every-control test run, an accessibility, layout and performance inspection) is recorded in `e2e/REQUIREMENTS_MATRIX.md`, `e2e/CONTROLS.md` and `e2e/UX_FINDINGS.md`; it found and fixed the four defects listed in the last.
 
 ### Mistakes caught along the way
 
