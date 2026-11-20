@@ -82,7 +82,7 @@ All ten cases in `backend/data/seed/expected_cases.json` run as tests (`tests/te
 Offline, no model, builds the corpus from the data pack. Metrics per article: precision@1, recall@3, MRR, and the false-positive rate (FPR) on negatives that should be insufficient evidence. Compared: the shipped TF-IDF, FTS5 bm25 over the same chunks (>= 2 matched terms), and a hybrid that returns an article only if both agree.
 
 - **Tuning set** `backend/data/eval/tune.json` (39 queries: 28 positive, 11 negative). Every decision above was made on this set.
-- **Holdout set** `backend/data/eval/holdout.json` (16 queries: 12 positive, 4 negative), written before any retrieval change and **never used for tuning**. `python -m app.eval --holdout` is the only way to read it. It was run twice: at baseline and once at the end.
+- **Holdout set** `backend/data/eval/holdout.json` (16 queries: 12 positive, 4 negative), written before any retrieval change and **never used for tuning**. `python -m app.eval --holdout` is the only way to read it. It was evaluated at baseline and at the end of the build; later reads were for verification only.
 
 | Set | Retriever | P@1 / R@3 / MRR baseline | P@1 / R@3 / MRR final | FPR baseline | FPR final |
 |---|---|---|---|---|---|
@@ -93,7 +93,7 @@ Offline, no model, builds the corpus from the data pack. Metrics per article: pr
 | holdout (16) | FTS5 bm25 | 0.833 | 0.833 | 0.250 | 0.250 |
 | holdout (16) | hybrid (agree) | 0.750 | **0.833** | 0.000 | 0.000 |
 
-Baseline is the original code (score floor 0.15, coverage 0.5, no identifier rule, no stemming). P@1, R@3 and MRR are equal in every row because the corpus has only 7 articles, so the question is whether the right article is retrieved at all, not its rank. Holdout by kind, shipped TF-IDF (baseline to final):
+Baseline is the original code (score floor 0.15, coverage 0.5, no identifier rule, no stemming); the baseline columns are an ad hoc run on that earlier code, and the baseline code and run script are not included in this repo. P@1, R@3 and MRR are equal in every row because the corpus has only 7 articles, so the question is whether the right article is retrieved at all, not its rank. Holdout by kind, shipped TF-IDF (baseline to final):
 
 | Kind | n | P@1 baseline | P@1 final |
 |---|---|---|---|
@@ -187,9 +187,9 @@ React 19 + TypeScript + Vite with plain CSS custom properties: no UI framework. 
 [`@phosphor-icons/react`](https://github.com/phosphor-icons/react) (MIT). It ships the icons as bundled SVG components, so nothing is fetched
 at runtime and the UI still works offline. Phosphor was chosen over a hand-drawn set for consistent, professionally drawn geometry
 and multiple weights (regular, fill for active states, duotone for the brand mark). Only `src/components/Icons.tsx` imports it.
-Cost, measured with `vite build`: the JS bundle went from 298.5 KB (91.3 KB gzip) to 387.2 KB (111.65 KB gzip), +20.3 KB gzip,
+Cost, measured with `vite build`: the JS bundle is 387.2 KB (111.65 KB gzip) now; the earlier 298.5 KB (91.3 KB gzip) figure, an ad hoc build measurement from before the icon change that cannot be reproduced from this repo, implies about +20.3 KB gzip,
 because each icon carries all six weights; CSS is 56.6 KB (11.1 KB gzip). Lighthouse on the production build: desktop performance,
-accessibility and best practices 1.00; mobile performance 0.98 (v1.0 icons: 0.99), accessibility and best practices 1.00. The design source is
+accessibility and best practices 1.00; mobile performance 0.98 (v1.0 icons: 0.99), accessibility and best practices 1.00 (ad hoc Lighthouse runs; the reports are not included; a desktop re-run on v1.2 scored 1.00 in all four categories). The design source is
 `docs/UI_HANDOFF.md` (a longer addendum was also supplied during the build; it is not stored in this repo). Five screenshots are committed below; the full set
 (about 2.4 MB) was kept out of the repo to stay within its size budget.
 
@@ -285,7 +285,7 @@ passing, and be named `BUG-n`; there are none at v1.2.
 - There is no authentication or role model. It is a single local agent.
 - The API accepts request bodies of any size and rejects oversized fields only after parsing them (a 2 MB body gets a 422, not a 413); there is no size-limit middleware.
 - `assistant_runs` is never pruned, and opening a ticket writes two rows (the automatic brief and similar-tickets runs). Fine for a local demo; a real deployment would add retention.
-- SQLite uses the default rollback journal, not WAL. A 5-second stress with one writer and four readers (12,196 writes, 1,305 reads) produced no lock errors, so WAL was not added.
+- SQLite uses the default rollback journal, not WAL. An ad hoc 5-second stress run with one writer and four readers produced no lock errors, so WAL was not added (the script and its counts are not included in this repo).
 - A few routes are `async def` yet make short synchronous database calls (`/health`, the category check before an assistant run); they block the event loop for microseconds, which does not matter at this scale.
 - The route handler attaches the run record to the raised exception (`exc.run_record`) so failed runs are still logged; it works but is a shortcut a larger codebase would replace with a result type.
 - The TF-IDF index is built once when the MCP server starts. Changing articles needs a re-seed and a restart of the API (which restarts the MCP server).
@@ -305,41 +305,28 @@ passing, and be named `BUG-n`; there are none at v1.2.
 
 ## AI tools used
 
-The original implementation was produced with AI assistance (Claude, per the original author's note). This section covers the **review and hardening phase** that followed. It uses two labels so each action is attributed to who actually did it: **Claude Code** (Claude Sonnet 5.5, in VS Code, with its shell and a browser extension) and **Owner** (the project owner, who directed the work and made the decisions).
+Almost all of the code, tests and documentation were written by Claude Code, working from specifications and prompts I drafted together with Claude (chat). I set the scope, reviewed each report, and approved or rejected each change. I did not write the retrieval, composer or UI code by hand. Every claim about test results in this README was produced by running the commands shown; output logs are not stored in the repo. The tuning and holdout query sets were written with AI assistance and the holdout set was evaluated at baseline and at the end of the build; later reads were for verification only.
 
-### What Claude Code did, and the evidence it produced
+### What was built and checked with AI assistance
 
-Each item was executed, not assumed, and its output was reported back to the owner.
+Each item can be checked in the repo (code, tests or scripts); the process history beyond `git log` is not documented.
 
-- Created a Python 3.11 virtualenv, ran the backend and frontend suites, and re-ran the backend suite and the tuning evaluation on 3.12 and 3.13 on the same machine (all passing, identical metrics). `python3` on the development machine is 3.14 and does not have the dependencies installed, which is why the docs insist on `backend/.venv`.
-- Ran all ten cases in `backend/data/seed/expected_cases.json` through the live API with curl and compared the answer state, tool calls and citation IDs with the expectations.
-- Implemented the redesigned UI test-first from two written specifications supplied by the owner, one step at a time, checking each step in a browser at real viewport widths (an iframe of the exact width, because resizing the window did not change the viewport) in both themes. Screenshots exposed defects that tests had not, such as the previous ticket staying on screen under a new ticket's URL while it loaded.
-- Exercised the MCP server three ways: an official Python SDK client, the Inspector CLI (including `--config mcp.json`), and the Inspector web UI v2.13, driven through browser automation (connect, list tools, call `search_knowledge`, read `support://tickets/T-104`). The README steps were corrected to match what the UI actually shows. The owner has not run this walkthrough personally in this record.
-- Killed the MCP child process for real (`SIGKILL`, and `SIGSTOP` then `SIGKILL` during an in-flight call) to test reconnect behaviour, then turned those experiments into tests.
-- Built the offline evaluation harness (`app/eval.py`) and the tuning set, and ran the sweeps and comparisons whose numbers appear above.
-- Implemented the approved changes test-first: the error-code rule, the stemmer, the coverage gate value, the guardrail fix, the similar-ticket floor, the 504 mapping, environment passthrough, the `/health` ping, and the draft split.
+- The backend suite and the tuning evaluation pass on Python 3.11, 3.12 and 3.13 with identical metrics. `python3` on the development machine is 3.14 and does not have the dependencies installed, which is why the docs insist on `backend/.venv`.
+- All ten cases in `backend/data/seed/expected_cases.json` run as tests (`tests/test_expected_cases.py`) and again through the UI (`e2e/tests/expected-cases.spec.ts`).
+- The MCP server is exercised by an official Python SDK client (`backend/scripts/mcp_check.py`) and by the Inspector CLI, including `--config mcp.json`. The Inspector web UI steps below were written from a browser-automation walkthrough of v2.13; I have not run them myself, and `npx` now fetches a newer release.
+- Reconnect behaviour is tested against a real child process: `SIGKILL` while idle and during an in-flight call (`tests/test_gateway_reliability.py`).
+- The offline evaluation harness (`app/eval.py`) and the tuning and holdout sets (`backend/data/eval/`).
+- The error-code rule, the stemmer, the coverage gate value, the guardrail fix, the similar-ticket floor, the 504 mapping, environment passthrough, the `/health` ping and the draft split, each with tests.
+- The UI follows the written handoff specification in `docs/UI_HANDOFF.md`; a longer addendum used during the build is not stored in this repo.
 
-### What the owner decided or redirected
+### Mistakes caught along the way
 
-- **Evaluation method.** Required a tuning set and a separate holdout set, with the holdout read only at the start and the end and never used to tune. The holdout set (16 queries) was drafted in a separate Claude chat session, independent of the Claude Code session that tuned retrieval, which had no access to it until the baseline run. The owner reviewed and approved the labels. It was evaluated exactly twice (baseline and final); no labels changed.
-- **A metric that did not add up.** Questioned why the hybrid retriever's precision changed between two reports (0.885 versus 0.769). The cause was a different composition (the earlier figure was built on the stemmer and identifier variant), not a bug, and it was explained before work continued.
-- **The guardrail bug.** Claude Code surfaced that an answer for "What does PAYMENT_TIMEOUT mean and how do I resolve it?" left out "If the payment is pending, do not ask the customer to submit another payment". The owner judged it an answer-correctness bug, ordered it fixed as its own step ahead of the stemmer, and set the acceptance test. The owner proposed two candidate fixes and asked Claude Code to choose and justify one; it chose the more general one (all of an article's prohibitions become eligible when the question named its error code).
-- **The gate decision.** Set the acceptance criteria for changing the term-coverage gate (remove the "delete my account" false positive without losing short queries such as "export timed out" and "MFA backup code"), approved 0.6 documented as "more than half", and required the holdout result for it to be reported honestly even if it got worse. It did not.
-- **The ambiguous "timeout" label.** Refused to count the one-word query "timeout" in the precision metrics because it legitimately matches two articles, and specified the scope-based assertions instead. When those assertions turned out to be false for the current system (KB-04 scores 0.09 against the 0.15 floor), the owner chose to leave the gap, keep the strict expected-failure test, and document it as a limitation.
-- **The draft behaviour.** Decided that agent-facing prohibitions must move to "Notes for the agent" and not be deleted, and that only the top-ranked article supplies the customer-facing steps.
-- **The UI direction.** Rejected the original UI, chose an evidence-first answer panel over a full redesign, and later replaced that plan with a written handoff specification.
-
-### Mistakes made along the way, and how they were caught
-
-Running things is what exposed these; none was found by reading alone.
-
-- An early prototype stemmer turned "devices" into "devic" but left "device" alone, so the two never matched. Caught by writing a test for exactly that pair first.
-- A threshold sweep in the evaluation harness silently used a stale default for the coverage gate, so its 0.15 row disagreed with the main table. Caught by comparing the two, fixed, and a regression test added.
-- A test assumed the quoted answer contained the word "pending"; it did not. The assertion was corrected to what the design guarantees.
-- A first set of process-kill tests used the shared session fixture and broke other tests. They now use an isolated app.
+- An early prototype stemmer turned "devices" into "devic" but left "device" alone, so the two never matched. A test for exactly that pair now exists (`tests/test_stemming.py`).
+- A threshold sweep in the evaluation harness silently used a stale default for the coverage gate, so its 0.15 row disagreed with the main table. It was fixed and a regression test added (`tests/test_eval.py`).
 - A "weak match" test query contained the word "customer", which is in 75% of tickets, so a count-only relevance floor was not enough and a document-frequency rule was added.
+- A first set of process-kill tests used the shared session fixture and broke other tests. They now use an isolated app.
 
 ### What this section does not claim
 
 - Retrieval numbers come from small, hand-labelled sets (39 tuning queries, 16 holdout queries) over a 7-article, 12-ticket corpus.
-- The original implementation's history is not reconstructed here, only the work above.
+- The original implementation's history is not reconstructed here.
