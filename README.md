@@ -267,7 +267,7 @@ cd e2e && npm install && npx playwright install chromium   # one-time dev downlo
 make e2e                                                   # or: cd e2e && npm run e2e   (add -- --headed to watch it)
 ```
 
-After the one-time browser download the tests run offline. The suite is 144 tests in 21 files and takes about 5 minutes (5.1-5.3 measured, one worker). It covers the queue
+After the one-time browser download the tests run offline. The suite is 145 tests in 21 files and takes about 5 minutes (5.2-5.3 measured over three consecutive runs, one worker, none flaky). It covers the queue
 and filters, ticket detail, the automatic brief and similar cards, answers and citations (including a sentence-by-sentence grounding check),
 drafts and the real clipboard, review and idempotency, the full keyboard path with real key presses, MCP and database failure states (it kills
 the real MCP child), responsive layouts at 1440, 1100, 820 and 390, axe accessibility scans in both themes, and every case in

@@ -41,7 +41,7 @@ Evidence was produced on a fresh clone of the submission candidate, with `env -i
 | 59 | scikit-learn TfidfVectorizer + cosine, chunks and metadata in SQLite | PASS | `app/rag/index.py` imports `TfidfVectorizer`, `cosine_similarity`; `article_chunks(chunk_id, article_id, position, title, category, text, word_count)` |
 | 60 | SQLite FTS5 for similar resolved tickets | PASS | `ticket_search` is `CREATE VIRTUAL TABLE ... USING fts5(...)`; `expected_cases` `similar_mfa_recovery` -> T-105 |
 | 61 | Small deterministic composer, no invented facts | PASS | Same request twice -> identical response hash (`a011fb32ae6d2d7f`) apart from run id and durations; `test_grounding.py::test_answer_is_quoted_from_cited_chunks_or_cites_nothing` |
-| 62 | pytest, plus one frontend test (Vitest) covering a visible UI behaviour | PASS | pytest 155 + 1 xfail; Vitest 101 tests in 12 files (the suite also has 144 Playwright tests) |
+| 62 | pytest, plus one frontend test (Vitest) covering a visible UI behaviour | PASS | pytest 155 + 1 xfail; Vitest 101 tests in 12 files (the suite also has 145 Playwright tests) |
 
 ## D. RAG, MCP and API requirements
 
