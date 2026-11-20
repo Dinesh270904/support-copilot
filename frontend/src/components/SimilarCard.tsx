@@ -1,7 +1,7 @@
 import type { RunState } from "../hooks/useCopilot";
 import { CardMenu } from "./CardMenu";
 import { CardSkeleton, ErrorNote } from "./ErrorNote";
-import { CompareIcon } from "./Icons";
+import { HistoryIcon } from "./Icons";
 
 // The backend writes one line per ticket: "- T-103 “title”: <fix> [T-103]".
 const FIX_LINE = /^- (T-\d+) “.+?”: (.+) \[T-\d+\]$/;
@@ -28,7 +28,7 @@ export function SimilarCard({ state, onRetry, onOpenTicket }: Props) {
   return (
     <section className="card" aria-labelledby="similar-h">
       <header className="card-head">
-        <CompareIcon size={15} />
+        <HistoryIcon size={15} />
         <h3 id="similar-h">Similar resolved</h3>
         <span className="card-tag">auto</span>
         {state.status === "ok" && <span className="card-ms num">{rows.length} found</span>}
@@ -48,7 +48,7 @@ export function SimilarCard({ state, onRetry, onOpenTicket }: Props) {
                   <span className="similar-top">
                     <span className="id-chip num">{id}</span>
                     <span className="similar-title">{c.title}</span>
-                    {c.score !== null && <span className="similar-score num" title="SQLite FTS5 bm25 (relative to this result)">bm25 {c.score.toFixed(2)}</span>}
+                    {c.score !== null && <span className="similar-score num" title="How closely this ticket matches (SQLite FTS5 bm25 score, relative to this result)">relevance {c.score.toFixed(2)}</span>}
                   </span>
                   {fix && <span className="similar-fix" title={fix}>Fix: {fix}</span>}
                   {c.matched_terms.length > 0 && <span className="similar-terms">matched: {c.matched_terms.join(", ")}</span>}

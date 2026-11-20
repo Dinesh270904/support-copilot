@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { RunState } from "../hooks/useCopilot";
 import { CardSkeleton, ErrorNote } from "./ErrorNote";
-import { CaretDownIcon, CaretUpIcon, CopyIcon, PenIcon, ResetIcon, SparkleIcon } from "./Icons";
+import { CaretDownIcon, CaretUpIcon, CircleSlashIcon, CopyIcon, PenIcon, ResetIcon } from "./Icons";
 
 interface Props {
   draft: RunState;
@@ -52,13 +52,13 @@ export function ReplyComposer({ draft, text, onText, onDraft, onReset }: Props) 
     <section className={`composer${ready ? " composer-ready" : ""}`} aria-labelledby="composer-heading">
       <header className="composer-head">
         {ready ? (
-          <h3 id="composer-heading" className="composer-label"><PenIcon size={14} /> Draft · not sent</h3>
+          <h3 id="composer-heading" className="composer-label"><CircleSlashIcon size={14} /> Draft · not sent</h3>
         ) : (
           <h3 id="composer-heading" className="composer-title">Reply</h3>
         )}
         <span className="composer-hint">{ready ? "Copilot never contacts the customer. Edit, then copy into your support tool." : "Copilot drafts from documented guidance. Nothing is sent."}</span>
         <button type="button" className="btn" onClick={onDraft} disabled={loading} title="Draft with Copilot · D">
-          {loading ? <span className="spinner" aria-hidden="true" /> : <SparkleIcon size={14} />}
+          {loading ? <span className="spinner" aria-hidden="true" /> : <PenIcon size={14} />}
           {loading ? "Drafting…" : ready ? "Draft again" : "Draft with Copilot"} {!loading && <kbd>D</kbd>}
         </button>
       </header>
