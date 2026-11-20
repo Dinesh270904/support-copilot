@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { apiTicket, answerCard, isRun, resetReviews } from "../helpers";
+import { apiTicket, answerCard, appReady, isRun, resetReviews } from "../helpers";
 
 test.beforeEach(() => resetReviews());
 test.afterAll(() => resetReviews());
@@ -119,6 +119,7 @@ test("? opens the shortcut sheet and t toggles the theme", async ({ page }) => {
 
 test("the palette counts open high-priority checkout tickets inline", async ({ page }) => {
   await page.goto("/");
+  await appReady(page);
   await page.keyboard.press("ControlOrMeta+K");
   const palette = page.getByRole("dialog", { name: "Command palette" });
   await page.keyboard.type("count open high priority checkout");

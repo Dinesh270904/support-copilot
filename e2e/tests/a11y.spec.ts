@@ -1,6 +1,6 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Page } from "@playwright/test";
-import { answerCard, ask, isRun, openTicket } from "../helpers";
+import { answerCard, appReady, ask, isRun, openTicket } from "../helpers";
 
 type Scheme = "light" | "dark";
 const schemes: Scheme[] = ["light", "dark"];
@@ -100,6 +100,7 @@ for (const scheme of schemes) {
 
     test("command palette", async ({ page }) => {
       await page.goto("/");
+      await appReady(page);
       await page.keyboard.press("ControlOrMeta+K");
       await expect(page.getByRole("dialog", { name: "Command palette" })).toBeVisible();
       await scan(page, "palette");
