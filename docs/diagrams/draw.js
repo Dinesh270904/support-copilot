@@ -23,11 +23,11 @@ const COL = { ui: '#dbeafe', api: '#dcfce7', mcp: '#ede9fe', db: '#ffe4cc', sub:
 
 if (q === 'arch') {
   text(40, 62, 'Support Copilot: how the pieces fit', { size: 52, bold: true }); squiggle(42, 82, 640);
-  text(40, 118, 'local · offline · no LLM · every answer quotes its sources', { size: 30, color: '#555' });
+  text(40, 118, 'local · offline · no LLM · answers quote their sources, or say there is not enough evidence', { size: 30, color: '#555' });
   // Browser
   box(30, 150, 400, 700, { fill: COL.ui }); text(50, 195, 'Browser', { size: 38, bold: true }); text(50, 228, 'React 19 · TypeScript · Vite', { size: 25, color: '#444' });
   [['Queue', 'views · filters · sort', 260], ['Ticket', 'description · timeline · review', 405], ['Copilot panel', 'brief · similar tickets · Ask', 550]].forEach(([a, b, y]) => { box(52, y, 356, 118, { fill: COL.sub, r: 1.3 }); text(70, y + 44, a, { size: 32, bold: true }); text(70, y + 80, b, { size: 25, color: '#555' }); });
-  text(52, 718, 'answer cards: quoted sentences,', { size: 25, color: '#333' }); text(52, 746, '[KB-03#chunk-1] markers, scores,', { size: 25, color: '#333' }); text(52, 774, 'tool trace · editable draft: not sent', { size: 25, color: '#333' }); text(52, 822, 'tests: Vitest + Playwright', { size: 24, color: '#777' });
+  text(52, 718, 'answer cards: quoted sentences,', { size: 25, color: '#333' }); text(52, 746, 'numbered source markers + scores,', { size: 25, color: '#333' }); text(52, 774, 'tool trace · draft editor (not sent)', { size: 25, color: '#333' }); text(52, 822, 'tests: Vitest + Playwright', { size: 24, color: '#777' });
   // FastAPI
   box(560, 150, 470, 700, { fill: COL.api }); text(582, 195, 'FastAPI', { size: 38, bold: true }); text(582, 228, 'Pydantic contracts · :8000', { size: 25, color: '#444' });
   [['1  validate', 'enum · ids · ≤ 500 chars → 422', 258, 100], ['2  fixed tool plan', 'one plan per action; content never changes it', 378, 100], ['3  MCP client', 'official SDK · stdio · 15 s timeout', 498, 100], ['4  compose', 'quote sentences + chunk IDs, or', 618, 100]].forEach(([a, b, y, h]) => { const c = a.includes('compose'); box(582, y, 426, h, { fill: COL.sub, r: 1.3 }); text(600, y + (c ? 34 : 40), a, { size: 29, bold: true }); text(600, y + (c ? 62 : 76), b, { size: 23, color: '#555' }); if (c) text(600, y + 88, '"not enough evidence"', { size: 23, color: '#555' }); });
@@ -59,9 +59,9 @@ if (q === 'flow') {
     ['2', 'FastAPI', ['validate the body,', 'then pick the fixed', 'plan for the action'], COL.api],
     ['3', 'MCP client', ['tools/call over', 'stdio: get_ticket,', 'search_knowledge'], COL.api],
     ['4', 'MCP server', ['typed arguments,', 'read-only handle', 'on SQLite'], COL.mcp],
-    ['5', 'Retrieve', ['TF-IDF cosine, top 3', 'min score 0.15', '+ coverage gates'], COL.mcp],
+    ['5', 'Retrieve', ['TF-IDF cosine, top 3', 'min score 0.15', '+ coverage gate'], COL.mcp],
     ['6', 'Compose', ['quote sentences', '+ [chunk-id], or', '"not enough evidence"'], COL.api],
-    ['7', 'Answer', ['sources + scores,', 'tool trace,', 'editable draft'], COL.ui],
+    ['7', 'Answer', ['sources + scores,', 'tool trace,', 'limitations'], COL.ui],
   ];
   const bw = 200, gap = 44, x0 = 40, y0 = 190;
   steps.forEach(([n, a, ls, col], i) => {

@@ -3,7 +3,7 @@
 <p align="center">
   <b>An evidence-grounded, offline copilot for support agents.</b><br>
   Pick a ticket, then summarize it, search internal guidance, find similar resolved tickets, count tickets or draft a reply.<br>
-  Every answer quotes its sources, shows its tool trace, and says plainly when the evidence is not enough.
+  Answers quote their sources and show their tool trace, and the copilot says plainly when the evidence is not enough.
 </p>
 
 <p align="center">
@@ -93,7 +93,7 @@ After dependencies are installed, everything runs with networking disabled. Re-s
 
 | Decision | Reason |
 |---|---|
-| The API reaches data only through MCP | One audited, typed, read-only surface for everything the assistant can do, and the MCP server's database handle cannot write. |
+| Assistant actions reach data only through MCP | One audited, typed, read-only surface for everything the assistant can do, and the MCP server's database handle cannot write. (The API reads SQLite directly, read-only, only for the plain ticket routes.) |
 | Writes live in FastAPI, not MCP | Marking a ticket reviewed is a separately validated, idempotent route. MCP stays read-only. |
 | A fixed tool plan per action | Text found in a ticket or article is data. It cannot add, remove or reorder tool calls. |
 | TF-IDF and cosine, not embeddings | Required to run offline on a CPU with no model download, and fully explainable: `matched_terms` and `matched_identifiers` account for every hit. The cost is paraphrase recall (see [Known limitations](#known-limitations)). |
@@ -121,7 +121,7 @@ All ten cases in `backend/data/seed/expected_cases.json` run as tests (`tests/te
 ## How a question flows
 
 <p align="center">
-  <img src="docs/question-flow.png" alt="Hand-drawn sketch of one question in seven steps: you ask, FastAPI validates and picks the fixed plan, the MCP client calls tools over stdio, the MCP server reads SQLite read-only, retrieval scores chunks with TF-IDF cosine and the coverage gates, the composer quotes sentences or says there is not enough evidence, and the answer card shows sources with scores, the tool trace and an editable draft." width="100%">
+  <img src="docs/question-flow.png" alt="Hand-drawn sketch of one question in seven steps: you ask, FastAPI validates and picks the fixed plan, the MCP client calls tools over stdio, the MCP server reads SQLite read-only, retrieval scores chunks with TF-IDF cosine and the coverage gates, the composer quotes sentences or says there is not enough evidence, and the answer card shows sources with scores, the tool trace and any limitations." width="100%">
 </p>
 
 1. **UI** posts `{action, ticket_id?, query?, category?}` to `POST /api/assistant/run`.
