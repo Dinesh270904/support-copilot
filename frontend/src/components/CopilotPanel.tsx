@@ -72,8 +72,8 @@ export function CopilotPanel({ ticket, meta, copilot, onOpenTicket, askRef, pend
       <div className="copilot-scroll" aria-live="polite" ref={scrollRef}>
         {ticket ? (
           <>
-            <TicketBriefCard key={`brief-${ticket.id}`} state={session.brief} onRetry={copilot.retryBrief} />
-            <SimilarCard state={session.similar} onRetry={copilot.retrySimilar} onOpenTicket={onOpenTicket} />
+            <TicketBriefCard key={`brief-${ticket.id}`} state={session.brief} onRetry={copilot.retryBrief} collapsed={session.answers.length > 0} />
+            <SimilarCard key={`similar-${ticket.id}`} state={session.similar} onRetry={copilot.retrySimilar} onOpenTicket={onOpenTicket} collapsed={session.answers.length > 0} />
           </>
         ) : pendingTicket ? (
           <>

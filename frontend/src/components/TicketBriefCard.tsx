@@ -6,18 +6,21 @@ import { FileTextIcon, ShieldIcon } from "./Icons";
 
 const MAX_FACTS = 4;
 
-export function TicketBriefCard({ state, onRetry }: { state: RunState; onRetry: () => void }) {
+export function TicketBriefCard({ state, onRetry, collapsed = false }: { state: RunState; onRetry: () => void; collapsed?: boolean }) {
+  // Progressive disclosure: once an answer exists the brief steps back to one row; the agent can open it at any time.
+  const [override, setOverride] = useState<boolean | null>(null);
+  const open = override ?? !collapsed;
   const [ticked, setTicked] = useState<Record<string, boolean>>({}); // UI state only, never sent anywhere
   const [showAll, setShowAll] = useState(false);
   return (
     <section className="card" aria-labelledby="brief-h">
       <header className="card-head">
         <FileTextIcon size={15} />
-        <h3 id="brief-h">Ticket brief</h3>
-        <span className="card-tag">auto</span>
-        {state.response && <span className="card-ms num">{Math.round(state.response.duration_ms)} ms</span>}
+        <h3 id="brief-h" title={state.response ? `Generated automatically in ${Math.round(state.response.duration_ms)} ms` : undefined}>Ticket brief</h3>
+        {(collapsed || override !== null) && <button type="button" className="link-btn card-toggle" aria-expanded={open} aria-label={`${open ? "Hide" : "Show"} ticket brief`} onClick={() => setOverride(!open)}>{open ? "Hide" : "Show"}</button>}
         <CardMenu label="Ticket brief options" items={[{ label: "Refresh brief", onSelect: onRetry }]} />
       </header>
+      {open && (<>
       {state.status === "loading" || state.status === "idle" ? <CardSkeleton /> : null}
       {state.status === "error" && state.error && <ErrorNote error={state.error} onRetry={onRetry} />}
       {state.status === "ok" && state.response && (() => {
@@ -54,6 +57,7 @@ export function TicketBriefCard({ state, onRetry }: { state: RunState; onRetry: 
           </>
         );
       })()}
+      </>)}
     </section>
   );
 }

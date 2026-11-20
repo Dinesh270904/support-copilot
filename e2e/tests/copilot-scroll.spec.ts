@@ -18,3 +18,22 @@ test("after asking, the answer itself is visible in the Copilot panel, not hidde
   await expect.poll(() => visibleInPanel(card.getByRole("heading", { name: /Answered from 1 article/ }))).toBe(true);
   await expect.poll(() => visibleInPanel(card.getByRole("button", { name: /^Source 1:/ }).first())).toBe(true);
 });
+
+test("once an answer exists the brief and similar cards collapse; Show and Hide really toggle them", async ({ page }) => {
+  await openTicket(page, "T-104", /Locked out after replacing authenticator phone/);
+  // Before asking: the brief is open and its checklist is visible.
+  await expect(page.getByText("Whether the customer still has a saved backup code")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Show ticket brief" })).toHaveCount(0);
+
+  await ask(page, "lost authenticator after replacing phone; backup code and enroll a new device");
+  const show = page.getByRole("button", { name: "Show ticket brief" });
+  await expect(show).toHaveAttribute("aria-expanded", "false");
+  await expect(page.getByText("Whether the customer still has a saved backup code")).toBeHidden();
+  await expect(page.getByRole("button", { name: "Show similar resolved tickets" })).toHaveAttribute("aria-expanded", "false");
+
+  await show.click();
+  await expect(page.getByRole("button", { name: "Hide ticket brief" })).toHaveAttribute("aria-expanded", "true");
+  await expect(page.getByText("Whether the customer still has a saved backup code")).toBeVisible();
+  await page.getByRole("button", { name: "Hide ticket brief" }).click();
+  await expect(page.getByText("Whether the customer still has a saved backup code")).toBeHidden();
+});
