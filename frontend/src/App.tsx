@@ -248,7 +248,7 @@ export default function App() {
       <div className="panes">
         <PaneLandmark as="nav" phone={layout === "phone"} className="pane pane-queue" aria-label="Ticket queue" hidden={layout === "phone" && tab !== "queue"}>
           {layout === "rail" ? (
-            <QueueRail view={route.view} counts={countViews(tickets)} onView={(view) => { navigate({ view }); setQueueOpen(true); }} />
+            <QueueRail view={route.view} counts={countViews(tickets)} unknown={listError !== null} onView={(view) => { navigate({ view }); setQueueOpen(true); }} />
           ) : (
             queuePane
           )}

@@ -52,3 +52,23 @@ test("API: a request body over the limit gets 413 with the standard error shape"
   expect((await resp.json()).error.code).toBe("payload_too_large");
   expect((await request.post(`${API}/api/assistant/run`, { data: { action: "count_tickets" } })).ok()).toBeTruthy();
 });
+
+test("link-style buttons have a hit area of at least 24px, and shortcut hints are hidden on touch devices", async ({ page, browser }) => {
+  await page.setViewportSize({ width: 1440, height: 800 });
+  await page.goto("/#/ticket/T-101");
+  await appReady(page);
+  const toggle = page.getByRole("button", { name: /Notes for the agent|Show all|Limitations/ }).first();
+  if (await toggle.count()) expect((await toggle.boundingBox())!.height).toBeGreaterThanOrEqual(24);
+  await page.getByRole("button", { name: /Draft with Copilot/ }).click();
+  const notes = page.getByRole("button", { name: /Notes for the agent/ });
+  await expect(notes).toBeVisible();
+  expect((await notes.boundingBox())!.height).toBeGreaterThanOrEqual(24);
+
+  const touch = await browser.newContext({ hasTouch: true, isMobile: true, viewport: { width: 390, height: 844 } });
+  const tp = await touch.newPage();
+  await tp.goto("/");
+  await tp.getByRole("button", { name: /Search|Command|palette/i }).first().click();
+  await expect(tp.getByRole("dialog", { name: "Command palette" })).toBeVisible();
+  await expect(tp.locator(".palette .kbd-hint:visible")).toHaveCount(0);
+  await touch.close();
+});

@@ -141,7 +141,7 @@ export function CommandPalette(p: Props) {
             value={query}
             onChange={(e) => { setQuery(e.target.value); setActive(0); setCount({ status: "idle" }); }}
           />
-          <kbd>esc</kbd>
+          <kbd className="kbd-hint">esc</kbd>
         </div>
         {noResults && <p className="palette-empty">No results for “{query.trim()}”.</p>}
         <ul id="palette-list" role="listbox" aria-label="Results" className="palette-list">
@@ -155,7 +155,7 @@ export function CommandPalette(p: Props) {
                   onMouseMove={() => setActive(i)} onClick={() => (item.id === "count-live" && count.status === "ok" && ids.length > 0 ? done(() => p.onOpenTicket(ids[0]))() : item.run())}>
                   <span className="palette-icon">{item.icon}</span>
                   <span className="palette-label">{item.group === "Tickets" ? <><span className="num palette-tid">{item.label.split("  ")[0]}</span> {item.label.split("  ").slice(1).join("  ")}</> : item.label}</span>
-                  {item.hint && <kbd>{item.hint}</kbd>}
+                  {item.hint && <kbd className="kbd-hint">{item.hint}</kbd>}
                 </div>
               </li>
             );
@@ -167,7 +167,7 @@ export function CommandPalette(p: Props) {
             <span>{count.response.count?.count ?? 0} ticket{(count.response.count?.count ?? 0) === 1 ? "" : "s"}{ids.length > 0 && <> : <span className="num">{ids.slice(0, 4).join(", ")}</span> · Open it <kbd>⏎</kbd></>}</span>
           )}
           {count.status === "error" && <span className="palette-error">{count.error?.message ?? "Couldn't count tickets."}</span>}
-          {count.status === "idle" && <span>{humanize("navigate")} <kbd>↑</kbd> <kbd>↓</kbd> · run <kbd>⏎</kbd></span>}
+          {count.status === "idle" && <span className="kbd-hint">{humanize("navigate")} <kbd>↑</kbd> <kbd>↓</kbd> · run <kbd>⏎</kbd></span>}
         </div>
       </div>
     </div>
