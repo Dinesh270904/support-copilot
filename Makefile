@@ -1,7 +1,7 @@
 # Prefer the project venv (backend/.venv) when it exists; override with `make PYTHON=...`.
 PYTHON ?= $(if $(wildcard backend/.venv/bin/python),$(CURDIR)/backend/.venv/bin/python,python3)
 
-.PHONY: install setup dev api ui test test-backend test-frontend typecheck mcp-inspect e2e clean
+.PHONY: install setup dev api ui test test-backend test-frontend lint typecheck mcp-inspect e2e clean
 
 install:            ## Install backend + frontend dependencies
 	cd backend && $(PYTHON) -m pip install -r requirements-dev.txt
@@ -26,6 +26,9 @@ test-backend:
 
 test-frontend:
 	cd frontend && npx vitest run
+
+lint:               ## Bug-finding lint (ruff: pyflakes + bugbear) for the backend
+	cd backend && $(PYTHON) -m ruff check .
 
 typecheck:
 	cd frontend && npx tsc -b

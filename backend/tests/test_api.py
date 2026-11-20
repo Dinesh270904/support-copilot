@@ -326,3 +326,43 @@ def test_run_log_and_db_row_hold_query_length_but_never_query_or_ticket_text(cli
         assert "zebraquasar7731" not in haystack, f"query text leaked into the {name}"
         for text in ticket_texts:
             assert text not in haystack, f"ticket text leaked into the {name}: {text[:40]!r}"
+
+
+def test_oversized_request_body_is_refused_with_413_before_parsing(client, settings):
+    limit = settings.max_body_bytes
+    huge = {"action": "search_knowledge", "query": "x" * (limit + 1)}
+    resp = client.post("/api/assistant/run", json=huge)
+    assert resp.status_code == 413
+    err = resp.json()["error"]
+    assert err["code"] == "payload_too_large" and err["request_id"] and resp.headers["X-Request-ID"] == err["request_id"]
+    # A normal request on the same app still works.
+    assert client.post("/api/assistant/run", json={"action": "count_tickets"}).status_code == 200
+
+
+def test_chunked_request_body_is_refused_with_411(client):
+    def chunks():
+        yield b'{"action": "count_tickets"}'
+
+    resp = client.post("/api/assistant/run", content=chunks(), headers={"Content-Type": "application/json"})
+    assert resp.status_code == 411 and resp.json()["error"]["code"] == "length_required"
+
+
+def test_run_history_keeps_only_the_newest_rows(seeded_db, tmp_path):
+    import shutil
+
+    from app.api.main import _save_run
+
+    db = tmp_path / "copy.db"
+    shutil.copy(seeded_db, db)
+    engine = make_engine(db)
+    sessions = make_sessionmaker(engine)
+    base = {"action": "count_tickets", "ticket_id": None, "status": "success", "answer_state": None, "tool_calls": [],
+            "retrieval_method": None, "source_ids": [], "query_chars": 0, "duration_ms": 1, "error_code": None}
+    for i in range(8):
+        _save_run(sessions, {**base, "run_id": f"keep-test-{i}", "created_at": f"2099-01-01T00:00:0{i}Z"}, keep=5)
+    with sessions() as s:
+        kept = [r.run_id for r in s.scalars(select(AssistantRun).where(AssistantRun.run_id.like("keep-test-%")).order_by(AssistantRun.created_at))]
+        total = len(s.scalars(select(AssistantRun)).all())
+    engine.dispose()
+    assert kept == [f"keep-test-{i}" for i in (3, 4, 5, 6, 7)]
+    assert total == 5

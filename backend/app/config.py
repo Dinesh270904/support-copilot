@@ -41,6 +41,9 @@ class Settings:
     mcp_call_timeout_s: float = 15.0
     # API input limits.
     max_query_chars: int = 500
+    max_body_bytes: int = 16 * 1024  # request bodies are tiny JSON objects; anything bigger is refused before it is read
+    # The audit log keeps this many newest rows (opening a ticket alone writes two).
+    max_run_history: int = 1000
     cors_origins: tuple[str, ...] = field(default_factory=tuple)
     log_level: str = "INFO"
 
@@ -64,4 +67,6 @@ def get_settings() -> Settings:
         mcp_call_timeout_s=_env_float("SUPPORT_COPILOT_MCP_CALL_TIMEOUT", 15.0),
         cors_origins=tuple(o.strip() for o in origins.split(",") if o.strip()),
         log_level=os.environ.get("SUPPORT_COPILOT_LOG_LEVEL", "INFO").upper(),
+        max_body_bytes=_env_int("SUPPORT_COPILOT_MAX_BODY_BYTES", 16 * 1024),
+        max_run_history=_env_int("SUPPORT_COPILOT_MAX_RUN_HISTORY", 1000),
     )

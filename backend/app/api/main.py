@@ -21,7 +21,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from mcp import StdioServerParameters
-from sqlalchemy import desc, select, text
+from sqlalchemy import delete, desc, select, text
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from sqlalchemy.orm import Session, sessionmaker
 
@@ -159,7 +159,16 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     @app.middleware("http")
     async def request_id(request: Request, call_next):
         request.state.request_id = request.headers.get("X-Request-ID", "")[:64] or uuid.uuid4().hex[:12]
-        response = await call_next(request)
+        # Refuse oversized bodies from the header alone, before anything is read or parsed. A body with no
+        # Content-Length (chunked) cannot be checked up front, so it is refused too: browsers and API clients
+        # send a length for JSON bodies.
+        length = request.headers.get("content-length")
+        if length is not None and (not length.isdigit() or int(length) > settings.max_body_bytes):
+            response = _error(413, "payload_too_large", f"Request body is larger than {settings.max_body_bytes} bytes.", request)
+        elif length is None and "chunked" in request.headers.get("transfer-encoding", "").lower():
+            response = _error(411, "length_required", "Send a Content-Length header; chunked request bodies are not accepted.", request)
+        else:
+            response = await call_next(request)
         response.headers["X-Request-ID"] = request.state.request_id
         return response
 
@@ -284,7 +293,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         except Exception as exc:
             record = getattr(exc, "run_record", None)
             if record:
-                await run_in_threadpool(_save_run, sessions, record)
+                await run_in_threadpool(_save_run, sessions, record, settings.max_run_history)
             if isinstance(exc, TicketNotFoundError):
                 raise AppError(404, "ticket_not_found", f"Ticket {exc} was not found") from exc
             if isinstance(exc, McpTimeoutError):
@@ -295,7 +304,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                 log.error("MCP tool error", extra={"fields": {"code": exc.code}})  # the text can echo the query
                 raise AppError(502, "tool_error", f"An assistant tool failed ({exc.code}).") from exc
             raise
-        await run_in_threadpool(_save_run, sessions, record)
+        await run_in_threadpool(_save_run, sessions, record, settings.max_run_history)
         return response
 
     @app.get("/api/assistant/runs", response_model=list[AssistantRunRecord], tags=["assistant"])
@@ -312,11 +321,15 @@ def _sessionmaker_from(app: FastAPI) -> sessionmaker[Session]:
     return app.state.sessions
 
 
-def _save_run(sessions: sessionmaker[Session], record: dict) -> None:
+def _save_run(sessions: sessionmaker[Session], record: dict, keep: int) -> None:
     log.info("assistant run", extra={"fields": record})
     try:
         with sessions.begin() as session:
             session.add(AssistantRun(**record))
+            session.flush()
+            # Retention: keep only the newest `keep` rows. The created_at index makes this a short range scan.
+            newest = select(AssistantRun.run_id).order_by(desc(AssistantRun.created_at), desc(AssistantRun.run_id)).limit(keep)
+            session.execute(delete(AssistantRun).where(AssistantRun.run_id.not_in(newest)))
     except Exception:  # noqa: BLE001 - audit logging must never fail the request
         log.exception("Failed to persist assistant run", extra={"fields": {"run_id": record.get("run_id")}})
 
