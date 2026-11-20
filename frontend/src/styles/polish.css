@@ -60,3 +60,6 @@
 
 /* The answer heading receives focus when an answer arrives (for screen readers). Keep the ring visible but inside the card, not clipped. */
 .acard-state:focus-visible { outline: 2px solid var(--accent); outline-offset: -3px; border-radius: 8px; }
+
+/* The conversation pane is a focusable scroll region (axe: scrollable-region-focusable); keep its ring inside the pane. */
+.ticket-scroll:focus-visible { outline-offset: -3px; }

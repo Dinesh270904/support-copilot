@@ -51,7 +51,7 @@ export function TicketPane({ ticket, loading, error, review, untrusted, onMarkRe
   const messageCount = ticket.messages.length;
   return (
     <>
-      <div className="ticket-scroll" aria-busy={loading} ref={scrollRef}>
+      <div className="ticket-scroll" aria-busy={loading} ref={scrollRef} role="region" aria-label="Ticket details and conversation" tabIndex={0}>
         <header className="ticket-head">
           <div className="ticket-head-main">
             <p className="ticket-kicker">
