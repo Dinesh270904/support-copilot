@@ -49,3 +49,14 @@
 .how { list-style: none; margin: var(--s-2) 0 0; padding: 0; display: flex; flex-direction: column; gap: var(--s-3); }
 .how li { display: flex; align-items: flex-start; gap: var(--s-3); font: var(--t-body); line-height: 1.5; }
 .how-n { flex: none; width: 22px; height: 22px; display: inline-grid; place-items: center; border-radius: 999px; border: 1px solid var(--accent-border); background: var(--accent-bg); font-size: 12px; font-weight: 650; }
+
+/* Collapsed cards: a quiet one-line header with a Show/Hide toggle. */
+.card-toggle { margin-left: auto; font-size: 12.5px; }
+.card-head:has(.card-toggle) { margin-bottom: 0; }
+
+/* Top-bar status pill: the full label on wide screens, a short one on phones (the full label overflowed 390px by 1px). */
+.pill-short { display: none; }
+@media (max-width: 480px) { .pill-full { display: none; } .pill-short { display: inline; } }
+
+/* The answer heading receives focus when an answer arrives (for screen readers). Keep the ring visible but inside the card, not clipped. */
+.acard-state:focus-visible { outline: 2px solid var(--accent); outline-offset: -3px; border-radius: 8px; }
