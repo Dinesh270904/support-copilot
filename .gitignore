@@ -19,3 +19,5 @@ e2e/playwright-report/
 # Local secrets (the app needs none)
 .env
 .env.*
+
+docs/diagrams/node_modules/

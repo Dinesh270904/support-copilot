@@ -1,13 +1,48 @@
-# Support Copilot
+<h1 align="center">Support Copilot</h1>
 
-A local, offline copilot for support agents. Pick a ticket, then summarize it, search internal guidance, find similar resolved tickets, count tickets, or draft a reply. Every answer is built from retrieved records, shows its sources and tool trace, and says plainly when the evidence is insufficient. **No LLM, no API keys, no network calls, and nothing is ever sent to a customer.**
+<p align="center">
+  <b>An evidence-grounded, offline copilot for support agents.</b><br>
+  Pick a ticket, then summarize it, search internal guidance, find similar resolved tickets, count tickets or draft a reply.<br>
+  Every answer quotes its sources, shows its tool trace, and says plainly when the evidence is not enough.
+</p>
 
-```
-React/TS (Vite) ──HTTP──▶ FastAPI ──MCP client (stdio)──▶ MCP server ──read-only──▶ SQLite
-                           │  orchestrator: fixed tool plan per action              ├─ tickets, messages
-                           │  deterministic response composer                       ├─ articles, chunks
-                           └─ writes: mark reviewed, assistant run log ──▶ SQLite   └─ FTS5 ticket_search
-```
+<p align="center">
+  <img alt="Python 3.11 to 3.13" src="https://img.shields.io/badge/python-3.11%E2%80%933.13-3776AB?logo=python&logoColor=white">
+  <img alt="FastAPI" src="https://img.shields.io/badge/FastAPI-Pydantic-009688?logo=fastapi&logoColor=white">
+  <img alt="React 19 and TypeScript" src="https://img.shields.io/badge/React%2019-TypeScript-3178C6?logo=react&logoColor=white">
+  <img alt="MCP over stdio" src="https://img.shields.io/badge/MCP-stdio-7c3aed">
+  <img alt="SQLite with FTS5" src="https://img.shields.io/badge/SQLite-FTS5-003B57?logo=sqlite&logoColor=white">
+  <img alt="No LLM, no API keys, offline" src="https://img.shields.io/badge/LLM-none-success">
+  <img alt="Tests: 155 pytest, 101 Vitest, 145 Playwright" src="https://img.shields.io/badge/tests-155%20pytest%20%C2%B7%20101%20Vitest%20%C2%B7%20145%20Playwright-brightgreen">
+</p>
+
+<p align="center">
+  <img src="docs/screenshots/readme-1-answered-citation-preview.jpg" alt="An answered question: each sentence carries a numbered source, and hovering a marker previews the quoted chunk with its score" width="92%">
+</p>
+
+> **No LLM, no API keys, no network calls, and nothing is ever sent to a customer.**
+
+## Contents
+
+- [Overview](#overview) · [Quick start](#quick-start) · [Architecture](#architecture) · [Sample actions](#sample-actions)
+- [How a question flows](#how-a-question-flows) · [Local RAG pipeline](#local-rag-pipeline) · [Similar tickets and counts](#similar-tickets-and-counts)
+- [MCP server](#mcp-server) · [API](#api) · [Frontend](#frontend) · [Data model](#data-model) · [Project structure](#project-structure)
+- [Tests](#tests) · [End-to-end tests](#end-to-end-tests) · [Known limitations](#known-limitations) · [Roadmap](#roadmap-with-a-local-model-or-a-larger-corpus) · [AI tools used](#ai-tools-used)
+
+## Overview
+
+Support agents need two things at once: what the ticket says, and what the internal guidance says about it. Support Copilot brings them
+together without guessing. A local, deterministic pipeline retrieves evidence, quotes it, and cites it. When nothing relevant exists it
+declines to answer instead of inventing something.
+
+| | |
+|---|---|
+| **Grounded** | Answers are verbatim sentences from retrieved chunks, tagged with chunk IDs such as `[KB-03#chunk-1]`, each with its similarity score. Weak matches return *insufficient evidence* with no citation. |
+| **Deterministic** | No model inference anywhere. The same request gives the same answer. |
+| **Local and offline** | No API keys, no model download, no network after install. The backend suite passes with the network blocked. |
+| **Safe by construction** | The MCP server opens SQLite read-only. Each action maps to a fixed tool plan, so text in a ticket or article can never change what runs. There is no SQL tool. |
+| **Inspectable** | Every answer shows the retrieval method, thresholds, sources with scores, and the tool trace. The raw trace is one click away, and the server can be inspected with the MCP Inspector. |
+| **Tested** | 155 pytest tests (+1 expected failure), 101 Vitest tests, and 145 Playwright tests that drive the real API, the real MCP server and the UI with real clicks and key presses. |
 
 ## Quick start
 
@@ -26,7 +61,8 @@ make dev         # seeds SQLite if missing, starts API on :8000 (which launches 
 
 Open http://localhost:5173. API docs are at http://127.0.0.1:8000/docs, and health is at `/health`.
 
-Without `make`:
+<details>
+<summary>Without <code>make</code></summary>
 
 ```bash
 cd backend && .venv/bin/python -m app.seed                                # migrate + seed + verify index build
@@ -35,7 +71,35 @@ cd backend && .venv/bin/python -m app.seed                                # migr
 cd frontend && npm install && npm run dev
 ```
 
+</details>
+
 After dependencies are installed, everything runs with networking disabled. Re-seed at any time with `make setup` or `RESEED=1 make dev`. Reseeding resets tickets and articles to the data pack and keeps the assistant run log.
+
+## Architecture
+
+<p align="center">
+  <img src="docs/architecture.png" alt="Hand-drawn architecture sketch. The browser (React, TypeScript, Vite) talks HTTP and JSON to FastAPI, which validates the request, picks a fixed tool plan, calls an MCP client over stdio, and composes the answer. The MCP server, a separate process, exposes four read-only tools and two resource templates, runs the TF-IDF and FTS5 retrieval, and reads SQLite through a read-only handle. Only FastAPI writes, and only reviewed_at and the run log." width="100%">
+</p>
+
+| Layer | Technology | Responsibility | Code |
+|---|---|---|---|
+| **UI** | React 19, TypeScript, Vite, plain CSS | Queue, ticket detail, Copilot panel, answer cards, draft editor | `frontend/src/` |
+| **API** | FastAPI, Pydantic | Validation, a fixed tool plan per action, the MCP client, the deterministic composer, the only writes | `backend/app/api/`, `backend/app/composer/` |
+| **MCP server** | Official `mcp` SDK, stdio | Four typed read-only tools and two resource templates, run as a separate process | `backend/app/mcp_server.py` |
+| **Retrieval** | scikit-learn TF-IDF and cosine; SQLite FTS5 | Knowledge search over chunks; similar resolved tickets | `backend/app/rag/`, `backend/app/repository.py` |
+| **Storage** | SQLite, SQLAlchemy, Alembic | Tickets, messages, articles, chunks, run log, FTS5 index | `backend/app/models.py`, `backend/alembic/` |
+
+**Why it is built this way**
+
+| Decision | Reason |
+|---|---|
+| The API reaches data only through MCP | One audited, typed, read-only surface for everything the assistant can do, and the MCP server's database handle cannot write. |
+| Writes live in FastAPI, not MCP | Marking a ticket reviewed is a separately validated, idempotent route. MCP stays read-only. |
+| A fixed tool plan per action | Text found in a ticket or article is data. It cannot add, remove or reorder tool calls. |
+| TF-IDF and cosine, not embeddings | Required to run offline on a CPU with no model download, and fully explainable: `matched_terms` and `matched_identifiers` account for every hit. The cost is paraphrase recall (see [Known limitations](#known-limitations)). |
+| FTS5 for similar tickets | Stable ticket IDs, bm25 ranking and no second index. It is compared with TF-IDF on the evaluation set. |
+| A deterministic composer | Quoting retrieved sentences means nothing can be invented, and the answer is reproducible. |
+| A threshold plus two rules | A cosine cutoff alone cannot separate near-misses from true matches. See [Local RAG pipeline](#local-rag-pipeline). |
 
 ## Sample actions
 
@@ -52,9 +116,13 @@ After dependencies are installed, everything runs with networking disabled. Re-s
 | T-112 | Summarize | — | SFTP identified; injected message flagged, not followed |
 | T-101 | Draft reply | — | Editable draft labelled "Draft, not sent": one customer step from KB-01; the "do not ask … another payment" caution and a KB-02 sentence appear under "Notes for the agent" |
 
-All ten cases in `backend/data/seed/expected_cases.json` run as tests (`tests/test_expected_cases.py`).
+All ten cases in `backend/data/seed/expected_cases.json` run as tests (`tests/test_expected_cases.py`) and again through the UI.
 
 ## How a question flows
+
+<p align="center">
+  <img src="docs/question-flow.png" alt="Hand-drawn sketch of one question in seven steps: you ask, FastAPI validates and picks the fixed plan, the MCP client calls tools over stdio, the MCP server reads SQLite read-only, retrieval scores chunks with TF-IDF cosine and the coverage gates, the composer quotes sentences or says there is not enough evidence, and the answer card shows sources with scores, the tool trace and an editable draft." width="100%">
+</p>
 
 1. **UI** posts `{action, ticket_id?, query?, category?}` to `POST /api/assistant/run`.
 2. **FastAPI** validates the request with Pydantic: the action enum, ID patterns, a 500-character query limit, and per-action requirements. The orchestrator (`app/api/assistant.py`) chooses a **fixed tool plan** from the action. For example, `search_knowledge` maps to `get_ticket` (if a ticket is given) then `search_knowledge`. Content never changes the plan.
@@ -76,6 +144,13 @@ All ten cases in `backend/data/seed/expected_cases.json` run as tests (`tests/te
   3. **Error-code identifiers**: an UPPER_SNAKE token in the query (for example `PAYMENT_TIMEOUT`) that appears verbatim, as a whole token, in a chunk's text makes that chunk evidence on its own, even below the score floor. A code is near-unique, so an exact match is stronger evidence than any cosine: "What does PAYMENT_TIMEOUT mean and how do I resolve it?" scores only 0.10 against the article written for that error. The hit reports `matched_identifiers`. An unknown code (`ERR_FOO_BAR`) still gives insufficient evidence.
 
   Why two text gates: "office wifi password" scores 0.22 against KB-05 because of the single word "password", so a cosine cutoff alone cannot separate it from true matches (0.22-0.50).
+
+- **Composition rules** (deterministic, no generation):
+  1. If nothing passes retrieval, the result is `insufficient_evidence` with no citations. The answer says why: an empty category, too few shared terms, or a best score below the threshold.
+  2. If the best-supported sentence is a *coverage disclaimer* ("does not define …"), the result is `insufficient_evidence`, and the disclaiming chunk is cited as `coverage_gap`. This handles the bank-decline-fee case, where similarity is high precisely because KB-06 names the topic it excludes.
+  3. Otherwise, up to 3 supporting sentences are quoted verbatim, in documented order.
+  4. **Guardrails survive**: prohibition sentences ("do not …", "never …") from cited articles that share a query term are always included. When the question named the article's error code, all of that article's prohibitions are eligible, because an identifier is one token and shares no word with "If the payment is pending, do not ask …".
+- **What TF-IDF misses compared with embeddings**: synonyms and paraphrase ("can't log in" vs "locked out", "reimburse" vs "refund") and intent. The light stemmer handles plain inflections only. It is strong on exact codes such as `PAYMENT_TIMEOUT`, and it is transparent: `matched_terms` and `matched_identifiers` explain every hit.
 
 ### Evaluation (`python -m app.eval`)
 
@@ -107,12 +182,6 @@ Baseline is the original code (score floor 0.15, coverage 0.5, no identifier rul
 Threshold sweep on the tuning set, with the coverage gate on: P@1 is 0.893 and FPR is 0.000 for every `min_score` from 0.05 to 0.175, then 0.857 at 0.20, 0.786 at 0.25 and 0.679 at 0.30. So 0.15 is not a sharp optimum; it sits on a plateau with a margin before the cliff, and the gates, not the cosine cutoff, do the separating work. The 0.6 coverage value was chosen after seeing one tuning query ("delete my account"); the holdout negatives stayed at 0 false positives. These are small sets, so treat the numbers as evidence of direction, not precision.
 
 Paraphrase is the remaining gap, as expected for lexical retrieval: the two holdout misses ("pay button spun forever and now there's a hold on the customer's card", "new phone, 2FA app is gone, can't log in") share almost no words with their articles.
-- **Composition rules** (deterministic, no generation):
-  1. If nothing passes retrieval, the result is `insufficient_evidence` with no citations. The answer says why: an empty category, too few shared terms, or a best score below the threshold.
-  2. If the best-supported sentence is a *coverage disclaimer* ("does not define …"), the result is `insufficient_evidence`, and the disclaiming chunk is cited as `coverage_gap`. This handles the bank-decline-fee case, where similarity is high precisely because KB-06 names the topic it excludes.
-  3. Otherwise, up to 3 supporting sentences are quoted verbatim, in documented order.
-  4. **Guardrails survive**: prohibition sentences ("do not …", "never …") from cited articles that share a query term are always included. When the question named the article's error code, all of that article's prohibitions are eligible, because an identifier is one token and shares no word with "If the payment is pending, do not ask …".
-- **What TF-IDF misses compared with embeddings**: synonyms and paraphrase ("can't log in" vs "locked out", "reimburse" vs "refund") and intent. The light stemmer handles plain inflections only. It is strong on exact codes such as `PAYMENT_TIMEOUT`, and it is transparent: `matched_terms` and `matched_identifiers` explain every hit.
 
 ## Similar tickets and counts
 
@@ -137,7 +206,9 @@ Paraphrase is the remaining gap, as expected for lexical retrieval: the two hold
 
 Logs go to stderr, and stdout is reserved for MCP frames.
 
-**Inspect it.** The commands below use the project venv interpreter, `backend/.venv/bin/python`, explicitly. A bare `python3` is a different interpreter and fails with `No module named 'mcp'`. The database must exist first: on a fresh clone run `.venv/bin/python -m app.seed` (or `make setup`) in `backend/`, otherwise the server exits with "Database not found" and the Inspector reports a connection timeout.
+### Inspect it
+
+The commands below use the project venv interpreter, `backend/.venv/bin/python`, explicitly. A bare `python3` is a different interpreter and fails with `No module named 'mcp'`. The database must exist first: on a fresh clone run `.venv/bin/python -m app.seed` (or `make setup`) in `backend/`, otherwise the server exits with "Database not found" and the Inspector reports a connection timeout.
 
 ```bash
 cd backend
@@ -150,6 +221,9 @@ npx @modelcontextprotocol/inspector --cli --config mcp.json --server support-cop
 .venv/bin/python scripts/mcp_check.py      # same checks with the official Python SDK client, no Node needed
 ```
 
+<details>
+<summary>Walkthrough of the Inspector web UI</summary>
+
 In the web UI (written against Inspector v2.13; `npx` fetches the newest release, so labels may differ slightly): open the printed URL (it includes a token), then:
 
 1. **Connect**: flip the toggle on the `python` server card. It shows "Connecting…" and then "Connected, MCP 2025-11-25". The Tools, Prompts and Resources tabs only appear after it connects.
@@ -159,9 +233,13 @@ In the web UI (written against Inspector v2.13; `npx` fetches the newest release
 
 The right-hand **Protocol** panel logs every JSON-RPC message with timing (`TOOLS/CALL`, `RESOURCES/READ`).
 
+</details>
+
 Client config: `backend/mcp.json` (`command` is `.venv/bin/python`, resolved against `cwd`, so create the venv first).
 
-**API resilience**: the MCP server is started once, when the API starts.
+### API resilience
+
+The MCP server is started once, when the API starts.
 - If it fails to start, the API still serves tickets, `/health` reports `degraded`, and assistant calls return a safe `503 assistant_unavailable` while retrying the connection.
 - `/health` pings the MCP server (2 s limit), so it reports `degraded` as soon as the child process is dead, not only after a request fails.
 - If the connection drops, including a `SIGKILL` of the child while a request is in flight, the call is retried once on a fresh session. This is safe because every tool is read-only and idempotent. A drop is recognised by the SDK's typed `CONNECTION_CLOSED` JSON-RPC code, not by message text; any other protocol error is a tool error and is not retried.
@@ -187,9 +265,7 @@ React 19 + TypeScript + Vite with plain CSS custom properties: no UI framework. 
 [`@phosphor-icons/react`](https://github.com/phosphor-icons/react) (MIT). It ships the icons as bundled SVG components, so nothing is fetched
 at runtime and the UI still works offline. Phosphor was chosen over a hand-drawn set for consistent, professionally drawn geometry
 and multiple weights (regular, fill for active states, duotone for the brand mark). Only `src/components/Icons.tsx` imports it.
-Cost, measured with `vite build`: the JS bundle is 392.5 KB (113.08 KB gzip) now; the earlier 298.5 KB (91.3 KB gzip) figure, an ad hoc build measurement from before the icon change that cannot be reproduced from this repo, implies about +21.8 KB gzip,
-because each icon carries all six weights; CSS is 59.1 KB (11.67 KB gzip). Lighthouse on the production build (measured in the final verification, headless Chromium, `vite preview`): desktop empty page and ticket page score 1.00 in performance, accessibility, best practices and SEO; mobile scores performance 0.99 and best practices and SEO 1.00, accessibility 1.00 on the ticket page and 0.98 on the phone's queue screen (axe `landmark-one-main`: no main landmark while only the queue is shown, a known gap), and the answered state (user flow) scores 1.00 with an INP of 40 ms. The design source is
-`docs/UI_HANDOFF.md` (a longer addendum was also supplied during the build; it is not stored in this repo). Five screenshots are committed below; the full set
+The design source is `docs/UI_HANDOFF.md` (a longer addendum was also supplied during the build; it is not stored in this repo). Five screenshots are committed below; the full set
 (about 2.4 MB) was kept out of the repo to stay within its size budget.
 
 - **Layout**: queue, ticket and Copilot panes. The queue has five views (Open, High priority, Needs review, Resolved, All) with counts
@@ -220,6 +296,11 @@ because each icon carries all six weights; CSS is 59.1 KB (11.67 KB gzip). Light
 
 ![Phone layout at 390 px](docs/screenshots/readme-5-mobile-390.jpg)
 
+### Performance and accessibility
+
+Measured with `vite build`: the JS bundle is 392.5 KB (113.08 KB gzip) now; the earlier 298.5 KB (91.3 KB gzip) figure, an ad hoc build measurement from before the icon change that cannot be reproduced from this repo, implies about +21.8 KB gzip,
+because each icon carries all six weights; CSS is 59.1 KB (11.67 KB gzip). Lighthouse on the production build (measured in the final verification, headless Chromium, `vite preview`): desktop empty page and ticket page score 1.00 in performance, accessibility, best practices and SEO; mobile scores performance 0.99 and best practices and SEO 1.00, accessibility 1.00 on the ticket page and 0.98 on the phone's queue screen (axe `landmark-one-main`: no main landmark while only the queue is shown, a known gap), and the answered state (user flow) scores 1.00 with an INP of 40 ms.
+
 ## Data model
 
 The schema is created by Alembic migration `0001_initial`:
@@ -231,6 +312,31 @@ The schema is created by Alembic migration `0001_initial`:
 - the FTS5 virtual table `ticket_search`
 
 The seed (`app/seed.py`) validates the JSON pack with Pydantic, which rejects duplicate IDs and malformed timestamps, then reloads everything in one transaction.
+
+## Project structure
+
+```text
+support-copilot/
+├── backend/
+│   ├── app/
+│   │   ├── api/            FastAPI app, orchestrator (assistant.py), MCP client (mcp_gateway.py), query parser
+│   │   ├── composer/       deterministic answer, draft and ticket-brief composers
+│   │   ├── rag/            chunking, stemming, TF-IDF index
+│   │   ├── mcp_server.py   the MCP stdio server (tools and resources)
+│   │   ├── repository.py   all SQL (SQLAlchemy expressions, FTS5)
+│   │   ├── models.py  schemas.py  validation.py  config.py  db.py  seed.py  eval.py
+│   ├── alembic/            migration 0001_initial
+│   ├── data/seed/          tickets, articles, expected cases (the starter data pack)
+│   ├── data/eval/          tuning and holdout query sets
+│   ├── scripts/mcp_check.py   MCP client check with the official SDK
+│   ├── tests/              pytest suite
+│   └── mcp.json            MCP client configuration
+├── frontend/src/           components/ hooks/ lib/ styles/ __tests__/ (React, TypeScript, Vitest)
+├── e2e/                    Playwright suite, plus REQUIREMENTS_MATRIX.md, CONTROLS.md, UX_FINDINGS.md
+├── docs/                   architecture and flow sketches (docs/diagrams/ renders them), UI handoff, README screenshots
+├── scripts/dev.sh          seed if needed, then start API and UI
+└── Makefile                install, dev, test, e2e, mcp-inspect
+```
 
 ## Tests
 
@@ -301,7 +407,9 @@ passing, and be named `BUG-n`; there are none at v1.2.
 - No model adapter or LLM call of any kind, so there is nothing to configure and no API key.
 - No Docker image or compose file: the app runs from a Python virtualenv and Node, as in the quick start.
 
-**With a local LLM or a larger corpus**, I would keep this pipeline as the retrieval and citation layer and the fallback:
+## Roadmap: with a local model or a larger corpus
+
+I would keep this pipeline as the retrieval and citation layer and the fallback:
 - Add embeddings (hybrid with BM25) for recall.
 - Have a local model rephrase only the retrieved sentences, then check its output: every sentence must map to a cited chunk.
 - Keep the deterministic composer for insufficient-evidence decisions.
@@ -316,12 +424,13 @@ Each item can be checked in the repo (code, tests or scripts); the process histo
 
 - The backend suite and the tuning evaluation pass on Python 3.11, 3.12 and 3.13 with identical metrics. `python3` on the development machine is 3.14 and does not have the dependencies installed, which is why the docs insist on `backend/.venv`.
 - All ten cases in `backend/data/seed/expected_cases.json` run as tests (`tests/test_expected_cases.py`) and again through the UI (`e2e/tests/expected-cases.spec.ts`).
-- The MCP server is exercised by an official Python SDK client (`backend/scripts/mcp_check.py`) and by the Inspector CLI, including `--config mcp.json`. The Inspector web UI steps below were written from a browser-automation walkthrough of v2.13; I have not run them myself, and `npx` now fetches a newer release.
+- The MCP server is exercised by an official Python SDK client (`backend/scripts/mcp_check.py`) and by the Inspector CLI, including `--config mcp.json`. The Inspector web UI steps in the MCP server section were written from a browser-automation walkthrough of v2.13; I have not run them myself, and `npx` now fetches a newer release.
 - Reconnect behaviour is tested against a real child process: `SIGKILL` while idle and during an in-flight call (`tests/test_gateway_reliability.py`).
 - The offline evaluation harness (`app/eval.py`) and the tuning and holdout sets (`backend/data/eval/`).
 - The error-code rule, the stemmer, the coverage gate value, the guardrail fix, the similar-ticket floor, the 504 mapping, environment passthrough, the `/health` ping and the draft split, each with tests.
 - The UI follows the written handoff specification in `docs/UI_HANDOFF.md`; a longer addendum used during the build is not stored in this repo.
 - A final verification pass (an offline run with the network denied, an every-control test run, an accessibility, layout and performance inspection) is recorded in `e2e/REQUIREMENTS_MATRIX.md`, `e2e/CONTROLS.md` and `e2e/UX_FINDINGS.md`; it found and fixed the four defects listed in the last.
+- The two sketches in `docs/` are illustrations, not screenshots. They are drawn by a script with a hand-drawn rendering library (rough.js) and a handwriting font (Caveat), and `docs/diagrams/` regenerates them identically (`cd docs/diagrams && npm install && npx playwright install chromium && npm run render`).
 
 ### Mistakes caught along the way
 

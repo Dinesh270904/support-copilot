@@ -1,0 +1,12 @@
+{
+  "name": "support-copilot-diagrams",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Renders docs/architecture.png and docs/question-flow.png: hand-drawn sketches made with rough.js and the Caveat font.",
+  "scripts": { "render": "node render.cjs" },
+  "dependencies": {
+    "@fontsource/caveat": "^5.2.0",
+    "playwright-core": "^1.49.0",
+    "roughjs": "^4.6.6"
+  }
+}
