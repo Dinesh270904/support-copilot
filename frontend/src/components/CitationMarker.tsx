@@ -46,6 +46,18 @@ export function CitationMarker({ n, source, threshold, onView, onActive }: Props
       setOpen(false);
       onActive?.(null);
       button.current?.focus();
+    } else if (e.key === "Tab" && open) {
+      // The preview lives on <body> (a portal), so Tab from the marker would skip it. Route Tab explicitly:
+      // marker -> the preview's button; from the preview, back to the marker (a forward Tab also closes it).
+      const inPreview = preview.current?.contains(e.target as Node) ?? false;
+      if (!inPreview && !e.shiftKey) {
+        const into = preview.current?.querySelector<HTMLElement>("button");
+        if (into) { e.preventDefault(); into.focus(); }
+      } else if (inPreview) {
+        e.preventDefault();
+        if (!e.shiftKey) { restoring.current = true; setOpen(false); onActive?.(null); }
+        button.current?.focus();
+      }
     }
   };
 

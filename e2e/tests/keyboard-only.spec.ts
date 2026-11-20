@@ -68,6 +68,11 @@ test("keyboard only: open a ticket, ask, reach a citation, open and close the dr
   await expect(page.getByRole("dialog", { name: /^Source 1/ })).toBeVisible();
   await page.keyboard.press("Tab");
   await expectFocusVisible(page, "Tab from the marker goes to the preview's Open source", /Open source/);
+  await page.keyboard.press("Shift+Tab");
+  await expectFocusVisible(page, "Shift+Tab from the preview returns to the marker", /^Source 1:/);
+  await expect(page.getByRole("dialog", { name: /^Source 1/ })).toBeVisible();
+  await page.keyboard.press("Tab");
+  await expectFocusVisible(page, "Tab again goes back into the preview", /Open source/);
   await page.keyboard.press("Enter");
   const drawer = page.getByRole("dialog", { name: /^Source: KB-03#chunk-1/ });
   await expect(drawer).toBeVisible();

@@ -150,6 +150,9 @@ test("brief and similar menus: 'Refresh brief' and 'Refresh similar tickets' eac
   await openTicket(page, "T-104", /Locked out after replacing/);
   await page.waitForLoadState("networkidle");
   const base = (a: string) => seen.runs.filter((r) => r.action === a).length;
+  await expect.poll(() => base("summarize_ticket")).toBeGreaterThanOrEqual(1); // both automatic runs have happened before the baseline is taken
+  await expect.poll(() => base("search_resolved_tickets")).toBeGreaterThanOrEqual(1);
+  await expect(page.getByRole("button", { name: "Ticket brief options" })).toBeEnabled();
   const b0 = base("summarize_ticket"), s0 = base("search_resolved_tickets");
   await page.getByRole("button", { name: "Ticket brief options" }).click();
   await page.getByRole("menuitem", { name: "Refresh brief" }).click();
@@ -374,6 +377,8 @@ test("keys: s refreshes the brief (a new summarize run) and Esc leaves the Ask b
   await openTicket(page, "T-101", /Checkout timed out/);
   await page.waitForLoadState("networkidle");
   const n = () => seen.runs.filter((r) => r.action === "summarize_ticket").length;
+  await expect.poll(n).toBeGreaterThanOrEqual(1); // the automatic brief has run before the baseline is taken
+  await expect(page.locator("section[aria-labelledby=brief-h]")).toContainText("T-101");
   const before = n();
   await page.keyboard.press("s");
   await expect.poll(n).toBe(before + 1);
