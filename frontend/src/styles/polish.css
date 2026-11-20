@@ -44,3 +44,8 @@
 .composer { max-height: 46%; }
 .composer-text { max-height: 26vh; min-height: 112px; resize: vertical; }
 @media (max-width: 767px) { .composer { max-height: 50%; } }
+
+/* Start screen: a plain three-step guide. */
+.how { list-style: none; margin: var(--s-2) 0 0; padding: 0; display: flex; flex-direction: column; gap: var(--s-3); }
+.how li { display: flex; align-items: flex-start; gap: var(--s-3); font: var(--t-body); line-height: 1.5; }
+.how-n { flex: none; width: 22px; height: 22px; display: inline-grid; place-items: center; border-radius: 999px; border: 1px solid var(--accent-border); background: var(--accent-bg); font-size: 12px; font-weight: 650; }

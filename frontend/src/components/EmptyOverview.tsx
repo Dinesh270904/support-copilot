@@ -43,6 +43,14 @@ export function EmptyOverview({ tickets, loading, onOpenTicket, onView }: Props)
           ))}
         </p>
       )}
+      <section aria-labelledby="how-h" className="overview-block">
+        <h3 id="how-h" className="block-label">How it works</h3>
+        <ol className="how">
+          <li><span className="how-n" aria-hidden="true">1</span><span><strong>Pick a ticket</strong> from the queue on the left.</span></li>
+          <li><span className="how-n" aria-hidden="true">2</span><span><strong>Read the brief.</strong> Copilot, on the right, summarises it and finds similar tickets that were already solved.</span></li>
+          <li><span className="how-n" aria-hidden="true">3</span><span><strong>Ask or draft.</strong> Every answer quotes the guidance it came from, and drafts are never sent to the customer.</span></li>
+        </ol>
+      </section>
       {tries.length > 0 && (
         <section aria-labelledby="try-h" className="overview-block">
           <h3 id="try-h" className="block-label">Try these</h3>
