@@ -32,10 +32,12 @@ interface Props {
 export function TicketPane({ ticket, loading, error, review, untrusted, onMarkReviewed, confirming = false, onConfirmReview, onCancelReview, composer, empty }: Props) {
   const scrollRef = useScrollMemory(ticket?.id ?? "none");
   const markRef = useRef<HTMLButtonElement>(null);
+  const titleRef = useRef<HTMLHeadingElement>(null); // where focus goes when the Mark reviewed button no longer exists
   const wasConfirming = useRef(false);
   useEffect(() => {
     // Cancelling returns focus to the button the question replaced.
-    if (wasConfirming.current && !confirming) markRef.current?.focus();
+    // Cancel keeps the button; Confirm replaces it with a disabled 'Reviewed', so focus moves to the ticket title instead of being lost.
+    if (wasConfirming.current && !confirming) (markRef.current ?? titleRef.current)?.focus({ preventScroll: true });
     wasConfirming.current = confirming;
   }, [confirming]);
   if (error) {
@@ -60,7 +62,7 @@ export function TicketPane({ ticket, loading, error, review, untrusted, onMarkRe
               <span className="kicker-item"><StatusIcon status={ticket.status} /> {humanize(ticket.status)}</span>
               <span className="kicker-item"><CategoryDot category={ticket.category} /> {humanize(ticket.category)}</span>
             </p>
-            <h2 className="ticket-title">{ticket.title}</h2>
+            <h2 className="ticket-title" ref={titleRef} tabIndex={-1}>{ticket.title}</h2>
             <p className="ticket-meta">
               {ticket.product_area !== ticket.category && <>{humanize(ticket.product_area)} · </>}
               Opened <span className="num">{formatTimestamp(ticket.created_at)}</span> · Updated <span className="num">{formatTime(ticket.updated_at)}</span> · {messageCount} message{messageCount === 1 ? "" : "s"}
