@@ -68,7 +68,7 @@ All ten cases in `backend/data/seed/expected_cases.json` run as tests (`tests/te
 
 - **Chunking** (`app/rag/chunking.py`): whole sentences are packed greedily into chunks of at most 45 words, with no overlap. IDs are stable (`KB-03#chunk-1`). Chunks are stored in SQLite with article ID, title and category. The 7 articles produce 14 chunks.
 - **Vectorization**: scikit-learn's analyzer (lower-case, English stop words, 1-2-grams) followed by a small suffix normaliser (`app/rag/stemming.py`) applied to every word, with `sublinear_tf=True`. The normaliser is part of the analyzer, so chunks, sentences and queries are stemmed identically. It conflates "devices"/"device", "fees"/"fee" and "exporting"/"exports"/"export". The stems are index keys only: quotes are always the original text, and `matched_terms` are mapped back to the first word in the chunk's own text that produced each stem ("code", not "cod"). Each chunk is indexed as `title + tags + text`, so article-level terms such as "MFA" help rank every chunk of that article. The cited excerpt is the raw chunk text only.
-- **Index build**: the index is built in memory from SQLite whenever the MCP server starts (about 20 ms here). `python -m app.seed --check` rebuilds it and prints statistics. Nothing is downloaded.
+- **Index build**: the index is built in memory from SQLite whenever the MCP server starts (under 20 ms; 8 ms measured at audit). `python -m app.seed --check` rebuilds it and prints statistics. Nothing is downloaded.
 - **Scoring**: the query goes through the same vectorizer, and chunks are scored by cosine similarity. A category scope removes other chunks *before* the threshold and top-k are applied.
 - **Three acceptance rules**, all configurable through environment variables (`SUPPORT_COPILOT_RAG_*`):
   1. `min_score = 0.15` cosine.
@@ -137,7 +137,7 @@ Paraphrase is the remaining gap, as expected for lexical retrieval: the two hold
 
 Logs go to stderr, and stdout is reserved for MCP frames.
 
-**Inspect it.** The commands below use the project venv interpreter, `backend/.venv/bin/python`, explicitly. A bare `python3` is a different interpreter and fails with `No module named 'mcp'`.
+**Inspect it.** The commands below use the project venv interpreter, `backend/.venv/bin/python`, explicitly. A bare `python3` is a different interpreter and fails with `No module named 'mcp'`. The database must exist first: on a fresh clone run `.venv/bin/python -m app.seed` (or `make setup`) in `backend/`, otherwise the server exits with "Database not found" and the Inspector reports a connection timeout.
 
 ```bash
 cd backend
@@ -150,7 +150,7 @@ npx @modelcontextprotocol/inspector --cli --config mcp.json --server support-cop
 .venv/bin/python scripts/mcp_check.py      # same checks with the official Python SDK client, no Node needed
 ```
 
-In the web UI (Inspector v2.13, walked through in a browser): open the printed URL (it includes a token), then:
+In the web UI (written against Inspector v2.13; `npx` fetches the newest release, so labels may differ slightly): open the printed URL (it includes a token), then:
 
 1. **Connect**: flip the toggle on the `python` server card. It shows "Connecting…" and then "Connected, MCP 2025-11-25". The Tools, Prompts and Resources tabs only appear after it connects.
 2. **Tools**: open the **Tools** tab. There is no separate "List tools" button; `tools/list` runs automatically on connect and the four tools are listed (`TOOLS/LIST` is already in the log). Each tool page shows READ-ONLY and IDEMPOTENT badges.
@@ -187,8 +187,8 @@ React 19 + TypeScript + Vite with plain CSS custom properties: no UI framework. 
 [`@phosphor-icons/react`](https://github.com/phosphor-icons/react) (MIT). It ships the icons as bundled SVG components, so nothing is fetched
 at runtime and the UI still works offline. Phosphor was chosen over a hand-drawn set for consistent, professionally drawn geometry
 and multiple weights (regular, fill for active states, duotone for the brand mark). Only `src/components/Icons.tsx` imports it.
-Cost, measured with `vite build`: the JS bundle went from 298.5 KB (91.3 KB gzip) to 387.0 KB (111.6 KB gzip), +20.3 KB gzip,
-because each icon carries all six weights; CSS is 56.4 KB (11.1 KB gzip). Lighthouse on the production build: desktop performance,
+Cost, measured with `vite build`: the JS bundle went from 298.5 KB (91.3 KB gzip) to 387.2 KB (111.65 KB gzip), +20.3 KB gzip,
+because each icon carries all six weights; CSS is 56.6 KB (11.1 KB gzip). Lighthouse on the production build: desktop performance,
 accessibility and best practices 1.00; mobile performance 0.98 (v1.0 icons: 0.99), accessibility and best practices 1.00. The design source is
 `docs/UI_HANDOFF.md` (a longer addendum was also supplied during the build; it is not stored in this repo). Five screenshots are committed below; the full set
 (about 2.4 MB) was kept out of the repo to stay within its size budget.
@@ -236,7 +236,7 @@ The seed (`app/seed.py`) validates the JSON pack with Pydantic, which rejects du
 ## Tests
 
 ```bash
-make test            # backend: 152 pytest tests (+1 expected failure); frontend: 94 Vitest tests (11 files)
+make test            # backend: 154 pytest tests (+1 expected failure); frontend: 101 Vitest tests (12 files)
 ```
 
 | Requirement | Tests |
@@ -266,12 +266,12 @@ cd e2e && npm install && npx playwright install chromium   # one-time dev downlo
 make e2e                                                   # or: cd e2e && npm run e2e   (add -- --headed to watch it)
 ```
 
-After the one-time browser download the tests run offline. The suite is 82 tests in 12 files and takes about 1.9 minutes. It covers the queue
+After the one-time browser download the tests run offline. The suite is 82 tests in 12 files and takes about 1.8 minutes. It covers the queue
 and filters, ticket detail, the automatic brief and similar cards, answers and citations (including a sentence-by-sentence grounding check),
 drafts and the real clipboard, review and idempotency, the full keyboard path with real key presses, MCP and database failure states (it kills
 the real MCP child), responsive layouts at 1440, 1100, 820 and 390, axe accessibility scans in both themes, and every case in
-`expected_cases.json` through the UI. Tests that record a known, not-yet-fixed finding use `test.fail()`, so the run turns red if one starts
-passing; they are named `BUG-n`.
+`expected_cases.json` through the UI. A test that records a known, not-yet-fixed finding should use `test.fail()`, so the run turns red if it starts
+passing, and be named `BUG-n`; there are none at v1.2.
 
 ## Known limitations
 
