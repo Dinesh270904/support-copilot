@@ -187,8 +187,8 @@ React 19 + TypeScript + Vite with plain CSS custom properties: no UI framework. 
 [`@phosphor-icons/react`](https://github.com/phosphor-icons/react) (MIT). It ships the icons as bundled SVG components, so nothing is fetched
 at runtime and the UI still works offline. Phosphor was chosen over a hand-drawn set for consistent, professionally drawn geometry
 and multiple weights (regular, fill for active states, duotone for the brand mark). Only `src/components/Icons.tsx` imports it.
-Cost, measured with `vite build`: the JS bundle is 387.2 KB (111.65 KB gzip) now; the earlier 298.5 KB (91.3 KB gzip) figure, an ad hoc build measurement from before the icon change that cannot be reproduced from this repo, implies about +20.3 KB gzip,
-because each icon carries all six weights; CSS is 56.6 KB (11.1 KB gzip). Lighthouse on the production build: desktop performance,
+Cost, measured with `vite build`: the JS bundle is 387.3 KB (111.67 KB gzip) now; the earlier 298.5 KB (91.3 KB gzip) figure, an ad hoc build measurement from before the icon change that cannot be reproduced from this repo, implies about +20.3 KB gzip,
+because each icon carries all six weights; CSS is 58.4 KB (11.5 KB gzip). Lighthouse on the production build: desktop performance,
 accessibility and best practices 1.00; mobile performance 0.98 (v1.0 icons: 0.99), accessibility and best practices 1.00 (ad hoc Lighthouse runs; the reports are not included; a desktop re-run on v1.2 scored 1.00 in all four categories). The design source is
 `docs/UI_HANDOFF.md` (a longer addendum was also supplied during the build; it is not stored in this repo). Five screenshots are committed below; the full set
 (about 2.4 MB) was kept out of the repo to stay within its size budget.
@@ -266,7 +266,7 @@ cd e2e && npm install && npx playwright install chromium   # one-time dev downlo
 make e2e                                                   # or: cd e2e && npm run e2e   (add -- --headed to watch it)
 ```
 
-After the one-time browser download the tests run offline. The suite is 82 tests in 12 files and takes about 2 minutes (1.8-1.9 measured). It covers the queue
+After the one-time browser download the tests run offline. The suite is 83 tests in 13 files and takes about 2 minutes (1.8-1.9 measured). It covers the queue
 and filters, ticket detail, the automatic brief and similar cards, answers and citations (including a sentence-by-sentence grounding check),
 drafts and the real clipboard, review and idempotency, the full keyboard path with real key presses, MCP and database failure states (it kills
 the real MCP child), responsive layouts at 1440, 1100, 820 and 390, axe accessibility scans in both themes, and every case in
