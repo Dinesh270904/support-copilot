@@ -1,0 +1,40 @@
+/* Visual polish layer. Spacing, shape, depth and focus only: no colours or markup change, so the measured contrast
+   (tokens.css) and every accessible name stay as audited. Loaded last so it refines components.css. */
+
+/* Cards: calmer, with a little depth and room to breathe. */
+.card { padding: var(--s-4); border-radius: 12px; box-shadow: 0 1px 2px rgba(0, 0, 0, 0.14); }
+.card-head { margin-bottom: var(--s-3); gap: 8px; }
+.card-head h3 { font-weight: 650; letter-spacing: -0.005em; }
+.card-tag { font-size: 10.5px; letter-spacing: 0.06em; text-transform: uppercase; padding: 1px 7px; border-radius: 999px; }
+.card-ms { font-size: 11.5px; font-variant-numeric: tabular-nums; }
+
+/* The answer is the point of the app: give it presence. */
+.acard { border-radius: 14px; box-shadow: 0 4px 16px rgba(0, 0, 0, 0.22), 0 0 0 1px var(--border); border-color: transparent; }
+.acard-answered { box-shadow: 0 4px 16px rgba(0, 0, 0, 0.22), 0 0 0 1px var(--ok-border); }
+.acard-insufficient_evidence { box-shadow: 0 4px 16px rgba(0, 0, 0, 0.22), 0 0 0 1px var(--warn-border); }
+.acard-head { padding: var(--s-3) var(--s-4); }
+.acard-state { font-size: 14px; letter-spacing: -0.005em; }
+.acard p, .acard li { line-height: 1.6; }
+
+/* Queue rows: clearer hover and selection, quieter metadata. */
+.qrow { border-radius: 10px; padding: 10px 12px; transition: background-color 120ms var(--ease), box-shadow 120ms var(--ease); }
+.qrow:hover { background: var(--accent-bg); }
+.qrow.selected { background: var(--accent-bg); box-shadow: inset 0 0 0 1px var(--accent-border); }
+.qrow-id { font-weight: 600; }
+.qrow-title { font-weight: 560; }
+.qrow-status { font-size: 12px; }
+.qrow-meta { margin-top: 2px; }
+
+/* Controls: one rhythm for height, shape and feedback. */
+.btn, .chip, .searchbtn, .icon-btn { transition: background-color 120ms var(--ease), box-shadow 120ms var(--ease), border-color 120ms var(--ease); }
+.btn { border-radius: 9px; font-weight: 560; }
+.btn-primary { box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25), inset 0 1px 0 var(--btn-highlight); }
+.chip { border-radius: 999px; }
+.searchbtn { border-radius: 10px; }
+.copilot-scroll { gap: var(--s-4); padding-top: var(--s-3); }
+.copilot-head { padding-bottom: var(--s-2); }
+.copilot-head h2 { font-weight: 650; letter-spacing: -0.005em; }
+
+@media (prefers-reduced-motion: reduce) {
+  .qrow, .btn, .chip, .searchbtn, .icon-btn { transition: none; }
+}

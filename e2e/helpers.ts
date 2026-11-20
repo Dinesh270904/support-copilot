@@ -68,3 +68,16 @@ export function mcpChildPid(): number {
 export async function shot(page: Page, name: string) {
   await page.screenshot({ path: `screenshots/${name}.png` });
 }
+
+/** Wait for the newest answer card and for the Copilot panel to stop scrolling (the new answer is smooth-scrolled into view). */
+export async function answerSettled(page: Page) {
+  await answerCard(page).waitFor();
+  await expect
+    .poll(async () => {
+      const read = () => page.evaluate(() => document.querySelector(".copilot-scroll")!.scrollTop);
+      const a = await read();
+      await page.waitForTimeout(250);
+      return a === (await read());
+    })
+    .toBe(true);
+}

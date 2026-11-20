@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { answerCard, ask, isRun, openTicket } from "../helpers";
+import { answerCard, answerSettled, ask, isRun, openTicket } from "../helpers";
 
 const norm = (s: string) => s.replace(/\s+/g, " ").trim();
 
@@ -60,6 +60,7 @@ test("grounding: every answer sentence is a verbatim sentence of the excerpt its
 
 test("the citation preview opens on hover, on focus (Tab) and on click, highlights the quoted sentence, and Esc returns focus", async ({ page }) => {
   await ask(page, "Can the customer retry while payment is pending?");
+  await answerSettled(page); // the new answer smooth-scrolls into view; hover only once it has stopped moving
   const marker = answerCard(page).getByRole("button", { name: /^Source 1: KB-01#chunk-1/ });
   const preview = page.getByRole("dialog", { name: /^Source 1: KB-01#chunk-1/ });
 
