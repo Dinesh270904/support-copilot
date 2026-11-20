@@ -256,7 +256,7 @@ The MCP server is started once, when the API starts.
 | `GET /api/tickets?status&priority&category&reviewed&limit&offset` | Bounded at 100. Invalid enum or unknown category returns 422 |
 | `GET /api/tickets/{id}` | Ticket with timeline. Malformed ID returns 422, unknown returns 404 |
 | `PATCH /api/tickets/{id}/reviewed` | Idempotent review mark |
-| `POST /api/assistant/run` | Unsupported action, extra fields, oversized query or missing requirements return 422; MCP down 503; MCP timeout 504 |
+| `POST /api/assistant/run` | Unsupported action, extra fields, oversized query or missing requirements return 422; MCP down 503; MCP timeout 504. Any route: a body over 16 KB returns 413 `payload_too_large`, a chunked body 411 |
 | `GET /api/assistant/runs` | Recent run metadata (audit view) |
 
 ## Frontend
@@ -298,8 +298,8 @@ The design source is `docs/UI_HANDOFF.md` (a longer addendum was also supplied d
 
 ### Performance and accessibility
 
-Measured with `vite build`: the JS bundle is 393.3 KB (113.32 KB gzip) now; the earlier 298.5 KB (91.3 KB gzip) figure, an ad hoc build measurement from before the icon change that cannot be reproduced from this repo, implies about +22.0 KB gzip,
-because each icon carries all six weights; CSS is 59.1 KB (11.67 KB gzip). Lighthouse on the production build (measured in the final verification, headless Chromium, `vite preview`): desktop empty page and ticket page score 1.00 in performance, accessibility, best practices and SEO; mobile scores performance 0.99 and best practices and SEO 1.00, accessibility 1.00 on the ticket page and 0.98 on the phone's queue screen, and the answered state (user flow) scores 1.00 with an INP of 40 ms. The 0.98 was axe `landmark-one-main` (no main landmark while only the queue was shown); that is fixed (each phone tab's visible pane is now the `main` landmark, covered by an end-to-end test), but Lighthouse itself was not re-run after the fix.
+Measured with `vite build`: the JS bundle is 393.5 KB (113.39 KB gzip) now; the earlier 298.5 KB (91.3 KB gzip) figure, an ad hoc build measurement from before the icon change that cannot be reproduced from this repo, implies about +22.1 KB gzip,
+because each icon carries all six weights; CSS is 59.2 KB (11.71 KB gzip). Lighthouse on the production build (measured in the final verification, headless Chromium, `vite preview`): desktop empty page and ticket page score 1.00 in performance, accessibility, best practices and SEO; mobile scores performance 0.99 and best practices and SEO 1.00, accessibility 1.00 on the ticket page and 0.98 on the phone's queue screen, and the answered state (user flow) scores 1.00 with an INP of 40 ms. The 0.98 was axe `landmark-one-main` (no main landmark while only the queue was shown); that is fixed (each phone tab's visible pane is now the `main` landmark, covered by an end-to-end test), but Lighthouse itself was not re-run after the fix.
 
 ## Data model
 
@@ -374,7 +374,7 @@ cd e2e && npm install && npx playwright install chromium   # one-time dev downlo
 make e2e                                                   # or: cd e2e && npm run e2e   (add -- --headed to watch it)
 ```
 
-After the one-time browser download the tests run offline. The suite is 149 tests in 22 files and takes about 5 minutes (5.2-5.3 measured over three consecutive runs, one worker, none flaky). It covers the queue
+After the one-time browser download the tests run offline. The suite is 149 tests in 22 files and takes about 6 minutes (6.2, 6.3 and 6.5 measured over three consecutive runs on the final tree, one worker, none flaky). It covers the queue
 and filters, ticket detail, the automatic brief and similar cards, answers and citations (including a sentence-by-sentence grounding check),
 drafts and the real clipboard, review and idempotency, the full keyboard path with real key presses, MCP and database failure states (it kills
 the real MCP child), responsive layouts at 1440, 1100, 820 and 390, axe accessibility scans in both themes, and every case in
