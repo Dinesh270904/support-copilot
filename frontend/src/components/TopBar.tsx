@@ -14,7 +14,7 @@ function healthView(health: HealthState): { state: "pending" | "up" | "down"; la
   return {
     state: up ? "up" : "down",
     // On narrow screens "connected" is dropped; "Tools (4)" is still text, so status is never colour alone.
-    label: up ? (<>Tools <span className="hide-narrow">connected</span> ({health.mcp.tools.length})</>) : "Assistant offline",
+    label: up ? (<><span className="pill-full">Assistant ready</span><span className="pill-short">Ready</span></>) : "Assistant offline",
     detail: health.mcp.last_error ?? "",
   };
 }

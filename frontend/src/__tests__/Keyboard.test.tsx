@@ -198,7 +198,7 @@ describe("top bar", () => {
     installApi({ runs: base });
     const user = userEvent.setup();
     render(<App />);
-    const pill = await screen.findByRole("button", { name: /Tools connected \(4\)/ });
+    const pill = await screen.findByRole("button", { name: /Assistant ready/ });
     await user.click(pill);
     const pop = screen.getByRole("dialog", { name: "Assistant tool status" });
     expect(within(pop).getByText(/support-copilot · MCP 2025-11-25/)).toBeInTheDocument();
@@ -217,7 +217,7 @@ describe("top bar", () => {
     expect(healthCalls()).toBe(1);
     window.location.hash = "#/ticket/T-101"; // opening a ticket starts the two auto-runs
     window.dispatchEvent(new HashChangeEvent("hashchange"));
-    await screen.findByRole("button", { name: /Tools connected \(4\)/ });
+    await screen.findByRole("button", { name: /Assistant ready/ });
     expect(healthCalls()).toBeGreaterThan(1);
   });
   it("the keyboard button opens the shortcut sheet", async () => {

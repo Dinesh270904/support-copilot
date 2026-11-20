@@ -26,7 +26,7 @@ export function ScoreLine({ citation, threshold }: { citation: Citation; thresho
   if (citation.score === null) return null;
   // An out-of-scope source can score high precisely because it names the topic it excludes: never draw it as a pass.
   if (citation.score_type === "cosine") return <ScoreMeter value={citation.score} threshold={threshold} neutral={citation.usage === "coverage_gap"} />;
-  return <span className="num score-text" title="SQLite FTS5 bm25, relative within this result">bm25 {citation.score.toFixed(2)}</span>;
+  return <span className="num score-text" title="How closely this ticket matches (SQLite FTS5 bm25 score, relative within this result)">relevance {citation.score.toFixed(2)}</span>;
 }
 
 export function MatchedLine({ citation }: { citation: Citation }) {

@@ -21,7 +21,7 @@ test("MCP child killed: browsing still works, the next action reconnects, the pi
 
   // The auto-runs go through the gateway's one retry on a fresh session: a NEW child appears and the card fills in.
   await expect(page.getByRole("region", { name: "Ticket brief" })).toContainText("T-104 is an open", { timeout: 20_000 });
-  await expect(page.getByRole("button", { name: /Tools connected \(4\)/ })).toBeVisible();
+  await expect(page.getByRole("button", { name: /Assistant ready/ })).toBeVisible();
   expect(mcpChildPid()).not.toBe(pid);
 });
 
@@ -49,7 +49,7 @@ test("MCP unrecoverable: the 503 card has Retry and a request ID, and Retry reco
   }
   await page.getByRole("alert").filter({ hasText: "Assistant tools are offline" }).getByRole("button", { name: "Retry" }).click();
   await expect(answerCard(page).getByRole("heading", { name: /Answered from 1 article/ })).toBeVisible({ timeout: 30_000 });
-  await expect(page.getByRole("button", { name: /Tools connected \(4\)/ })).toBeVisible();
+  await expect(page.getByRole("button", { name: /Assistant ready/ })).toBeVisible();
 });
 
 test("database not initialized: a clear 'Run make setup first' state, no crash", async ({ page }) => {
