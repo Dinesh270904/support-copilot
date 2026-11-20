@@ -308,7 +308,7 @@ passing, and be named `BUG-n`; there are none at v1.2.
 
 ## AI tools used
 
-Almost all of the code, tests and documentation were written by Claude Code, working from specifications and prompts I drafted together with Claude (chat). I set the scope, reviewed each report, and approved or rejected each change. I did not write the retrieval, composer or UI code by hand. Every claim about test results in this README was produced by running the commands shown; output logs are not stored in the repo. The tuning and holdout query sets were written with AI assistance and the holdout set was evaluated at baseline and at the end of the build; later reads were for verification only.
+Almost all of the code, tests and documentation were written by Claude Code, working from specifications and prompts I drafted together with Claude (chat). I set the scope, read each agent report with its test results, and approved or rejected each change. I did not write the retrieval, composer or UI code by hand. What was tested: the behaviour is covered by pytest (155 + 1 expected failure), Vitest (101) and Playwright end-to-end tests (145), which drive the real API, the real MCP server over stdio and the UI with real clicks and key presses, and the MCP server was checked with the MCP Inspector CLI. Output logs from those runs are not stored in the repo. The tuning and holdout query sets were written with AI assistance and the holdout set was evaluated at baseline and at the end of the build; later reads were for verification only.
 
 ### What was built and checked with AI assistance
 
