@@ -38,3 +38,9 @@
 @media (prefers-reduced-motion: reduce) {
   .qrow, .btn, .chip, .searchbtn, .icon-btn { transition: none; }
 }
+
+/* While drafting, the agent must still be able to read the customer's thread: cap the composer so the conversation keeps
+   at least half of the pane (it was taking ~60% and squeezing the thread to a sliver). The draft scrolls inside its box. */
+.composer { max-height: 46%; }
+.composer-text { max-height: 26vh; min-height: 112px; resize: vertical; }
+@media (max-width: 767px) { .composer { max-height: 50%; } }
