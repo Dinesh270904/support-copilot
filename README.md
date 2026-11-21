@@ -429,7 +429,7 @@ Each item can be checked in the repo (code, tests or scripts); the process histo
 - The offline evaluation harness (`app/eval.py`) and the tuning and holdout sets (`backend/data/eval/`).
 - The error-code rule, the stemmer, the coverage gate value, the guardrail fix, the similar-ticket floor, the 504 mapping, environment passthrough, the `/health` ping and the draft split, each with tests.
 - The UI follows the written handoff specification in `docs/UI_HANDOFF.md`; a longer addendum used during the build is not stored in this repo.
-- A final verification pass (an offline run with the network denied, an every-control test run, an accessibility, layout and performance inspection) is recorded in `e2e/REQUIREMENTS_MATRIX.md`, `e2e/CONTROLS.md` and `e2e/UX_FINDINGS.md`; it found and fixed the four defects listed in the last.
+- A final verification pass (an offline run with the network denied, an every-control test run, an accessibility, layout and performance inspection) is recorded in `e2e/REQUIREMENTS_MATRIX.md`, `e2e/CONTROLS.md` and `e2e/UX_FINDINGS.md`; it found and fixed the six defects listed in the last.
 - The two sketches in `docs/` are illustrations, not screenshots. They are drawn by a script with a hand-drawn rendering library (rough.js) and a handwriting font (Caveat), and `docs/diagrams/` regenerates them identically (`cd docs/diagrams && npm install && npx playwright install chromium && npm run render`).
 
 ### Mistakes caught along the way
