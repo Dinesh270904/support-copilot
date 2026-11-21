@@ -383,3 +383,27 @@ def test_size_guard_errors_carry_the_same_cors_headers_as_every_other_error(clie
 
     invalid = client.post("/api/assistant/run", json={"action": "nope"}, headers={"Origin": origin})
     assert invalid.status_code == 422 and invalid.headers.get("access-control-allow-origin") == origin  # the comparison case
+
+
+def test_run_history_prune_never_deletes_the_newest_rows_in_a_same_second_burst(seeded_db, tmp_path):
+    """created_at has one-second resolution, so ties must be broken by insertion order, not by the random run id."""
+    import shutil
+
+    from app.api.main import _save_run
+
+    db = tmp_path / "burst.db"
+    shutil.copy(seeded_db, db)
+    engine = make_engine(db)
+    sessions = make_sessionmaker(engine)
+    base = {"action": "count_tickets", "ticket_id": None, "status": "success", "answer_state": None, "tool_calls": [],
+            "retrieval_method": None, "source_ids": [], "query_chars": 0, "duration_ms": 1, "error_code": None,
+            "created_at": "2099-01-01T00:00:00Z"}  # every row in the same second
+    total, keep = 30, 20
+    for i in range(total):
+        # run ids DEcrease with insertion order, so an id-based tie-break would delete the newest rows
+        _save_run(sessions, {**base, "run_id": f"burst-{total - i:03d}"}, keep=keep)
+    with sessions() as s:
+        kept = {r.run_id for r in s.scalars(select(AssistantRun).where(AssistantRun.run_id.like("burst-%")))}
+    engine.dispose()
+    newest = {f"burst-{total - i:03d}" for i in range(total - keep, total)}  # the last `keep` inserted
+    assert kept == newest
