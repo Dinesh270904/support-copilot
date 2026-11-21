@@ -365,7 +365,7 @@ make lint            # ruff (pyflakes + bugbear rules) over the backend
 Verification records kept in `e2e/`: `REQUIREMENTS_MATRIX.md` (the assignment line by line, each with evidence), `CONTROLS.md` (every interactive control, how it is reached and which test asserts its effect) and `UX_FINDINGS.md` (layout, accessibility, performance and the defects found and fixed).
 
 `e2e/` holds a Playwright suite that drives the real app in a real browser: the real FastAPI process, the real MCP stdio subprocess, a real
-SQLite file and real keyboard and mouse input. There are no mocks and no stubbed network. It uses its own ports (API 8100, UI 5180, plus
+SQLite file and real keyboard and mouse input. Nothing is mocked except in a few places: some tests hold the assistant call in flight for about a second (the real response is still delivered) to observe a loading state, and two answer one assistant request with a canned 503 to exercise the error card and its Retry; killing the real MCP child is tested separately. It uses its own ports (API 8100, UI 5180, plus
 8101 for a missing database and 5181 and 5182 for the "database not initialized" and "API down" states) and a temporary database that is
 seeded fresh before every run, so it never touches `backend/data/support.db`.
 
