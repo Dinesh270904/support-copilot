@@ -93,7 +93,7 @@ After dependencies are installed, everything runs with networking disabled. Re-s
 
 | Decision | Reason |
 |---|---|
-| Assistant actions reach data only through MCP | One audited, typed, read-only surface for everything the assistant can do, and the MCP server's database handle cannot write. (The API reads SQLite directly, read-only, only for the plain ticket routes.) |
+| Assistant actions reach data only through MCP | One audited, typed, read-only surface for everything the assistant can do, and the MCP server's database handle cannot write. (The API also reads SQLite directly for the plain routes (tickets, meta, run history) and for the category check before an assistant run; no assistant answer is built from those reads.) |
 | Writes live in FastAPI, not MCP | Marking a ticket reviewed is a separately validated, idempotent route. MCP stays read-only. |
 | A fixed tool plan per action | Text found in a ticket or article is data. It cannot add, remove or reorder tool calls. |
 | TF-IDF and cosine, not embeddings | Required to run offline on a CPU with no model download, and fully explainable: `matched_terms` and `matched_identifiers` account for every hit. The cost is paraphrase recall (see [Known limitations](#known-limitations)). |
@@ -201,8 +201,8 @@ Paraphrase is the remaining gap, as expected for lexical retrieval: the two hold
 **How SQLite access is constrained**:
 - The server opens the database with `mode=ro` and `PRAGMA query_only=ON`.
 - Tools accept only typed, pattern-validated parameters. There is no SQL passthrough.
-- All SQL lives in `app/repository.py` and uses SQLAlchemy expressions or bound parameters.
-- The only write (`PATCH /api/tickets/{id}/reviewed`) lives in FastAPI and is idempotent: the first review time is kept.
+- All of the MCP server's SQL lives in `app/repository.py` and uses SQLAlchemy expressions or bound parameters. The API adds only three statements of its own in `app/api/main.py` (the health ping, the run-history list and the run-history prune), also SQLAlchemy.
+- The only write to ticket data (`PATCH /api/tickets/{id}/reviewed`) lives in FastAPI and is idempotent: the first review time is kept. FastAPI also appends to the `assistant_runs` log and prunes it; MCP never writes.
 
 Logs go to stderr, and stdout is reserved for MCP frames.
 
