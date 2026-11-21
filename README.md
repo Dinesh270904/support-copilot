@@ -311,7 +311,7 @@ The schema is created by Alembic migration `0001_initial`:
 - `assistant_runs`
 - the FTS5 virtual table `ticket_search`
 
-The seed (`app/seed.py`) validates the JSON pack with Pydantic, which rejects duplicate IDs and malformed timestamps, then reloads everything in one transaction.
+The seed (`app/seed.py`) validates the JSON pack (Pydantic models reject malformed fields and timestamps, and an explicit check rejects duplicate IDs), then reloads everything in one transaction.
 
 ## Project structure
 
