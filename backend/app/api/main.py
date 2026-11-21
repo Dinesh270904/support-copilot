@@ -142,13 +142,6 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         lifespan=lifespan,
         responses={422: {"model": ErrorResponse}, 500: {"model": ErrorResponse}},
     )
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origins=list(settings.cors_origins),
-        allow_methods=["GET", "POST", "PATCH"],
-        allow_headers=["Content-Type", "X-Request-ID"],
-    )
-
     # ------------------------------------------------------------- errors
     def _error(status: int, code: str, message: str, request: Request, details=None) -> JSONResponse:
         body = {"error": {"code": code, "message": message, "request_id": getattr(request.state, "request_id", None)}}
@@ -171,6 +164,15 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             response = await call_next(request)
         response.headers["X-Request-ID"] = request.state.request_id
         return response
+
+    # Added after the request-id/size-guard middleware on purpose: the last middleware added is the outermost, so CORS
+    # headers are put on every response, including the 413 and 411 the size guard answers by itself.
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=list(settings.cors_origins),
+        allow_methods=["GET", "POST", "PATCH"],
+        allow_headers=["Content-Type", "X-Request-ID"],
+    )
 
     @app.exception_handler(RequestValidationError)
     async def _validation(request: Request, exc: RequestValidationError) -> JSONResponse:

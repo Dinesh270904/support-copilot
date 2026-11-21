@@ -366,3 +366,20 @@ def test_run_history_keeps_only_the_newest_rows(seeded_db, tmp_path):
     engine.dispose()
     assert kept == [f"keep-test-{i}" for i in (3, 4, 5, 6, 7)]
     assert total == 5
+
+
+def test_size_guard_errors_carry_the_same_cors_headers_as_every_other_error(client, settings):
+    """A cross-origin browser client can only read a 413/411 body if the response has CORS headers, like 422 does."""
+    origin = settings.cors_origins[0]
+    headers = {"Origin": origin, "Content-Type": "application/json"}
+    too_big = client.post("/api/assistant/run", content=b" " * (settings.max_body_bytes + 1), headers=headers)
+    assert too_big.status_code == 413 and too_big.headers.get("access-control-allow-origin") == origin
+
+    def chunks():
+        yield b'{"action": "count_tickets"}'
+
+    chunked = client.post("/api/assistant/run", content=chunks(), headers=headers)
+    assert chunked.status_code == 411 and chunked.headers.get("access-control-allow-origin") == origin
+
+    invalid = client.post("/api/assistant/run", json={"action": "nope"}, headers={"Origin": origin})
+    assert invalid.status_code == 422 and invalid.headers.get("access-control-allow-origin") == origin  # the comparison case
