@@ -14,7 +14,7 @@ Pipeline
      `min_term_coverage` (0.6) of them. Anything above 0.5 behaves the same on this corpus:
      the fraction only matters when exactly one term matched, and then it passes only for a
      one-term query. At 0.5, "How do I delete my account?" (1 of its 2 terms) slipped through. Cosine on short texts is inflated by a single rare
-     shared term (an unrelated "office wifi password" question scores 0.22 against the
+     shared term (an unrelated "office wifi password" question scores 0.19 against the
      notification article because of "password"); the coverage gate rejects those.
    - exception: an error-code identifier. An UPPER_SNAKE token in the query (PAYMENT_TIMEOUT)
      that appears verbatim, as a whole token, in a chunk's text makes that chunk evidence on

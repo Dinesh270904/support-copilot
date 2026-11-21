@@ -143,7 +143,7 @@ All ten cases in `backend/data/seed/expected_cases.json` run as tests (`tests/te
   2. **Term coverage**: a chunk must contain at least 2 distinct query terms, or more than half of them (`min_term_coverage = 0.6`). The fraction only matters when exactly one term matched, and then it passes only a one-term query. At 0.5, "How do I delete my account?" (1 of its 2 terms matching KB-03) slipped through; any value above 0.5 behaves identically here, so 0.6 reads as "more than half".
   3. **Error-code identifiers**: an UPPER_SNAKE token in the query (for example `PAYMENT_TIMEOUT`) that appears verbatim, as a whole token, in a chunk's text makes that chunk evidence on its own, even below the score floor. A code is near-unique, so an exact match is stronger evidence than any cosine: "What does PAYMENT_TIMEOUT mean and how do I resolve it?" scores only 0.10 against the article written for that error. The hit reports `matched_identifiers`. An unknown code (`ERR_FOO_BAR`) still gives insufficient evidence.
 
-  Why two text gates: "office wifi password" scores 0.22 against KB-05 because of the single word "password", so a cosine cutoff alone cannot separate it from true matches (0.22-0.50).
+  Why two text gates: "office wifi password" scores 0.19 against KB-05 because of the single word "password", while the true matches that cosine finds on its own score 0.20-0.52, so a cosine cutoff alone cannot separate them (the error-code hits score as low as 0.10 and are admitted by the identifier rule instead).
 
 - **Composition rules** (deterministic, no generation):
   1. If nothing passes retrieval, the result is `insufficient_evidence` with no citations. The answer says why: an empty category, too few shared terms, or a best score below the threshold.
