@@ -266,7 +266,7 @@ React 19 + TypeScript + Vite with plain CSS custom properties: no UI framework. 
 at runtime and the UI still works offline. Phosphor was chosen over a hand-drawn set for consistent, professionally drawn geometry
 and multiple weights (regular, fill for active states, duotone for the brand mark). Only `src/components/Icons.tsx` imports it.
 The design source is `docs/UI_HANDOFF.md` (a longer addendum was also supplied during the build; it is not stored in this repo). Five screenshots are committed below; the full set
-(about 2.4 MB) was kept out of the repo to stay within its size budget.
+was kept out of the repo to stay within its size budget.
 
 - **Layout**: queue, ticket and Copilot panes. The queue has five views (Open, High priority, Needs review, Resolved, All) with counts
   computed from the loaded list, filters, and a sort. The ticket pane has the conversation (instruction-like messages are flagged and left
@@ -370,7 +370,7 @@ SQLite file and real keyboard and mouse input. Nothing is mocked except in a few
 seeded fresh before every run, so it never touches `backend/data/support.db`.
 
 ```bash
-cd e2e && npm install && npx playwright install chromium   # one-time dev download (about 100 MB); the app itself does not need it
+cd e2e && npm install && npx playwright install chromium   # one-time dev download (about 600 MB on disk: Chromium, its headless shell and ffmpeg); the app itself does not need it
 make e2e                                                   # or: cd e2e && npm run e2e   (add -- --headed to watch it)
 ```
 
