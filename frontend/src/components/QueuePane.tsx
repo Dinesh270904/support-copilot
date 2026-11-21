@@ -54,7 +54,7 @@ export function QueuePane({ meta, tickets, view, onView, filters, onFilters, sor
               <button type="button" className="view-row" aria-pressed={view === v.id} onClick={() => onView(v.id)}>
                 <Icon size={16} weight={view === v.id ? "fill" : "regular"} />
                 <span className="view-label">{v.label}</span>
-                <span className="view-count num">{loading ? "" : counts[v.id]}</span>
+                <span className="view-count num" title={error ? "Unknown: the ticket list could not be loaded" : undefined}>{loading ? "" : error ? "–" : counts[v.id]}</span>
               </button>
             </li>
           );

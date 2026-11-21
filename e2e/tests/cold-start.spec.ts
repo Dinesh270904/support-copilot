@@ -52,7 +52,8 @@ test("a new user reaches a cited answer, a copied draft and a reviewed ticket in
 
   expect(clicks).toBe(5);
 
-  // Honest limit, asserted so it is documented: a draft lives in the page only; reloading discards it.
+  // A reload keeps the draft (sessionStorage, this tab only): it is restored, still labelled "not sent".
   await page.reload();
-  await expect(page.getByRole("textbox", { name: "Reply draft" })).toHaveCount(0);
+  await expect(page.getByRole("textbox", { name: "Reply draft" })).toBeVisible();
+  await expect(page.getByText("Draft · not sent")).toBeVisible();
 });

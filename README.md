@@ -13,7 +13,7 @@
   <img alt="MCP over stdio" src="https://img.shields.io/badge/MCP-stdio-7c3aed">
   <img alt="SQLite with FTS5" src="https://img.shields.io/badge/SQLite-FTS5-003B57?logo=sqlite&logoColor=white">
   <img alt="No LLM, no API keys, offline" src="https://img.shields.io/badge/LLM-none-success">
-  <img alt="Tests: 155 pytest, 101 Vitest, 145 Playwright" src="https://img.shields.io/badge/tests-155%20pytest%20%C2%B7%20101%20Vitest%20%C2%B7%20145%20Playwright-brightgreen">
+  <img alt="Tests: 158 pytest, 103 Vitest, 149 Playwright" src="https://img.shields.io/badge/tests-158%20pytest%20%C2%B7%20103%20Vitest%20%C2%B7%20149%20Playwright-brightgreen">
 </p>
 
 <p align="center">
@@ -42,7 +42,7 @@ declines to answer instead of inventing something.
 | **Local and offline** | No API keys, no model download, no network after install. The backend suite passes with the network blocked. |
 | **Safe by construction** | The MCP server opens SQLite read-only. Each action maps to a fixed tool plan, so text in a ticket or article can never change what runs. There is no SQL tool. |
 | **Inspectable** | Every answer shows the retrieval method, thresholds, sources with scores, and the tool trace. The raw trace is one click away, and the server can be inspected with the MCP Inspector. |
-| **Tested** | 155 pytest tests (+1 expected failure), 101 Vitest tests, and 145 Playwright tests that drive the real API, the real MCP server and the UI with real clicks and key presses. |
+| **Tested** | 158 pytest tests (+1 expected failure), 103 Vitest tests, and 149 Playwright tests that drive the real API, the real MCP server and the UI with real clicks and key presses. |
 
 ## Quick start
 
@@ -256,7 +256,7 @@ The MCP server is started once, when the API starts.
 | `GET /api/tickets?status&priority&category&reviewed&limit&offset` | Bounded at 100. Invalid enum or unknown category returns 422 |
 | `GET /api/tickets/{id}` | Ticket with timeline. Malformed ID returns 422, unknown returns 404 |
 | `PATCH /api/tickets/{id}/reviewed` | Idempotent review mark |
-| `POST /api/assistant/run` | Unsupported action, extra fields, oversized query or missing requirements return 422; MCP down 503; MCP timeout 504 |
+| `POST /api/assistant/run` | Unsupported action, extra fields, oversized query or missing requirements return 422; MCP down 503; MCP timeout 504. Any route: a body over 16 KB returns 413 `payload_too_large`, a chunked body 411 |
 | `GET /api/assistant/runs` | Recent run metadata (audit view) |
 
 ## Frontend
@@ -298,8 +298,8 @@ The design source is `docs/UI_HANDOFF.md` (a longer addendum was also supplied d
 
 ### Performance and accessibility
 
-Measured with `vite build`: the JS bundle is 392.5 KB (113.08 KB gzip) now; the earlier 298.5 KB (91.3 KB gzip) figure, an ad hoc build measurement from before the icon change that cannot be reproduced from this repo, implies about +21.8 KB gzip,
-because each icon carries all six weights; CSS is 59.1 KB (11.67 KB gzip). Lighthouse on the production build (measured in the final verification, headless Chromium, `vite preview`): desktop empty page and ticket page score 1.00 in performance, accessibility, best practices and SEO; mobile scores performance 0.99 and best practices and SEO 1.00, accessibility 1.00 on the ticket page and 0.98 on the phone's queue screen (axe `landmark-one-main`: no main landmark while only the queue is shown, a known gap), and the answered state (user flow) scores 1.00 with an INP of 40 ms.
+Measured with `vite build`: the JS bundle is 393.5 KB (113.39 KB gzip) now; the earlier 298.5 KB (91.3 KB gzip) figure, an ad hoc build measurement from before the icon change that cannot be reproduced from this repo, implies about +22.1 KB gzip,
+because each icon carries all six weights; CSS is 59.2 KB (11.71 KB gzip). Lighthouse on the production build (measured in the final verification, headless Chromium, `vite preview`): desktop empty page and ticket page score 1.00 in performance, accessibility, best practices and SEO; mobile scores performance 0.99 and best practices and SEO 1.00, accessibility 1.00 on the ticket page and 0.98 on the phone's queue screen, and the answered state (user flow) scores 1.00 with an INP of 40 ms. The 0.98 was axe `landmark-one-main` (no main landmark while only the queue was shown); that is fixed (each phone tab's visible pane is now the `main` landmark, covered by an end-to-end test), but Lighthouse itself was not re-run after the fix.
 
 ## Data model
 
@@ -341,7 +341,8 @@ support-copilot/
 ## Tests
 
 ```bash
-make test            # backend: 155 pytest tests (+1 expected failure); frontend: 101 Vitest tests (12 files)
+make test            # backend: 158 pytest tests (+1 expected failure); frontend: 103 Vitest tests (12 files)
+make lint            # ruff (pyflakes + bugbear rules) over the backend
 ```
 
 | Requirement | Tests |
@@ -373,7 +374,7 @@ cd e2e && npm install && npx playwright install chromium   # one-time dev downlo
 make e2e                                                   # or: cd e2e && npm run e2e   (add -- --headed to watch it)
 ```
 
-After the one-time browser download the tests run offline. The suite is 145 tests in 21 files and takes about 5 minutes (5.2-5.3 measured over three consecutive runs, one worker, none flaky). It covers the queue
+After the one-time browser download the tests run offline. The suite is 149 tests in 22 files and takes about 6 minutes (6.2, 6.3 and 6.5 measured over three consecutive runs on the final tree, one worker, none flaky). It covers the queue
 and filters, ticket detail, the automatic brief and similar cards, answers and citations (including a sentence-by-sentence grounding check),
 drafts and the real clipboard, review and idempotency, the full keyboard path with real key presses, MCP and database failure states (it kills
 the real MCP child), responsive layouts at 1440, 1100, 820 and 390, axe accessibility scans in both themes, and every case in
@@ -383,8 +384,7 @@ passing, and be named `BUG-n`; there are none at v1.2.
 ## Known limitations
 
 - Retrieval is lexical: no synonyms or paraphrase. Paraphrase is the weakest kind in the evaluation (holdout P@1 0.500). A larger corpus would need a re-tuned threshold and probably BM25 or hybrid ranking.
-- A reply draft and the brief's checklist live in the page only; reloading discards them (nothing is saved or sent).
-- On a phone the Queue screen has no `main` landmark (the ticket pane, the only `<main>`, is hidden there); the accessibility audit reports it as a best-practice gap (Lighthouse 0.98).
+- A reply draft and the agent's edits are kept in the browser tab's `sessionStorage` per ticket, so a reload restores them; closing the tab discards them. The brief's checklist ticks are still in-page only. Nothing is saved on the server or sent.
 - Single-word queries can fall below the similarity floor. Bare 'timeout' scored 0.098 against KB-04. The category scope narrows ambiguity, and real questions with more terms retrieve correctly. This is recorded as a strict expected-failure test (`test_ambiguous_single_term_query_surfaces_both_articles_and_exports_scope`).
 - Ambiguous short queries can span categories ("timeout" is a tag of both KB-01 and KB-04). The ticket's category scope resolves them, and the UI defaults to it; unscoped, the answer may come from only one article.
 - The evaluation sets are small (39 tuning, 16 holdout queries) and were labelled by hand; the corpus is 7 articles and 12 tickets. The coverage value (0.6) and the similar-ticket 50% cutoff were chosen on this data.
@@ -392,8 +392,8 @@ passing, and be named `BUG-n`; there are none at v1.2.
 - Drafts quote internal wording verbatim ("first check the order…"); the agent is told to rephrase before sending. Draft steps come from the top-ranked article only; agent-facing prohibitions and sentences from other articles are listed under "Notes for the agent", not in the customer text.
 - FTS rows are rebuilt by the seed. Tickets are immutable in this prototype apart from `reviewed_at`.
 - There is no authentication or role model. It is a single local agent.
-- The API accepts request bodies of any size and rejects oversized fields only after parsing them (a 2 MB body gets a 422, not a 413); there is no size-limit middleware.
-- `assistant_runs` is never pruned, and opening a ticket writes two rows (the automatic brief and similar-tickets runs). Fine for a local demo; a real deployment would add retention.
+- Request bodies over 16 KB get a 413 (`payload_too_large`) and chunked bodies a 411, decided from the `Content-Length` header alone (`SUPPORT_COPILOT_MAX_BODY_BYTES`). Oversized fields inside a small body are still rejected by validation (422).
+- `assistant_runs` keeps the newest 1,000 rows (`SUPPORT_COPILOT_MAX_RUN_HISTORY`); opening a ticket writes two rows. There is no archive or export of older runs.
 - SQLite uses the default rollback journal, not WAL. An ad hoc 5-second stress run with one writer and four readers produced no lock errors, so WAL was not added (the script and its counts are not included in this repo).
 - A few routes are `async def` yet make short synchronous database calls (`/health`, the category check before an assistant run); they block the event loop for microseconds, which does not matter at this scale.
 - The route handler attaches the run record to the raised exception (`exc.run_record`) so failed runs are still logged; it works but is a shortcut a larger codebase would replace with a result type.
@@ -416,7 +416,7 @@ I would keep this pipeline as the retrieval and citation layer and the fallback:
 
 ## AI tools used
 
-Almost all of the code, tests and documentation were written by Claude Code, working from specifications and prompts I drafted together with Claude (chat). I set the scope, read each agent report with its test results, and approved or rejected each change. I did not write the retrieval, composer or UI code by hand. What was tested: the behaviour is covered by pytest (155 + 1 expected failure), Vitest (101) and Playwright end-to-end tests (145), which drive the real API, the real MCP server over stdio and the UI with real clicks and key presses, and the MCP server was checked with the MCP Inspector CLI. Output logs from those runs are not stored in the repo. The tuning and holdout query sets were written with AI assistance and the holdout set was evaluated at baseline and at the end of the build; later reads were for verification only.
+Almost all of the code, tests and documentation were written by Claude Code, working from specifications and prompts I drafted together with Claude (chat). I set the scope, read each agent report with its test results, and approved or rejected each change. I did not write the retrieval, composer or UI code by hand. What was tested: the behaviour is covered by pytest (158 + 1 expected failure), Vitest (103) and Playwright end-to-end tests (149), which drive the real API, the real MCP server over stdio and the UI with real clicks and key presses, and the MCP server was checked with the MCP Inspector CLI. Output logs from those runs are not stored in the repo. The tuning and holdout query sets were written with AI assistance and the holdout set was evaluated at baseline and at the end of the build; later reads were for verification only.
 
 ### What was built and checked with AI assistance
 

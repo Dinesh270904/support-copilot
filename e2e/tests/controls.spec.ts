@@ -408,7 +408,7 @@ test("390 px tab bar: Queue, Ticket and Copilot each show their own pane and mar
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/#/ticket/T-101");
   const tabs = page.getByRole("navigation", { name: "Sections" });
-  for (const [name, visible] of [["Queue", page.getByRole("navigation", { name: "Ticket queue" })], ["Ticket", page.getByRole("main")], ["Copilot", page.getByRole("complementary", { name: "Copilot" })]] as const) {
+  for (const [name, visible] of [["Queue", page.getByRole("main", { name: "Ticket queue" })], ["Ticket", page.getByRole("main").filter({ hasText: "T-101" })], ["Copilot", page.getByRole("main", { name: "Copilot" })]] as const) {
     await tabs.getByRole("button", { name }).click();
     await expect(tabs.getByRole("button", { name })).toHaveAttribute("aria-current", "page");
     await expect(visible).toBeVisible();

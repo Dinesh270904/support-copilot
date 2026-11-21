@@ -25,6 +25,13 @@ function message(err: unknown): string {
   return err instanceof ApiError ? err.message : "Unexpected error";
 }
 
+/** On a phone only one pane is visible at a time, so that pane is the page's `main` landmark; on wider layouts the
+ * queue is navigation and the ticket pane is `main`. Hidden panes are out of the accessibility tree either way. */
+function PaneLandmark({ phone, as, children, ...rest }: { phone: boolean; as: "nav" | "aside"; children: React.ReactNode } & React.HTMLAttributes<HTMLElement> & { hidden?: boolean; inert?: boolean }) {
+  const Tag = phone ? "main" : as;
+  return <Tag {...rest}>{children}</Tag>;
+}
+
 export default function App() {
   const { theme, toggle: toggleTheme } = useTheme();
   const [meta, setMeta] = useState<Meta | null>(null);
@@ -239,13 +246,13 @@ export default function App() {
         ) : undefined}
       />
       <div className="panes">
-        <nav className="pane pane-queue" aria-label="Ticket queue" hidden={layout === "phone" && tab !== "queue"}>
+        <PaneLandmark as="nav" phone={layout === "phone"} className="pane pane-queue" aria-label="Ticket queue" hidden={layout === "phone" && tab !== "queue"}>
           {layout === "rail" ? (
-            <QueueRail view={route.view} counts={countViews(tickets)} onView={(view) => { navigate({ view }); setQueueOpen(true); }} />
+            <QueueRail view={route.view} counts={countViews(tickets)} unknown={listError !== null} onView={(view) => { navigate({ view }); setQueueOpen(true); }} />
           ) : (
             queuePane
           )}
-        </nav>
+        </PaneLandmark>
         <main className="pane pane-ticket" hidden={layout === "phone" && tab !== "ticket"}>
           <TicketPane
             ticket={ticket}
@@ -271,7 +278,9 @@ export default function App() {
             }
           />
         </main>
-        <aside
+        <PaneLandmark
+          as="aside"
+          phone={layout === "phone"}
           id="copilot-pane"
           className={`pane pane-copilot${copilotOpen ? " open" : ""}`}
           aria-label="Copilot"
@@ -279,7 +288,7 @@ export default function App() {
           inert={drawerMode && !copilotOpen}
         >
           <CopilotPanel ticket={ticket} meta={meta} copilot={copilot} onOpenTicket={selectTicket} askRef={askRef} pendingTicket={selectedId !== null && ticket === null && ticketError === null} />
-        </aside>
+        </PaneLandmark>
       </div>
       {layout === "rail" && (
         <Drawer open={queueOpen} side="left" title="Queue" label="Ticket queue list" onClose={() => setQueueOpen(false)}>

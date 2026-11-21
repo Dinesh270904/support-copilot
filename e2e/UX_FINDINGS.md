@@ -9,7 +9,7 @@ target-size. Five screenshots were also looked at by eye (`api-down-390-dark`, `
 A first inspection ran against a stale server for a different branch and was discarded; everything below is from the candidate.
 
 Severity: **S1** broken or blocks the task. **S2** confusing, inaccessible or visually wrong. **S3** polish.
-Counts: S1 = 0. S2 = 4 (all fixed, each with a regression test that fails before the fix). S3 = 9 (listed, not implemented).
+Counts: S1 = 0. S2 = 4 (all fixed, each with a regression test that fails before the fix). S3 = 9: five fixed afterwards (S3-01, 02, 03, 05, 08; see `limitations.spec.ts`), four left as suggestions (S3-04, 06, 07, 09).
 
 ## Fixed (S2), one commit and one regression test each
 
@@ -27,14 +27,14 @@ shortcut the instant `goto()` returned and lost a ~120 ms race (shortcuts go liv
 
 | ID | Screen | Observation | Evidence | Why not changed here |
 |---|---|---|---|---|
-| S3-01 | Phone, queue screen | No `main` landmark while the Queue tab is shown (axe `landmark-one-main`, best-practice; Lighthouse accessibility 0.98 instead of 1.00) | Lighthouse mobile run | Needs the queue pane to change element, which several role-based tests depend on; not a WCAG A/AA failure |
-| S3-02 | Brief, similar, limitations and notes toggles | Link-style buttons are 16 px tall (33x16, 78x16, 148x16). Axe target-size (with its spacing exceptions) passes in every state | geometry check; axe wcag22aa clean | Enlarging the hit area is a restyle |
-| S3-03 | API down, queue | View counts read "0" (Open 0, High priority 0, ...), which can be read as "no tickets" | screenshot `api-down-390-dark` | Copy and design change |
+| S3-01 | Phone, queue screen | No `main` landmark while the Queue tab is shown (axe `landmark-one-main`, best-practice; Lighthouse accessibility 0.98 instead of 1.00) | Lighthouse mobile run | FIXED: each phone tab's visible pane is the `main` landmark (`limitations.spec.ts`). |
+| S3-02 | Brief, similar, limitations and notes toggles | Link-style buttons are 16 px tall (33x16, 78x16, 148x16). Axe target-size (with its spacing exceptions) passes in every state | geometry check; axe wcag22aa clean | FIXED: link-style buttons get a 24px hit area (padding cancelled by negative margin). |
+| S3-03 | API down, queue | View counts read "0" (Open 0, High priority 0, ...), which can be read as "no tickets" | screenshot `api-down-390-dark` | FIXED: counts read "–" (with a title) when the list could not load (`errors.spec.ts`). |
 | S3-04 | Ticket, keyboard | `r` asks for confirmation, but the Mark reviewed button and the palette command mark immediately | `controls.spec.ts` "palette command ... Mark current ticket reviewed" | A deliberate guard for stray key presses; consistency is a design decision |
-| S3-05 | Draft | A draft lives in the page only; reloading discards it. The UI says "Draft, not sent... copy it", but a new user may expect it to be kept | `cold-start.spec.ts` asserts the reload behaviour | New feature |
+| S3-05 | Draft | A draft lives in the page only; reloading discards it. The UI says "Draft, not sent... copy it", but a new user may expect it to be kept | `cold-start.spec.ts` asserts the reload behaviour | FIXED: the draft and edits persist per ticket in `sessionStorage` (`limitations.spec.ts`, `cold-start.spec.ts`). |
 | S3-06 | Ticket and Copilot | Two solid primary buttons on one screen ("Mark reviewed" and "Ask") | screenshots | Restyle |
 | S3-07 | Brief card | The first sentence repeats the ticket header's metadata | screenshots | Copy change |
-| S3-08 | Palette on phones | The footer shows an "esc" hint and the shortcut hints, which a phone user cannot use | `palette-390-dark` | Polish |
+| S3-08 | Palette on phones | The footer shows an "esc" hint and the shortcut hints, which a phone user cannot use | `palette-390-dark` | FIXED: shortcut hints are hidden on touch devices (`pointer: coarse`). |
 | S3-09 | Start screen | The "Try these" block lists demo-oriented ticket descriptions | screenshot | Content decision |
 
 ## Cold-start comprehension (`cold-start.spec.ts`)

@@ -13,3 +13,8 @@ filterwarnings = ["ignore::DeprecationWarning"]
 [tool.ruff]
 line-length = 120
 target-version = "py311"
+
+[tool.ruff.lint]
+# Bug-finding rules only (pyflakes + bugbear); formatting-style rules are deliberately not enforced.
+select = ["F", "B"]
+ignore = ["B905"]  # zip() without strict=: lengths are equal by construction where it is used

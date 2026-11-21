@@ -58,6 +58,33 @@ describe("ReplyComposer", () => {
     expect(box.value).toBe(DRAFT.draft);
   });
 
+  it("an edited draft survives a reload (remount) of the same ticket, and Reset still returns to the generated text", async () => {
+    installApi({ runs: { summarize_ticket: BRIEF, search_resolved_tickets: SIMILAR, draft_reply: DRAFT } });
+    const user = userEvent.setup();
+    const first = render(<Composer />);
+    await user.click(screen.getByRole("button", { name: /Draft with Copilot/ }));
+    const box = (await screen.findByDisplayValue(/Thank you for contacting us/)) as HTMLTextAreaElement;
+    await user.type(box, " Edited by the agent.");
+    first.unmount(); // a page reload: all React state is gone, sessionStorage is not
+
+    render(<Composer />);
+    const restored = (await screen.findByDisplayValue(/Edited by the agent\./)) as HTMLTextAreaElement;
+    expect(screen.getByRole("heading", { name: /Draft · not sent/ })).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /Reset/ }));
+    expect(restored.value).toBe(DRAFT.draft);
+  });
+
+  it("still works when storage is blocked (no restore, no crash)", async () => {
+    installApi({ runs: { summarize_ticket: BRIEF, search_resolved_tickets: SIMILAR, draft_reply: DRAFT } });
+    vi.spyOn(Storage.prototype, "setItem").mockImplementation(() => { throw new Error("quota"); });
+    vi.spyOn(Storage.prototype, "getItem").mockImplementation(() => { throw new Error("blocked"); });
+    const user = userEvent.setup();
+    render(<Composer />);
+    await user.click(screen.getByRole("button", { name: /Draft with Copilot/ }));
+    expect(await screen.findByDisplayValue(/Thank you for contacting us/)).toBeInTheDocument();
+    vi.restoreAllMocks();
+  });
+
   it("a holding-reply draft carries an amber note so nobody promises specifics", async () => {
     installApi({ runs: { summarize_ticket: BRIEF, search_resolved_tickets: SIMILAR, draft_reply: { ...DRAFT, answer_state: "insufficient_evidence" } } });
     const user = userEvent.setup();

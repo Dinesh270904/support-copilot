@@ -1,7 +1,5 @@
 """The eval harness itself: dataset labels are valid and the metric arithmetic is right."""
 
-import json
-
 import pytest
 
 from app import eval as ev

@@ -63,3 +63,9 @@
 
 /* The conversation pane is a focusable scroll region (axe: scrollable-region-focusable); keep its ring inside the pane. */
 .ticket-scroll:focus-visible { outline-offset: -3px; }
+
+/* Touch devices have no keyboard shortcuts: hide the shortcut hints (the palette still works by tapping). */
+@media (pointer: coarse) { .kbd-hint { display: none; } }
+
+/* Link-style buttons: a 24px-tall hit area without moving anything (the extra padding is cancelled by the negative margin). */
+.link-btn, .notes-toggle { padding-block: 4px; margin-block: -4px; }

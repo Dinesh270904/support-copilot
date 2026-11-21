@@ -63,7 +63,7 @@ test("390: the key flow works through the tab bar (open ticket, ask, see sources
   await expect(tabbar).toBeVisible();
 
   await tabbar.getByRole("button", { name: "Queue" }).click();
-  await page.getByRole("navigation", { name: "Ticket queue" }).getByRole("button", { name: /T-101/ }).click();
+  await page.getByRole("main", { name: "Ticket queue" }).getByRole("button", { name: /T-101/ }).click(); // on a phone the visible pane is the main landmark
   await expect(page.getByRole("heading", { level: 2, name: /Checkout timed out/ })).toBeVisible(); // lands on the Ticket tab
   await expect(tabbar.getByRole("button", { name: "Ticket" })).toHaveAttribute("aria-current", "page");
 

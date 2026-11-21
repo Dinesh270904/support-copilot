@@ -74,4 +74,8 @@ test("API down says 'API unreachable' (a proxy 502 is not shown as 'Request fail
   await expect(page.getByRole("alert").first()).toContainText(/API unreachable/);
   await shot(page, "state-api-unreachable");
   await expect(page.getByRole("alert").first()).not.toContainText("Request failed");
+  // The view counts are unknown, not zero: they read "–", never "0".
+  const counts = page.locator(".view-count");
+  await expect(counts.first()).toHaveText("–");
+  expect(await counts.allInnerTexts()).not.toContain("0");
 });

@@ -30,6 +30,30 @@ const IDLE: RunState = { status: "idle" };
 const EMPTY: Session = { brief: IDLE, similar: IDLE, draft: IDLE, draftText: "", answers: [] };
 const NO_TICKET = "__none__";
 
+/** A reply draft (and the agent's edits to it) survives a page reload, per ticket, for this browser tab only.
+ * sessionStorage, not localStorage: nothing outlives the tab, and storage that is blocked or full just means no restore. */
+const draftKey = (tid: string) => `support-copilot:draft:${tid}`;
+
+function loadDraft(tid: string): { response: AssistantRunResponse; text: string } | null {
+  try {
+    const raw = window.sessionStorage.getItem(draftKey(tid));
+    if (!raw) return null;
+    const saved = JSON.parse(raw) as { response?: AssistantRunResponse; text?: unknown };
+    if (!saved.response || typeof saved.response.draft !== "string" || typeof saved.text !== "string") return null;
+    return { response: saved.response, text: saved.text };
+  } catch {
+    return null;
+  }
+}
+
+function saveDraft(tid: string, response: AssistantRunResponse, text: string): void {
+  try {
+    window.sessionStorage.setItem(draftKey(tid), JSON.stringify({ response, text }));
+  } catch {
+    /* private mode or quota: the draft simply is not restored after a reload */
+  }
+}
+
 async function execute(body: AssistantRunRequest, signal: AbortSignal | undefined, onSettled: () => void): Promise<RunState> {
   try {
     const response = await api.runAssistant(body, signal);
@@ -141,6 +165,21 @@ export function useCopilot(ticketId: string | null, onRunSettled: () => void = (
       patch(tid, (s) => ({ ...s, draft: r, draftText: r.response?.draft ?? s.draftText })),
     );
   }, [ticketId, patch, track, settled]);
+
+  // Restore a saved draft when a ticket is opened, unless this page already has one.
+  useEffect(() => {
+    if (!ticketId) return;
+    const saved = loadDraft(ticketId);
+    if (!saved) return;
+    patch(ticketId, (s) => (s.draft.status === "idle" ? { ...s, draft: { status: "ok", response: saved.response }, draftText: saved.text } : s));
+  }, [ticketId, patch]);
+
+  const current = sessions[key];
+  const savedResponse = current?.draft.status === "ok" ? current.draft.response : undefined;
+  const savedText = current?.draftText ?? "";
+  useEffect(() => {
+    if (ticketId && savedResponse) saveDraft(ticketId, savedResponse, savedText);
+  }, [ticketId, savedResponse, savedText]);
 
   const setDraftText = useCallback((text: string) => patch(key, (s) => ({ ...s, draftText: text })), [key, patch]);
   const resetDraft = useCallback(() => patch(key, (s) => ({ ...s, draftText: s.draft.response?.draft ?? "" })), [key, patch]);

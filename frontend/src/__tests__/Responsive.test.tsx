@@ -104,9 +104,11 @@ describe("under 768px: one pane and a bottom tab bar", () => {
     expect(document.querySelector(".app-shell")).toHaveAttribute("data-layout", "phone");
     const tabs = within(screen.getByRole("navigation", { name: "Sections" }));
     expect(tabs.getByRole("button", { name: "Queue" })).toHaveAttribute("aria-current", "page");
-    const nav = screen.getByRole("navigation", { name: "Ticket queue" });
+    // One pane at a time, so the visible pane is the page's only `main` landmark.
+    const nav = screen.getByRole("main", { name: "Ticket queue" });
+    expect(screen.getAllByRole("main")).toEqual([nav]);
     expect(nav).not.toHaveAttribute("hidden");
-    expect(document.querySelector("main")).toHaveAttribute("hidden");
+    expect(document.querySelector("main.pane-ticket")).toHaveAttribute("hidden");
 
     await user.click(await within(nav).findByRole("button", { name: /T-101/ }));
     expect(tabs.getByRole("button", { name: "Ticket" })).toHaveAttribute("aria-current", "page");
@@ -114,7 +116,8 @@ describe("under 768px: one pane and a bottom tab bar", () => {
     expect(await screen.findByRole("heading", { name: /Reply|Draft/ })).toBeInTheDocument(); // the composer
     await user.click(tabs.getByRole("button", { name: "Copilot" }));
     expect(pane()).not.toHaveAttribute("hidden");
-    expect(document.querySelector("main")).toHaveAttribute("hidden");
+    expect(document.querySelector("main.pane-ticket")).toHaveAttribute("hidden");
+    expect(screen.getAllByRole("main")).toEqual([pane()]);
     await user.click(tabs.getByRole("button", { name: "Queue" }));
     expect(window.location.hash).toBe("#/ticket/T-101"); // the selected ticket persists across tabs
   });
