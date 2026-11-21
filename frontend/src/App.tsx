@@ -264,7 +264,7 @@ export default function App() {
             confirming={confirming}
             onConfirmReview={confirmReview}
             onCancelReview={() => setConfirmingId(null)}
-            empty={<EmptyOverview tickets={tickets} loading={listLoading} onOpenTicket={selectTicket} onView={(view) => navigate({ view })} />}
+            empty={<EmptyOverview tickets={tickets} loading={listLoading} onOpenTicket={selectTicket} onView={(view) => navigate({ view })} error={layout === "rail" || layout === "phone" ? listError : null} onRetry={() => setReloadKey((k) => k + 1)} />}
             composer={
               ticket && (
                 <ReplyComposer

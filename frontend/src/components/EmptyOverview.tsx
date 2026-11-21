@@ -17,11 +17,14 @@ interface Props {
   loading: boolean;
   onOpenTicket: (id: string) => void;
   onView: (view: ViewId) => void;
+  /** Set only when the queue is not on screen next to this pane (icon rail, phone), so the failure is still stated here. */
+  error?: string | null;
+  onRetry?: () => void;
 }
 
 /** The ticket pane with nothing selected: real counts (computed from the list, each one switches the view),
  * a few tickets worth opening first, and the four most useful keys. */
-export function EmptyOverview({ tickets, loading, onOpenTicket, onView }: Props) {
+export function EmptyOverview({ tickets, loading, onOpenTicket, onView, error = null, onRetry }: Props) {
   const counts = countViews(tickets);
   const stats: { view: ViewId; n: number; label: string }[] = [
     { view: "open", n: counts.open, label: "open" },
@@ -33,6 +36,12 @@ export function EmptyOverview({ tickets, loading, onOpenTicket, onView }: Props)
   return (
     <div className="overview">
       <h2 className="overview-title">Pick a ticket to start</h2>
+      {error && (
+        <div className="notice notice-danger" role="alert">
+          <p>{error}</p>
+          {onRetry && <button type="button" className="btn" onClick={onRetry}>Retry</button>}
+        </div>
+      )}
       {!loading && tickets.length > 0 && (
         <p className="overview-stats" aria-label="Queue summary">
           {stats.map((s, i) => (
