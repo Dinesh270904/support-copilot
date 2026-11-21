@@ -31,6 +31,29 @@ test("a reply draft and the agent's edits survive a page reload (same tab), per 
   await expect(page.getByRole("textbox", { name: "Reply draft" })).not.toHaveValue(/EDITED-BY-AGENT-4471/);
 });
 
+test("a saved draft belongs to one tab session: a brand-new browser context starts without it, the original keeps it", async ({ page, browser }) => {
+  await page.setViewportSize({ width: 1440, height: 800 });
+  await page.goto("/#/ticket/T-101");
+  await appReady(page);
+  await page.getByRole("button", { name: /Draft with Copilot/ }).click();
+  const box = page.getByRole("textbox", { name: "Reply draft" });
+  await expect(box).toBeVisible();
+  await box.fill("PERSISTED-DRAFT-9183");
+  await page.reload();
+  await appReady(page);
+  await expect(page.getByRole("textbox", { name: "Reply draft" })).toHaveValue("PERSISTED-DRAFT-9183"); // survives a reload
+
+  const fresh = await browser.newContext({ viewport: { width: 1440, height: 800 } }); // what closing the tab and opening a new one amounts to
+  const other = await fresh.newPage();
+  await other.goto("/#/ticket/T-101");
+  await expect(other.getByRole("heading", { level: 2, name: /Checkout timed out/ })).toBeVisible();
+  await expect(other.getByRole("textbox", { name: "Reply draft" })).toHaveCount(0); // discarded with the old tab session
+  await expect(other.getByText("PERSISTED-DRAFT-9183")).toHaveCount(0);
+  await fresh.close();
+
+  await expect(page.getByRole("textbox", { name: "Reply draft" })).toHaveValue("PERSISTED-DRAFT-9183"); // the first tab is unaffected
+});
+
 test("phone: every tab has exactly one visible main landmark, and axe finds no landmark-one-main on the Queue screen", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/");
