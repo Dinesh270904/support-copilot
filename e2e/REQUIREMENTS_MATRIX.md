@@ -40,7 +40,7 @@ Evidence was re-produced on 2026-11-21 on the final tree (branch `final2`: v1.2.
 | 58 | Official `mcp` package, stdio, separate server, client in FastAPI | PASS | `mcp==2.3.0` (`mcp.server.mcpserver.MCPServer`, `stdio_client`, `ClientSession`); server is `python -m app.mcp_server`; handshake protocol 2025-11-25 |
 | 59 | scikit-learn TfidfVectorizer + cosine, chunks and metadata in SQLite | PASS | `app/rag/index.py` imports `TfidfVectorizer`, `cosine_similarity`; `article_chunks(chunk_id, article_id, position, title, category, text, word_count)` |
 | 60 | SQLite FTS5 for similar resolved tickets | PASS | `ticket_search` is `CREATE VIRTUAL TABLE ... USING fts5(...)`; `expected_cases` `similar_mfa_recovery` -> T-105 |
-| 61 | Small deterministic composer, no invented facts | PASS | Same request twice -> identical response hash (`a011fb32ae6d2d7f`) apart from run id and durations; `test_grounding.py::test_answer_is_quoted_from_cited_chunks_or_cites_nothing` |
+| 61 | Small deterministic composer, no invented facts | PASS | Each of the five actions sent three times over real HTTP -> three identical response hashes apart from run id and durations (draft reply `a011fb32ae6d`, search `200e061bb327`, summary `23e07b707945`, count `8142e089f6fa`, similar `13247afd04c0`); `test_grounding.py::test_answer_is_quoted_from_cited_chunks_or_cites_nothing` |
 | 62 | pytest, plus one frontend test (Vitest) covering a visible UI behaviour | PASS | pytest 160 + 1 xfail; Vitest 103 tests in 12 files (the suite also has 157 Playwright tests) |
 
 ## D. RAG, MCP and API requirements
@@ -81,6 +81,8 @@ Evidence was re-produced on 2026-11-21 on the final tree (branch `final2`: v1.2.
 
 ## F. Frontend (lines 25-32, 129-137)
 
+Every spec named below passed in each of the three final full runs from a fresh clone (157 tests, 0 failed, 0 retries, 5.8 minutes each).
+
 | Line | Requirement | Verdict | Evidence (Playwright, real browser) |
 |---|---|---|---|
 | 27, 132 | Queue with status, priority, category filters | PASS | `queue.spec.ts` (views, filters match `GET /api/tickets`), `controls.spec.ts` (every filter checkbox, Clear all, chips) |
@@ -108,7 +110,7 @@ Evidence was re-produced on 2026-11-21 on the final tree (branch `final2`: v1.2.
 | 171 | Inspector or another client lists tools/resources and calls a read operation | PASS | Section D |
 | 172 | Explain chunking, TF-IDF, top-k, threshold, citations, limits vs embeddings | PASS | README "Local RAG pipeline" and "Evaluation"; weak spot stated (paraphrase 0.500 on the holdout) |
 | 173 | How SQLite access is constrained; how MCP and end-to-end paths were tested | PASS | `mode=ro` + `PRAGMA query_only=ON`; parameterised SQL only (no string-built SQL found); tests in section E |
-| 174 | Small change during the session | PASS | Rehearsed on a scratch branch earlier in this audit: coverage 0.6 -> 0.5 (1 test fails, FPR 0.091), new article (2 tests with a hard-coded 14), `count_tickets` filter (status/priority already exist) |
+| 174 | Small change during the session | PASS | Rehearsed again on a throwaway clone of the final tree: (1) coverage 0.6 -> 0.5 in the default of `TfidfIndex.search` (`rag/index.py:125`) fails exactly one test, `test_one_of_two_query_terms_is_not_evidence` (159 passed), and the tuning FPR becomes 0.091 (`python -m app.eval` with `SUPPORT_COPILOT_RAG_MIN_TERM_COVERAGE=0.5` shows the same 0.091); changing only `config.py` fails no test, because the unit tests use the index default; (2) adding an article changes the chunk count, which two tests hard-code (`test_api.py:21` and `test_retrieval.py:36`, both `== 14`); (3) `count_tickets` already filters on status, priority and category (`schemas.py:19-23`), so a `reviewed` filter is the natural small change |
 
 ## H. Behaviour added after the first audit, checked against the requirements above (final tree, real curl against the real API)
 
