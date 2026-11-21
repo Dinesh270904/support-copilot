@@ -1,11 +1,11 @@
 # Controls inventory and coverage map
 
-Generated from the live DOM by `tests/controls-inventory.spec.ts` (38 views and states, 1,036 element sightings, 107 distinct accessible-name families) and grouped into the rows below. A row is one control or one family of identical controls.
+Generated from the live DOM by `tests/controls-inventory.spec.ts` (38 views and states; re-measured on the final tree: 2,063 element sightings, 981 in the desktop walk and 1,082 in the state walk, which the sweep's normalisation groups into 109 control families; the same walk on v1.2.3 gave 2,045 sightings and 103 families. The original 1,036 / 107 figures came from the first walk and a coarser grouping and are not reproducible) and grouped into the rows below. A row is one control or one family of identical controls.
 
 **Covered before** = an existing e2e/Vitest test clicked or pressed it and asserted its effect (read in this audit). `UNCOVERED` = none did. A row with both is covered for one path and not another.
 **Covered now** = the test that exercises it after this audit (`controls.spec.ts` for the gaps, `dead-controls.spec.ts` clicks every distinct control once, `keyboard-only.spec.ts` and `cold-start.spec.ts` run the whole flow).
 
-**Rows: 72.** Fully covered before: 43. Partly covered before (one path only): 4. Not covered before: 25. Covered now: 72 (see the dead-control sweep for the click-once guarantee on all 107 families).
+**Rows: 74.** Fully covered before: 43. Partly covered before (one path only): 4. Not covered before: 25. Two rows (the last two behaviours below the queue and ticket sections, marked NEW) describe behaviour added after the first audit and had no test when added. Covered now: 74. The dead-control sweep clicks every distinct family once (100 clicks over 103 families on the final tree, 0 problems; 94 over 97 on v1.2.3). The six extra families against v1.2.3 are not new controls: five are the queue view buttons reading "Open –" etc. instead of "Open 0" when the API is down, and one is the existing Reset button now reachable because a restored draft exists in the shared tab.
 
 | View | Control | Reached by | Expected effect | Covered before | Covered now |
 |---|---|---|---|---|---|
@@ -17,6 +17,7 @@ Generated from the live DOM by `tests/controls-inventory.spec.ts` (38 views and 
 | 390 px | Queue / Ticket / Copilot (tab bar ×3) | click | Shows that pane and sets aria-current=page | responsive.spec (key flow through the tab bar) | controls.spec: 390 px tab bar, each pane |
 | 820 px | View icon buttons (rail ×5) | click | Switches the view and opens the queue drawer; Close returns to the rail | UNCOVERED | controls.spec: 820 px icon rail |
 | Queue | Open / High priority / Needs review / Resolved / All tickets (view buttons ×5) | click, keys 1–5, palette | List equals what GET /api/tickets says for that view; aria-pressed marks it | queue.spec: views show real counts / each view lists what the API says (click); keys 1–5: UNCOVERED | controls.spec: palette 'View: …' and the 1–5 keys |
+| Queue (API down) | View buttons read "–" instead of 0 (×5) | state | When the ticket list cannot load the counts are unknown, not zero: they read "–" with a title, and the buttons still work | NEW: no test when added | errors.spec "API down says 'API unreachable'" (asserts "–" and never "0"); the sweep clicks all five |
 | Queue | Filters (button) and its popover | click | Opens the Filters popover; Esc closes; label shows the active count | queue.spec | queue.spec; controls.spec (count label) |
 | Queue | Filter checkbox: High | click | List narrows to GET /api/tickets?priority=high; uncheck restores | queue.spec | controls.spec |
 | Queue | Filter checkbox: Checkout | click | List narrows to category=checkout | queue.spec | controls.spec |
@@ -39,6 +40,7 @@ Generated from the live DOM by `tests/controls-inventory.spec.ts` (38 views and 
 | Ticket | Reply draft (textarea) | type | Shows Edited and a live character count | draft.spec | draft.spec |
 | Ticket | Copy draft (button) | click, Enter | Puts exactly the edited text on the clipboard | draft.spec; keyboard.spec | keyboard-only.spec; cold-start.spec |
 | Ticket | Reset (button) | click | Restores the generated draft; disabled until edited | draft.spec (click) | controls.spec (disabled state) |
+| Ticket | Saved reply draft (restored after a reload) | reload | The draft and the agent's edits return after a reload of the same tab; a new tab session starts without them; Reset still returns to the generated text | NEW: no test when added | limitations.spec: reload keeps it, a brand-new browser context does not; Vitest TicketPane (remount) |
 | Ticket | Notes for the agent (n) (toggle) | click | Expands/collapses the agent-only notes | draft.spec | draft.spec |
 | Ticket | Draft a holding reply (button) | click | Drafts a holding reply for a no-guidance ticket | draft.spec; states.spec | same |
 | Copilot | Ask a question (textarea) | type, /, Enter | Enter sends one request; ≥3 and ≤500 characters; 501 disables Ask | answer.spec (validation, Enter); keyboard.spec (/) | controls.spec (Enter vs button, double click) |
