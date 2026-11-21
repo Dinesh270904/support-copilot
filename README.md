@@ -13,7 +13,7 @@
   <img alt="MCP over stdio" src="https://img.shields.io/badge/MCP-stdio-7c3aed">
   <img alt="SQLite with FTS5" src="https://img.shields.io/badge/SQLite-FTS5-003B57?logo=sqlite&logoColor=white">
   <img alt="No LLM, no API keys, offline" src="https://img.shields.io/badge/LLM-none-success">
-  <img alt="Tests: 158 pytest, 103 Vitest, 149 Playwright" src="https://img.shields.io/badge/tests-158%20pytest%20%C2%B7%20103%20Vitest%20%C2%B7%20149%20Playwright-brightgreen">
+  <img alt="Tests: 160 pytest, 103 Vitest, 157 Playwright" src="https://img.shields.io/badge/tests-160%20pytest%20%C2%B7%20103%20Vitest%20%C2%B7%20157%20Playwright-brightgreen">
 </p>
 
 <p align="center">
@@ -42,7 +42,7 @@ declines to answer instead of inventing something.
 | **Local and offline** | No API keys, no model download, no network after install. The backend suite passes with the network blocked. |
 | **Safe by construction** | The MCP server opens SQLite read-only. Each action maps to a fixed tool plan, so text in a ticket or article can never change what runs. There is no SQL tool. |
 | **Inspectable** | Every answer shows the retrieval method, thresholds, sources with scores, and the tool trace. The raw trace is one click away, and the server can be inspected with the MCP Inspector. |
-| **Tested** | 158 pytest tests (+1 expected failure), 103 Vitest tests, and 149 Playwright tests that drive the real API, the real MCP server and the UI with real clicks and key presses. |
+| **Tested** | 160 pytest tests (+1 expected failure), 103 Vitest tests, and 157 Playwright tests that drive the real API, the real MCP server and the UI with real clicks and key presses. |
 
 ## Quick start
 
@@ -298,8 +298,8 @@ was kept out of the repo to stay within its size budget.
 
 ### Performance and accessibility
 
-Measured with `vite build`: the JS bundle is 393.5 KB (113.39 KB gzip) now; the earlier 298.5 KB (91.3 KB gzip) figure, an ad hoc build measurement from before the icon change that cannot be reproduced from this repo, implies about +22.1 KB gzip,
-because each icon carries all six weights; CSS is 59.2 KB (11.71 KB gzip). Lighthouse on the production build (measured in the final verification, headless Chromium, `vite preview`): desktop empty page and ticket page score 1.00 in performance, accessibility, best practices and SEO; mobile scores performance 0.99 and best practices and SEO 1.00, accessibility 1.00 on the ticket page and 0.98 on the phone's queue screen, and the answered state (user flow) scores 1.00 with an INP of 40 ms. The 0.98 was axe `landmark-one-main` (no main landmark while only the queue was shown); that is fixed (each phone tab's visible pane is now the `main` landmark, covered by an end-to-end test), but Lighthouse itself was not re-run after the fix.
+Measured with `vite build`: the JS bundle is 393.8 KB (113.44 KB gzip) now; the earlier 298.5 KB (91.3 KB gzip) figure, an ad hoc build measurement from before the icon change that cannot be reproduced from this repo, implies about +22.1 KB gzip,
+because each icon carries all six weights; CSS is 59.2 KB (11.71 KB gzip). Lighthouse 13.6.0 on the production build (`vite preview`, headless Chrome for Testing; two runs per page and form factor, then three runs of the answered-state user flow): the empty page and the ticket page score 1.00 in performance, accessibility, best practices and SEO on desktop. On mobile, accessibility, best practices and SEO are 1.00 on both pages, including the phone's Queue screen, and performance is 0.99-1.00 (the only deduction is the Time to Interactive audit; LCP is 2.1 s on the throttled mobile profile). The answered state (navigation, a timespan around asking a question, then a snapshot) scores 1.00 in every category that applies, with an INP of 20-130 ms on desktop and 30-40 ms on mobile across the three runs (all under the 200 ms threshold; the first desktop run was the slow one). The per-run numbers are in `e2e/UX_FINDINGS.md`.
 
 ## Data model
 
@@ -341,7 +341,7 @@ support-copilot/
 ## Tests
 
 ```bash
-make test            # backend: 158 pytest tests (+1 expected failure); frontend: 103 Vitest tests (12 files)
+make test            # backend: 160 pytest tests (+1 expected failure); frontend: 103 Vitest tests (12 files)
 make lint            # ruff (pyflakes + bugbear rules) over the backend
 ```
 
@@ -374,7 +374,7 @@ cd e2e && npm install && npx playwright install chromium   # one-time dev downlo
 make e2e                                                   # or: cd e2e && npm run e2e   (add -- --headed to watch it)
 ```
 
-After the one-time browser download the tests run offline. The suite is 149 tests in 22 files and takes about 6 minutes (6.2, 6.3 and 6.5 measured over three consecutive runs on the final tree, one worker, none flaky). It covers the queue
+After the one-time browser download the tests run offline. The suite is 157 tests in 22 files and takes about 6 minutes (6.2, 6.3 and 6.5 measured over three consecutive runs on the final tree, one worker, none flaky). It covers the queue
 and filters, ticket detail, the automatic brief and similar cards, answers and citations (including a sentence-by-sentence grounding check),
 drafts and the real clipboard, review and idempotency, the full keyboard path with real key presses, MCP and database failure states (it kills
 the real MCP child), responsive layouts at 1440, 1100, 1024, 820 and 390, axe accessibility scans in both themes, and every case in
@@ -416,7 +416,7 @@ I would keep this pipeline as the retrieval and citation layer and the fallback:
 
 ## AI tools used
 
-Almost all of the code, tests and documentation were written by Claude Code, working from specifications and prompts I drafted together with Claude (chat). I set the scope, read each agent report with its test results, and approved or rejected each change. I did not write the retrieval, composer or UI code by hand. What was tested: the behaviour is covered by pytest (158 + 1 expected failure), Vitest (103) and Playwright end-to-end tests (149), which drive the real API, the real MCP server over stdio and the UI with real clicks and key presses, and the MCP server was checked with the MCP Inspector CLI. Output logs from those runs are not stored in the repo. The tuning and holdout query sets were written with AI assistance and the holdout set was evaluated at baseline and at the end of the build; later reads were for verification only.
+Almost all of the code, tests and documentation were written by Claude Code, working from specifications and prompts I drafted together with Claude (chat). I set the scope, read each agent report with its test results, and approved or rejected each change. I did not write the retrieval, composer or UI code by hand. What was tested: the behaviour is covered by pytest (160 + 1 expected failure), Vitest (103) and Playwright end-to-end tests (157), which drive the real API, the real MCP server over stdio and the UI with real clicks and key presses, and the MCP server was checked with the MCP Inspector CLI. Output logs from those runs are not stored in the repo. The tuning and holdout query sets were written with AI assistance and the holdout set was evaluated at baseline and at the end of the build; later reads were for verification only.
 
 ### What was built and checked with AI assistance
 
