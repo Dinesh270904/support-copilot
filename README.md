@@ -270,7 +270,7 @@ The design source is `docs/UI_HANDOFF.md` (a longer addendum was also supplied d
 
 - **Layout**: queue, ticket and Copilot panes. The queue has five views (Open, High priority, Needs review, Resolved, All) with counts
   computed from the loaded list, filters, and a sort. The ticket pane has the conversation (instruction-like messages are flagged and left
-  unfollowed) and a reply composer that always says "Draft, not sent". The Copilot pane has the brief, similar resolved tickets and an Ask box.
+  unfollowed) and a reply composer that labels every draft "Draft · not sent" and says that nothing is sent. The Copilot pane has the brief, similar resolved tickets and an Ask box.
 - **The answer card** is the point of the UI: the answer as prose, each sentence tied to a numbered source; hovering or focusing a marker previews
   the exact excerpt with the quoted sentence highlighted; a score meter shows each similarity against the minimum; the tool calls that produced
   the answer are shown by default and the raw trace is one click away. Insufficient evidence leads with a plain sentence and keeps the backend's
