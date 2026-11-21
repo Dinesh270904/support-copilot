@@ -335,7 +335,7 @@ support-copilot/
 ├── e2e/                    Playwright suite, plus REQUIREMENTS_MATRIX.md, CONTROLS.md, UX_FINDINGS.md
 ├── docs/                   architecture and flow sketches (docs/diagrams/ renders them), UI handoff, README screenshots
 ├── scripts/dev.sh          seed if needed, then start API and UI
-└── Makefile                install, dev, test, e2e, mcp-inspect
+└── Makefile                install, setup, dev, test, lint, e2e, mcp-inspect
 ```
 
 ## Tests
@@ -377,9 +377,9 @@ make e2e                                                   # or: cd e2e && npm r
 After the one-time browser download the tests run offline. The suite is 149 tests in 22 files and takes about 6 minutes (6.2, 6.3 and 6.5 measured over three consecutive runs on the final tree, one worker, none flaky). It covers the queue
 and filters, ticket detail, the automatic brief and similar cards, answers and citations (including a sentence-by-sentence grounding check),
 drafts and the real clipboard, review and idempotency, the full keyboard path with real key presses, MCP and database failure states (it kills
-the real MCP child), responsive layouts at 1440, 1100, 820 and 390, axe accessibility scans in both themes, and every case in
+the real MCP child), responsive layouts at 1440, 1100, 1024, 820 and 390, axe accessibility scans in both themes, and every case in
 `expected_cases.json` through the UI. A test that records a known, not-yet-fixed finding should use `test.fail()`, so the run turns red if it starts
-passing, and be named `BUG-n`; there are none at v1.2.
+passing, and be named `BUG-n`; there are none.
 
 ## Known limitations
 
