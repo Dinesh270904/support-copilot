@@ -79,3 +79,17 @@ test("API down says 'API unreachable' (a proxy 502 is not shown as 'Request fail
   await expect(counts.first()).toHaveText("–");
   expect(await counts.allInnerTexts()).not.toContain("0");
 });
+
+for (const [width, height] of [[820, 900], [390, 844]] as const) {
+  for (const [url, what] of [[UI_NO_API, /API unreachable/], [UI_NO_DB, /Database not initialized/]] as const) {
+    test(`${what.source} at ${width} px: the main pane itself says so and offers Retry (the queue is in a drawer or another tab)`, async ({ page }) => {
+      await page.setViewportSize({ width, height });
+      await page.goto(url);
+      if (width < 768) await page.getByRole("navigation", { name: "Sections" }).getByRole("button", { name: "Ticket" }).click();
+      const main = page.getByRole("main");
+      await expect(main.getByRole("alert")).toContainText(what);
+      await expect(main.getByRole("button", { name: "Retry" })).toBeVisible();
+      await expect(main.getByRole("heading", { name: "Pick a ticket to start" })).toBeVisible();
+    });
+  }
+}

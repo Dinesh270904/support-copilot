@@ -39,7 +39,7 @@ export default function App() {
   // The URL hash is the source of truth for the selected ticket and view (#/ticket/T-101?view=high).
   const { route, navigate } = useHashRoute();
   const layout = useLayoutMode();
-  const drawerMode = layout === "drawer" || layout === "rail"; // the Copilot is a drawer
+  const drawerMode = layout === "drawer" || layout === "rail"; // the Copilot is a drawer, laid over the ticket pane while it is open (so the ticket pane is inert then: focus must not land on what the drawer covers)
   const [copilotOpen, setCopilotOpen] = useState(false);
   const [queueOpen, setQueueOpen] = useState(false); // the queue list's left drawer (rail layout)
   const [tab, setTab] = useState<Tab>(route.ticketId ? "ticket" : "queue"); // phone layout
@@ -253,7 +253,7 @@ export default function App() {
             queuePane
           )}
         </PaneLandmark>
-        <main className="pane pane-ticket" hidden={layout === "phone" && tab !== "ticket"}>
+        <main className="pane pane-ticket" hidden={layout === "phone" && tab !== "ticket"} inert={drawerMode && copilotOpen}>
           <TicketPane
             ticket={ticket}
             loading={ticketLoading}
@@ -264,7 +264,7 @@ export default function App() {
             confirming={confirming}
             onConfirmReview={confirmReview}
             onCancelReview={() => setConfirmingId(null)}
-            empty={<EmptyOverview tickets={tickets} loading={listLoading} onOpenTicket={selectTicket} onView={(view) => navigate({ view })} />}
+            empty={<EmptyOverview tickets={tickets} loading={listLoading} onOpenTicket={selectTicket} onView={(view) => navigate({ view })} error={layout === "rail" || layout === "phone" ? listError : null} onRetry={() => setReloadKey((k) => k + 1)} />}
             composer={
               ticket && (
                 <ReplyComposer

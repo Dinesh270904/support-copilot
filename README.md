@@ -13,7 +13,7 @@
   <img alt="MCP over stdio" src="https://img.shields.io/badge/MCP-stdio-7c3aed">
   <img alt="SQLite with FTS5" src="https://img.shields.io/badge/SQLite-FTS5-003B57?logo=sqlite&logoColor=white">
   <img alt="No LLM, no API keys, offline" src="https://img.shields.io/badge/LLM-none-success">
-  <img alt="Tests: 158 pytest, 103 Vitest, 149 Playwright" src="https://img.shields.io/badge/tests-158%20pytest%20%C2%B7%20103%20Vitest%20%C2%B7%20149%20Playwright-brightgreen">
+  <img alt="Tests: 160 pytest, 103 Vitest, 157 Playwright" src="https://img.shields.io/badge/tests-160%20pytest%20%C2%B7%20103%20Vitest%20%C2%B7%20157%20Playwright-brightgreen">
 </p>
 
 <p align="center">
@@ -42,7 +42,7 @@ declines to answer instead of inventing something.
 | **Local and offline** | No API keys, no model download, no network after install. The backend suite passes with the network blocked. |
 | **Safe by construction** | The MCP server opens SQLite read-only. Each action maps to a fixed tool plan, so text in a ticket or article can never change what runs. There is no SQL tool. |
 | **Inspectable** | Every answer shows the retrieval method, thresholds, sources with scores, and the tool trace. The raw trace is one click away, and the server can be inspected with the MCP Inspector. |
-| **Tested** | 158 pytest tests (+1 expected failure), 103 Vitest tests, and 149 Playwright tests that drive the real API, the real MCP server and the UI with real clicks and key presses. |
+| **Tested** | 160 pytest tests (+1 expected failure), 103 Vitest tests, and 157 Playwright tests that drive the real API, the real MCP server and the UI with real clicks and key presses. |
 
 ## Quick start
 
@@ -93,7 +93,7 @@ After dependencies are installed, everything runs with networking disabled. Re-s
 
 | Decision | Reason |
 |---|---|
-| Assistant actions reach data only through MCP | One audited, typed, read-only surface for everything the assistant can do, and the MCP server's database handle cannot write. (The API reads SQLite directly, read-only, only for the plain ticket routes.) |
+| Assistant actions reach data only through MCP | One audited, typed, read-only surface for everything the assistant can do, and the MCP server's database handle cannot write. (The API also reads SQLite directly for the plain routes (tickets, meta, run history) and for the category check before an assistant run; no assistant answer is built from those reads.) |
 | Writes live in FastAPI, not MCP | Marking a ticket reviewed is a separately validated, idempotent route. MCP stays read-only. |
 | A fixed tool plan per action | Text found in a ticket or article is data. It cannot add, remove or reorder tool calls. |
 | TF-IDF and cosine, not embeddings | Required to run offline on a CPU with no model download, and fully explainable: `matched_terms` and `matched_identifiers` account for every hit. The cost is paraphrase recall (see [Known limitations](#known-limitations)). |
@@ -143,7 +143,7 @@ All ten cases in `backend/data/seed/expected_cases.json` run as tests (`tests/te
   2. **Term coverage**: a chunk must contain at least 2 distinct query terms, or more than half of them (`min_term_coverage = 0.6`). The fraction only matters when exactly one term matched, and then it passes only a one-term query. At 0.5, "How do I delete my account?" (1 of its 2 terms matching KB-03) slipped through; any value above 0.5 behaves identically here, so 0.6 reads as "more than half".
   3. **Error-code identifiers**: an UPPER_SNAKE token in the query (for example `PAYMENT_TIMEOUT`) that appears verbatim, as a whole token, in a chunk's text makes that chunk evidence on its own, even below the score floor. A code is near-unique, so an exact match is stronger evidence than any cosine: "What does PAYMENT_TIMEOUT mean and how do I resolve it?" scores only 0.10 against the article written for that error. The hit reports `matched_identifiers`. An unknown code (`ERR_FOO_BAR`) still gives insufficient evidence.
 
-  Why two text gates: "office wifi password" scores 0.22 against KB-05 because of the single word "password", so a cosine cutoff alone cannot separate it from true matches (0.22-0.50).
+  Why two text gates: "office wifi password" scores 0.19 against KB-05 because of the single word "password", while the true matches that cosine finds on its own score 0.20-0.52, so a cosine cutoff alone cannot separate them (the error-code hits score as low as 0.10 and are admitted by the identifier rule instead).
 
 - **Composition rules** (deterministic, no generation):
   1. If nothing passes retrieval, the result is `insufficient_evidence` with no citations. The answer says why: an empty category, too few shared terms, or a best score below the threshold.
@@ -201,8 +201,8 @@ Paraphrase is the remaining gap, as expected for lexical retrieval: the two hold
 **How SQLite access is constrained**:
 - The server opens the database with `mode=ro` and `PRAGMA query_only=ON`.
 - Tools accept only typed, pattern-validated parameters. There is no SQL passthrough.
-- All SQL lives in `app/repository.py` and uses SQLAlchemy expressions or bound parameters.
-- The only write (`PATCH /api/tickets/{id}/reviewed`) lives in FastAPI and is idempotent: the first review time is kept.
+- All of the MCP server's SQL lives in `app/repository.py` and uses SQLAlchemy expressions or bound parameters. The API adds only three statements of its own in `app/api/main.py` (the health ping, the run-history list and the run-history prune), also SQLAlchemy.
+- The only write to ticket data (`PATCH /api/tickets/{id}/reviewed`) lives in FastAPI and is idempotent: the first review time is kept. FastAPI also appends to the `assistant_runs` log and prunes it; MCP never writes.
 
 Logs go to stderr, and stdout is reserved for MCP frames.
 
@@ -266,11 +266,11 @@ React 19 + TypeScript + Vite with plain CSS custom properties: no UI framework. 
 at runtime and the UI still works offline. Phosphor was chosen over a hand-drawn set for consistent, professionally drawn geometry
 and multiple weights (regular, fill for active states, duotone for the brand mark). Only `src/components/Icons.tsx` imports it.
 The design source is `docs/UI_HANDOFF.md` (a longer addendum was also supplied during the build; it is not stored in this repo). Five screenshots are committed below; the full set
-(about 2.4 MB) was kept out of the repo to stay within its size budget.
+was kept out of the repo to stay within its size budget.
 
 - **Layout**: queue, ticket and Copilot panes. The queue has five views (Open, High priority, Needs review, Resolved, All) with counts
   computed from the loaded list, filters, and a sort. The ticket pane has the conversation (instruction-like messages are flagged and left
-  unfollowed) and a reply composer that always says "Draft, not sent". The Copilot pane has the brief, similar resolved tickets and an Ask box.
+  unfollowed) and a reply composer that labels every draft "Draft · not sent" and says that nothing is sent. The Copilot pane has the brief, similar resolved tickets and an Ask box.
 - **The answer card** is the point of the UI: the answer as prose, each sentence tied to a numbered source; hovering or focusing a marker previews
   the exact excerpt with the quoted sentence highlighted; a score meter shows each similarity against the minimum; the tool calls that produced
   the answer are shown by default and the raw trace is one click away. Insufficient evidence leads with a plain sentence and keeps the backend's
@@ -284,7 +284,7 @@ The design source is `docs/UI_HANDOFF.md` (a longer addendum was also supplied d
   keys are ignored while typing.
 - **Responsive**: three panes from 1280px; the Copilot becomes a drawer from 1279px down (toggle `c`, opens when an answer arrives); the queue
   becomes an icon rail below 1024px; below 768px there is one pane with a bottom tab bar.
-- **Themes and contrast**: dark by default, light on request, remembered per browser. Text contrast was measured, not assumed; where a literal
+- **Themes and contrast**: dark and light; the first visit follows the operating system's colour scheme (dark when it cannot tell), `t` or the toggle switches it, and the choice is remembered per browser. Text contrast was measured, not assumed; where a literal
   token failed WCAG AA the text colour was adjusted (see the comment at the top of `frontend/src/styles/tokens.css`), never a tint's alpha.
 
 ### Screenshots
@@ -298,8 +298,8 @@ The design source is `docs/UI_HANDOFF.md` (a longer addendum was also supplied d
 
 ### Performance and accessibility
 
-Measured with `vite build`: the JS bundle is 393.5 KB (113.39 KB gzip) now; the earlier 298.5 KB (91.3 KB gzip) figure, an ad hoc build measurement from before the icon change that cannot be reproduced from this repo, implies about +22.1 KB gzip,
-because each icon carries all six weights; CSS is 59.2 KB (11.71 KB gzip). Lighthouse on the production build (measured in the final verification, headless Chromium, `vite preview`): desktop empty page and ticket page score 1.00 in performance, accessibility, best practices and SEO; mobile scores performance 0.99 and best practices and SEO 1.00, accessibility 1.00 on the ticket page and 0.98 on the phone's queue screen, and the answered state (user flow) scores 1.00 with an INP of 40 ms. The 0.98 was axe `landmark-one-main` (no main landmark while only the queue was shown); that is fixed (each phone tab's visible pane is now the `main` landmark, covered by an end-to-end test), but Lighthouse itself was not re-run after the fix.
+Measured with `vite build`: the JS bundle is 393.8 KB (113.44 KB gzip) now; the earlier 298.5 KB (91.3 KB gzip) figure, an ad hoc build measurement from before the icon change that cannot be reproduced from this repo, implies about +22.1 KB gzip,
+because each icon carries all six weights; CSS is 59.2 KB (11.71 KB gzip). Lighthouse 13.6.0 on the production build (`vite preview`, headless Chrome for Testing; two runs per page and form factor, then three runs of the answered-state user flow): the empty page and the ticket page score 1.00 in performance, accessibility, best practices and SEO on desktop. On mobile, accessibility, best practices and SEO are 1.00 on both pages, including the phone's Queue screen, and performance is 0.99-1.00 (the only deduction is the Time to Interactive audit; LCP is 2.1 s on the throttled mobile profile). The answered state (navigation, a timespan around asking a question, then a snapshot) scores 1.00 in every category that applies, with an INP of 20-130 ms on desktop and 30-40 ms on mobile across the three runs (all under the 200 ms threshold; the first desktop run was the slow one). The per-run numbers are in `e2e/UX_FINDINGS.md`.
 
 ## Data model
 
@@ -311,7 +311,7 @@ The schema is created by Alembic migration `0001_initial`:
 - `assistant_runs`
 - the FTS5 virtual table `ticket_search`
 
-The seed (`app/seed.py`) validates the JSON pack with Pydantic, which rejects duplicate IDs and malformed timestamps, then reloads everything in one transaction.
+The seed (`app/seed.py`) validates the JSON pack (Pydantic models reject malformed fields and timestamps, and an explicit check rejects duplicate IDs), then reloads everything in one transaction.
 
 ## Project structure
 
@@ -335,13 +335,13 @@ support-copilot/
 ├── e2e/                    Playwright suite, plus REQUIREMENTS_MATRIX.md, CONTROLS.md, UX_FINDINGS.md
 ├── docs/                   architecture and flow sketches (docs/diagrams/ renders them), UI handoff, README screenshots
 ├── scripts/dev.sh          seed if needed, then start API and UI
-└── Makefile                install, dev, test, e2e, mcp-inspect
+└── Makefile                install, setup, dev, test, lint, e2e, mcp-inspect
 ```
 
 ## Tests
 
 ```bash
-make test            # backend: 158 pytest tests (+1 expected failure); frontend: 103 Vitest tests (12 files)
+make test            # backend: 160 pytest tests (+1 expected failure); frontend: 103 Vitest tests (12 files)
 make lint            # ruff (pyflakes + bugbear rules) over the backend
 ```
 
@@ -365,21 +365,21 @@ make lint            # ruff (pyflakes + bugbear rules) over the backend
 Verification records kept in `e2e/`: `REQUIREMENTS_MATRIX.md` (the assignment line by line, each with evidence), `CONTROLS.md` (every interactive control, how it is reached and which test asserts its effect) and `UX_FINDINGS.md` (layout, accessibility, performance and the defects found and fixed).
 
 `e2e/` holds a Playwright suite that drives the real app in a real browser: the real FastAPI process, the real MCP stdio subprocess, a real
-SQLite file and real keyboard and mouse input. There are no mocks and no stubbed network. It uses its own ports (API 8100, UI 5180, plus
+SQLite file and real keyboard and mouse input. Nothing is mocked except in a few places: some tests hold the assistant call in flight for about a second (the real response is still delivered) to observe a loading state, and two answer one assistant request with a canned 503 to exercise the error card and its Retry; killing the real MCP child is tested separately. It uses its own ports (API 8100, UI 5180, plus
 8101 for a missing database and 5181 and 5182 for the "database not initialized" and "API down" states) and a temporary database that is
 seeded fresh before every run, so it never touches `backend/data/support.db`.
 
 ```bash
-cd e2e && npm install && npx playwright install chromium   # one-time dev download (about 100 MB); the app itself does not need it
+cd e2e && npm install && npx playwright install chromium   # one-time dev download (about 600 MB on disk: Chromium, its headless shell and ffmpeg); the app itself does not need it
 make e2e                                                   # or: cd e2e && npm run e2e   (add -- --headed to watch it)
 ```
 
-After the one-time browser download the tests run offline. The suite is 149 tests in 22 files and takes about 6 minutes (6.2, 6.3 and 6.5 measured over three consecutive runs on the final tree, one worker, none flaky). It covers the queue
+After the one-time browser download the tests run offline. The suite is 157 tests in 22 files and takes about 6 minutes (5.8 minutes, 348 s, in each of three consecutive runs from a fresh clone on the final tree, one worker, none flaky). It covers the queue
 and filters, ticket detail, the automatic brief and similar cards, answers and citations (including a sentence-by-sentence grounding check),
 drafts and the real clipboard, review and idempotency, the full keyboard path with real key presses, MCP and database failure states (it kills
-the real MCP child), responsive layouts at 1440, 1100, 820 and 390, axe accessibility scans in both themes, and every case in
+the real MCP child), responsive layouts at 1440, 1100, 1024, 820 and 390, axe accessibility scans in both themes, and every case in
 `expected_cases.json` through the UI. A test that records a known, not-yet-fixed finding should use `test.fail()`, so the run turns red if it starts
-passing, and be named `BUG-n`; there are none at v1.2.
+passing, and be named `BUG-n`; there are none.
 
 ## Known limitations
 
@@ -416,7 +416,7 @@ I would keep this pipeline as the retrieval and citation layer and the fallback:
 
 ## AI tools used
 
-Almost all of the code, tests and documentation were written by Claude Code, working from specifications and prompts I drafted together with Claude (chat). I set the scope, read each agent report with its test results, and approved or rejected each change. I did not write the retrieval, composer or UI code by hand. What was tested: the behaviour is covered by pytest (158 + 1 expected failure), Vitest (103) and Playwright end-to-end tests (149), which drive the real API, the real MCP server over stdio and the UI with real clicks and key presses, and the MCP server was checked with the MCP Inspector CLI. Output logs from those runs are not stored in the repo. The tuning and holdout query sets were written with AI assistance and the holdout set was evaluated at baseline and at the end of the build; later reads were for verification only.
+Almost all of the code, tests and documentation were written by Claude Code, working from specifications and prompts I drafted together with Claude (chat). I set the scope, read each agent report with its test results, and approved or rejected each change. I did not write the retrieval, composer or UI code by hand. What was tested: the behaviour is covered by pytest (160 + 1 expected failure), Vitest (103) and Playwright end-to-end tests (157), which drive the real API, the real MCP server over stdio and the UI with real clicks and key presses, and the MCP server was checked with the MCP Inspector CLI. Output logs from those runs are not stored in the repo. The tuning and holdout query sets were written with AI assistance and the holdout set was evaluated at baseline and at the end of the build; later reads were for verification only.
 
 ### What was built and checked with AI assistance
 
@@ -429,7 +429,7 @@ Each item can be checked in the repo (code, tests or scripts); the process histo
 - The offline evaluation harness (`app/eval.py`) and the tuning and holdout sets (`backend/data/eval/`).
 - The error-code rule, the stemmer, the coverage gate value, the guardrail fix, the similar-ticket floor, the 504 mapping, environment passthrough, the `/health` ping and the draft split, each with tests.
 - The UI follows the written handoff specification in `docs/UI_HANDOFF.md`; a longer addendum used during the build is not stored in this repo.
-- A final verification pass (an offline run with the network denied, an every-control test run, an accessibility, layout and performance inspection) is recorded in `e2e/REQUIREMENTS_MATRIX.md`, `e2e/CONTROLS.md` and `e2e/UX_FINDINGS.md`; it found and fixed the four defects listed in the last.
+- A final verification pass (an offline run with the network denied, an every-control test run, an accessibility, layout and performance inspection) is recorded in `e2e/REQUIREMENTS_MATRIX.md`, `e2e/CONTROLS.md` and `e2e/UX_FINDINGS.md`; it found and fixed the six defects listed in the last.
 - The two sketches in `docs/` are illustrations, not screenshots. They are drawn by a script with a hand-drawn rendering library (rough.js) and a handwriting font (Caveat), and `docs/diagrams/` regenerates them identically (`cd docs/diagrams && npm install && npx playwright install chromium && npm run render`).
 
 ### Mistakes caught along the way

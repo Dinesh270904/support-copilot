@@ -21,7 +21,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from mcp import StdioServerParameters
-from sqlalchemy import delete, desc, select, text
+from sqlalchemy import delete, desc, literal_column, select, text
 from starlette.exceptions import HTTPException as StarletteHTTPException
 from sqlalchemy.orm import Session, sessionmaker
 
@@ -142,13 +142,6 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         lifespan=lifespan,
         responses={422: {"model": ErrorResponse}, 500: {"model": ErrorResponse}},
     )
-    app.add_middleware(
-        CORSMiddleware,
-        allow_origins=list(settings.cors_origins),
-        allow_methods=["GET", "POST", "PATCH"],
-        allow_headers=["Content-Type", "X-Request-ID"],
-    )
-
     # ------------------------------------------------------------- errors
     def _error(status: int, code: str, message: str, request: Request, details=None) -> JSONResponse:
         body = {"error": {"code": code, "message": message, "request_id": getattr(request.state, "request_id", None)}}
@@ -171,6 +164,15 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             response = await call_next(request)
         response.headers["X-Request-ID"] = request.state.request_id
         return response
+
+    # Added after the request-id/size-guard middleware on purpose: the last middleware added is the outermost, so CORS
+    # headers are put on every response, including the 413 and 411 the size guard answers by itself.
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=list(settings.cors_origins),
+        allow_methods=["GET", "POST", "PATCH"],
+        allow_headers=["Content-Type", "X-Request-ID"],
+    )
 
     @app.exception_handler(RequestValidationError)
     async def _validation(request: Request, exc: RequestValidationError) -> JSONResponse:
@@ -327,8 +329,9 @@ def _save_run(sessions: sessionmaker[Session], record: dict, keep: int) -> None:
         with sessions.begin() as session:
             session.add(AssistantRun(**record))
             session.flush()
-            # Retention: keep only the newest `keep` rows. The created_at index makes this a short range scan.
-            newest = select(AssistantRun.run_id).order_by(desc(AssistantRun.created_at), desc(AssistantRun.run_id)).limit(keep)
+            # Retention: keep only the newest `keep` rows. created_at has one-second resolution, so ties are broken by
+            # insertion order (rowid), never by the random run id. The created_at index makes this a short range scan.
+            newest = select(AssistantRun.run_id).order_by(desc(AssistantRun.created_at), desc(literal_column("rowid"))).limit(keep)
             session.execute(delete(AssistantRun).where(AssistantRun.run_id.not_in(newest)))
     except Exception:  # noqa: BLE001 - audit logging must never fail the request
         log.exception("Failed to persist assistant run", extra={"fields": {"run_id": record.get("run_id")}})
