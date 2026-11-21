@@ -95,3 +95,37 @@ test("link-style buttons have a hit area of at least 24px, and shortcut hints ar
   await expect(tp.locator(".palette .kbd-hint:visible")).toHaveCount(0);
   await touch.close();
 });
+
+/** WCAG 2.2 SC 2.4.11 Focus Not Obscured: with the Copilot drawer open (768-1279 px) it lies on top of the ticket pane, so
+ *  keyboard focus must never land on a ticket-pane control that the drawer covers. */
+for (const width of [1100, 1024, 820]) {
+  test(`${width} px: with the Copilot drawer open, Tab never lands on a control hidden under it`, async ({ page }) => {
+    await page.setViewportSize({ width, height: 800 });
+    await page.goto("/#/ticket/T-101");
+    await expect(page.getByRole("heading", { level: 2, name: /Checkout timed out/ })).toBeVisible();
+    const toggle = page.getByRole("button", { name: /^Copilot/ });
+    await toggle.click();
+    await expect(toggle).toHaveAttribute("aria-expanded", "true");
+    await page.waitForTimeout(400);
+    await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
+    const covered: string[] = [];
+    for (let i = 0; i < 45; i++) {
+      await page.keyboard.press("Tab");
+      const hit = await page.evaluate(() => {
+        const e = document.activeElement as HTMLElement | null;
+        if (!e || e === document.body) return null;
+        const r = e.getBoundingClientRect();
+        const top = document.elementFromPoint(Math.min(Math.max(r.left + r.width / 2, 0), innerWidth - 1), Math.min(Math.max(r.top + r.height / 2, 0), innerHeight - 1));
+        return top && !(e === top || e.contains(top) || top.contains(e)) ? (e.getAttribute("aria-label") || e.innerText || e.tagName).replace(/\s+/g, " ").trim().slice(0, 40) : null;
+      });
+      if (hit) covered.push(hit);
+    }
+    expect(covered).toEqual([]);
+    // and the controls are reachable again once the drawer is closed
+    await toggle.click();
+    await expect(toggle).toHaveAttribute("aria-expanded", "false");
+    await expect(page.getByRole("button", { name: /Mark reviewed/ })).toBeEnabled();
+    await page.getByRole("button", { name: /Mark reviewed/ }).focus();
+    await expect(page.getByRole("button", { name: /Mark reviewed/ })).toBeFocused();
+  });
+}
