@@ -284,7 +284,7 @@ The design source is `docs/UI_HANDOFF.md` (a longer addendum was also supplied d
   keys are ignored while typing.
 - **Responsive**: three panes from 1280px; the Copilot becomes a drawer from 1279px down (toggle `c`, opens when an answer arrives); the queue
   becomes an icon rail below 1024px; below 768px there is one pane with a bottom tab bar.
-- **Themes and contrast**: dark by default, light on request, remembered per browser. Text contrast was measured, not assumed; where a literal
+- **Themes and contrast**: dark and light; the first visit follows the operating system's colour scheme (dark when it cannot tell), `t` or the toggle switches it, and the choice is remembered per browser. Text contrast was measured, not assumed; where a literal
   token failed WCAG AA the text colour was adjusted (see the comment at the top of `frontend/src/styles/tokens.css`), never a tint's alpha.
 
 ### Screenshots
